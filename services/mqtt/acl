@@ -1,0 +1,16 @@
+user homeassistant
+topic readwrite homeassistant/#
+topic readwrite zigbee2mqtt/#
+topic read frigate/#
+topic write frigate/+/set
+topic write frigate/+/+/set
+
+user zigbee2mqtt
+topic readwrite zigbee2mqtt/#
+topic write homeassistant/#
+topic read homeassistant/status
+
+user frigate
+topic readwrite frigate/#
+topic write homeassistant/#
+topic read homeassistant/status

@@ -1,0 +1,44 @@
+name: homelab-pi
+
+x-app: &app
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "5m"
+      max-file: "2"
+
+services:
+  unbound:
+    <<: *app
+    build: ./services/unbound
+    networks:
+      resolver:
+        ipv4_address: 172.29.0.2
+
+  adguard:
+    <<: *app
+    image: adguard/adguardhome:v0.107.79
+    depends_on: [unbound]
+    ports:
+      - "${PI_IP:-10.0.40.11}:53:53/tcp"
+      - "${PI_IP:-10.0.40.11}:53:53/udp"
+      - "127.0.0.1:8081:80"
+    networks: [resolver]
+    volumes:
+      - ${DATA_ROOT:-/srv}/adguard/config:/opt/adguardhome/conf
+      - ${DATA_ROOT:-/srv}/adguard/data:/opt/adguardhome/work
+
+  uptime-kuma:
+    <<: *app
+    image: louislam/uptime-kuma:2.5.6
+    ports: ["${PI_IP:-10.0.40.11}:3001:3001"]
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+    volumes:
+      - ${DATA_ROOT:-/srv}/uptime-kuma/data:/app/data
+
+networks:
+  resolver:
+    ipam:
+      config: [{subnet: 172.29.0.0/24}]

@@ -1,0 +1,75 @@
+mqtt:
+  host: mqtt
+  user: frigate
+  password: "{FRIGATE_MQTT_PASSWORD}"
+auth:
+  enabled: true
+detectors:
+  ov:
+    type: openvino
+    device: GPU
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+ffmpeg:
+  hwaccel_args: preset-vaapi
+detect:
+  width: 1280
+  height: 720
+  fps: 5
+record:
+  enabled: true
+  continuous:
+    days: 7
+  alerts:
+    retain:
+      days: 30
+      mode: all
+  detections:
+    retain:
+      days: 30
+      mode: all
+snapshots:
+  enabled: true
+  retain:
+    default: 30
+cameras:
+  camera_1:
+    ffmpeg:
+      inputs:
+        - path: "{FRIGATE_CAMERA_1_MAIN}"
+          roles: [record]
+        - path: "{FRIGATE_CAMERA_1_SUB}"
+          roles: [detect]
+  camera_2:
+    ffmpeg:
+      inputs:
+        - path: "{FRIGATE_CAMERA_2_MAIN}"
+          roles: [record]
+        - path: "{FRIGATE_CAMERA_2_SUB}"
+          roles: [detect]
+  camera_3:
+    ffmpeg:
+      inputs:
+        - path: "{FRIGATE_CAMERA_3_MAIN}"
+          roles: [record]
+        - path: "{FRIGATE_CAMERA_3_SUB}"
+          roles: [detect]
+  camera_4:
+    ffmpeg:
+      inputs:
+        - path: "{FRIGATE_CAMERA_4_MAIN}"
+          roles: [record]
+        - path: "{FRIGATE_CAMERA_4_SUB}"
+          roles: [detect]
+  camera_5:
+    ffmpeg:
+      inputs:
+        - path: "{FRIGATE_CAMERA_5_MAIN}"
+          roles: [record]
+        - path: "{FRIGATE_CAMERA_5_SUB}"
+          roles: [detect]

@@ -1,0 +1,203 @@
+name: homelab-server
+
+x-app: &app
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  environment:
+    TZ: ${TZ:-Etc/UTC}
+
+services:
+  # Recursively resolves DNS queries and validates DNSSEC for AdGuard.
+  unbound:
+    <<: *app
+    build: ./services/unbound
+    networks:
+      resolver:
+        ipv4_address: 172.29.0.2
+
+  # Filters household DNS requests, blocks unwanted domains, and serves local rewrites.
+  adguard:
+    <<: *app
+    image: adguard/adguardhome:v0.107.79
+    depends_on: [unbound]
+    networks: [default, resolver]
+    ports:
+      - "${SERVER_IP:-10.0.40.10}:53:53/tcp"
+      - "${SERVER_IP:-10.0.40.10}:53:53/udp"
+      - "127.0.0.1:8081:80"
+    volumes:
+      - ${DATA_ROOT:-/srv}/adguard/config:/opt/adguardhome/conf
+      - ${DATA_ROOT:-/srv}/adguard/data:/opt/adguardhome/work
+
+  # Provides the HTTPS front door, wildcard certificates, and routing to service UIs.
+  caddy:
+    <<: *app
+    profiles: [https]
+    build:
+      context: ./services/caddy
+      args:
+        CADDY_DNS_MODULE: ${CADDY_DNS_MODULE:-}
+    network_mode: host
+    environment:
+      HOME_DOMAIN: ${HOME_DOMAIN:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      DNS_PROVIDER: ${DNS_PROVIDER:-}
+      DNS_API_TOKEN: ${DNS_API_TOKEN:-}
+      PI_IP: ${PI_IP:-10.0.40.11}
+    volumes:
+      - ./services/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_ROOT:-/srv}/caddy/config/esphome-users:/etc/caddy/esphome-users:ro
+      - ${DATA_ROOT:-/srv}/caddy/config/alerts-users:/etc/caddy/alerts-users:ro
+      - ${DATA_ROOT:-/srv}/caddy/data:/data
+      - ${DATA_ROOT:-/srv}/caddy/config:/config
+
+  # Mosquitto message broker connecting Home Assistant, Zigbee2MQTT, and Frigate.
+  mqtt:
+    <<: *app
+    image: eclipse-mosquitto:2.0.22
+    volumes:
+      - ./services/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./services/mqtt/acl:/mosquitto/config/acl:ro
+      - ${DATA_ROOT:-/srv}/mqtt/config/passwords:/mosquitto/config/passwords:ro
+      - ${DATA_ROOT:-/srv}/mqtt/data:/mosquitto/data
+
+  # Central smart-home hub for device integrations, automations, and dashboards.
+  homeassistant:
+    <<: *app
+    image: ghcr.io/home-assistant/home-assistant:2026.10.2
+    ports: ["127.0.0.1:8123:8123"]
+    volumes:
+      - ${DATA_ROOT:-/srv}/homeassistant/config:/config
+    depends_on: [mqtt]
+
+  # Connects Zigbee devices through a USB coordinator and exposes them over MQTT.
+  zigbee2mqtt:
+    <<: *app
+    profiles: [radios]
+    image: ghcr.io/koenkk/zigbee2mqtt:2.14.2
+    depends_on: [mqtt]
+    ports: ["127.0.0.1:8080:8080"]
+    devices:
+      - ${ZIGBEE_DEVICE:-/dev/serial/by-id/REPLACE_ZIGBEE}:/dev/ttyZigbee
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD: ${MQTT_Z2M_PASSWORD:-}
+      ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN: ${Z2M_AUTH_TOKEN:-}
+      ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: ${ZIGBEE_ADAPTER:-ember}
+    volumes:
+      - ${DATA_ROOT:-/srv}/zigbee2mqtt/data:/app/data
+
+  # Manages the USB Z-Wave controller and provides Home Assistant's WebSocket API.
+  zwave:
+    <<: *app
+    profiles: [radios]
+    image: zwavejs/zwave-js-ui:11.24.3
+    ports: ["127.0.0.1:8091:8091"]
+    devices:
+      - ${ZWAVE_DEVICE:-/dev/serial/by-id/REPLACE_ZWAVE}:/dev/zwave
+    volumes:
+      - ${DATA_ROOT:-/srv}/zwave/data:/usr/src/app/store
+
+  # Builds and updates local ESP-device firmware through a web dashboard.
+  esphome:
+    <<: *app
+    image: ghcr.io/esphome/esphome:2026.9.1
+    ports: ["127.0.0.1:6052:6052"]
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      ESPHOME_DASHBOARD_USE_PING: "true"
+    volumes:
+      - ${DATA_ROOT:-/srv}/esphome/config:/config
+
+  # Records camera streams and detects objects locally using the Intel GPU.
+  frigate:
+    <<: *app
+    profiles: [cameras]
+    image: ghcr.io/blakeblackshear/frigate:0.18.2
+    depends_on: [mqtt]
+    shm_size: "512mb"
+    ports: ["127.0.0.1:8971:8971"]
+    devices:
+      - ${DRI_DEVICE:-/dev/dri/renderD128}:/dev/dri/renderD128
+    group_add: ["${RENDER_GID:-REPLACE_RENDER_GROUP}"]
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      FRIGATE_MQTT_PASSWORD: ${MQTT_FRIGATE_PASSWORD:-}
+      FRIGATE_CAMERA_1_MAIN: ${FRIGATE_CAMERA_1_MAIN:-}
+      FRIGATE_CAMERA_1_SUB: ${FRIGATE_CAMERA_1_SUB:-}
+      FRIGATE_CAMERA_2_MAIN: ${FRIGATE_CAMERA_2_MAIN:-}
+      FRIGATE_CAMERA_2_SUB: ${FRIGATE_CAMERA_2_SUB:-}
+      FRIGATE_CAMERA_3_MAIN: ${FRIGATE_CAMERA_3_MAIN:-}
+      FRIGATE_CAMERA_3_SUB: ${FRIGATE_CAMERA_3_SUB:-}
+      FRIGATE_CAMERA_4_MAIN: ${FRIGATE_CAMERA_4_MAIN:-}
+      FRIGATE_CAMERA_4_SUB: ${FRIGATE_CAMERA_4_SUB:-}
+      FRIGATE_CAMERA_5_MAIN: ${FRIGATE_CAMERA_5_MAIN:-}
+      FRIGATE_CAMERA_5_SUB: ${FRIGATE_CAMERA_5_SUB:-}
+    volumes:
+      - ${DATA_ROOT:-/srv}/frigate/config:/config
+      - type: bind
+        source: ${RECORDINGS_ROOT:-/mnt/recordings}
+        target: /media/frigate/recordings
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${RECORDINGS_ROOT:-/mnt/recordings}/.homelab-recording-volume
+        target: /run/homelab-recording-volume
+        read_only: true
+        bind:
+          create_host_path: false
+      - ${DATA_ROOT:-/srv}/frigate/data/clips:/media/frigate/clips
+    tmpfs: ["/tmp/cache:size=1000000000"]
+
+  # Discovers network devices and alerts on new or unexpected devices.
+  netalertx:
+    <<: *app
+    profiles: [monitoring]
+    image: ghcr.io/netalertx/netalertx:26.10.0
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, NET_RAW, NET_BIND_SERVICE, CHOWN, SETUID, SETGID]
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      LISTEN_ADDR: "127.0.0.1"
+      PORT: "20211"
+      GRAPHQL_PORT: "20212"
+    volumes:
+      - ${DATA_ROOT:-/srv}/netalertx/data:/data
+    tmpfs: ["/tmp:mode=1700"]
+
+  # Hosts private Git repositories for infrastructure and service configuration.
+  forgejo:
+    <<: *app
+    image: codeberg.org/forgejo/forgejo:17.0.0
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      USER_UID: "1000"
+      USER_GID: "1000"
+    volumes:
+      - ${DATA_ROOT:-/srv}/forgejo/data:/data
+
+  # Executes trusted Forgejo Actions jobs inside this container, without host Docker access.
+  runner:
+    <<: *app
+    profiles: [actions]
+    image: code.forgejo.org/forgejo/runner:13.2.0
+    working_dir: /data
+    command: ["forgejo-runner", "daemon", "--config", "/etc/runner.yaml"]
+    volumes:
+      - ./services/forgejo/runner.yaml:/etc/runner.yaml:ro
+      - ${DATA_ROOT:-/srv}/runner/data:/data
+
+networks:
+  default:
+    ipam:
+      config: [{subnet: 172.28.0.0/24}]
+  resolver:
+    ipam:
+      config: [{subnet: 172.29.0.0/24}]

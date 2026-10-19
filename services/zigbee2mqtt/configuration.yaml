@@ -1,0 +1,18 @@
+version: 5
+homeassistant:
+  enabled: true
+permit_join: false
+mqtt:
+  server: mqtt://mqtt:1883
+  base_topic: zigbee2mqtt
+  user: zigbee2mqtt
+serial:
+  port: /dev/ttyZigbee
+frontend:
+  enabled: true
+  port: 8080
+advanced:
+  enable_external_js: false
+  network_key: GENERATE
+  pan_id: GENERATE
+  ext_pan_id: GENERATE

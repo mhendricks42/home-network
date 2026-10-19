@@ -1,0 +1,72 @@
+# Replace the domain and bcrypt hash before deploying to either node.
+# Keep client profiles/filter URLs in this file; UI changes are not Git changes.
+schema_version: 34
+http:
+  address: 0.0.0.0:80
+users:
+  - name: admin
+    password: REPLACE_WITH_BCRYPT_HASH
+auth_attempts: 5
+block_auth_min: 15
+dns:
+  bind_hosts: [0.0.0.0]
+  port: 53
+  upstream_dns:
+    - 172.29.0.2:5335
+    - "[/home.arpa/]10.0.10.1"
+  bootstrap_dns: []
+  fallback_dns: []
+  use_private_ptr_resolvers: true
+  local_ptr_upstreams: [10.0.10.1]
+  enable_dnssec: true
+  ratelimit: 20
+filtering:
+  protection_enabled: true
+  filtering_enabled: true
+  safebrowsing_enabled: false
+  parental_enabled: false
+  safe_search:
+    enabled: false
+  rewrites:
+    - domain: "*.home.REPLACE_DOMAIN"
+      answer: 10.0.40.10
+user_rules:
+  - "||use-application-dns.net^"
+filters:
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+    name: AdGuard DNS filter
+    id: 1
+  - enabled: true
+    url: https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/doh.txt
+    name: HaGeZi encrypted DNS bypass
+    id: 2
+clients:
+  persistent:
+    - name: IoT
+      ids: [10.0.50.0/24, 10.0.55.0/24]
+      use_global_settings: false
+      filtering_enabled: true
+      safebrowsing_enabled: false
+      parental_enabled: false
+      safe_search:
+        enabled: false
+      use_global_blocked_services: true
+    - name: Trusted
+      ids: [10.0.20.0/24]
+      use_global_settings: true
+    - name: Work
+      ids: [10.0.30.0/24]
+      use_global_settings: false
+      filtering_enabled: false
+      safebrowsing_enabled: false
+      parental_enabled: false
+    - name: Guest
+      ids: [10.0.70.0/24]
+      use_global_settings: true
+querylog:
+  enabled: true
+  interval: 24h
+statistics:
+  enabled: true
+  interval: 24h

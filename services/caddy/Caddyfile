@@ -1,0 +1,81 @@
+{
+	email {$ACME_EMAIL}
+	auto_https disable_redirects
+	admin localhost:2019
+}
+
+*.home.{$HOME_DOMAIN} {
+	tls {
+		dns {$DNS_PROVIDER} {env.DNS_API_TOKEN}
+	}
+
+	@ha host ha.home.{$HOME_DOMAIN}
+	handle @ha {
+		reverse_proxy 127.0.0.1:8123
+	}
+	@frigate host frigate.home.{$HOME_DOMAIN}
+	handle @frigate {
+		reverse_proxy https://127.0.0.1:8971 {
+			transport http {
+				# Frigate's built-in certificate is self-signed.
+				tls_insecure_skip_verify
+			}
+		}
+	}
+	@z2m host z2m.home.{$HOME_DOMAIN}
+	handle @z2m {
+		reverse_proxy 127.0.0.1:8080
+	}
+	@zwave host zwave.home.{$HOME_DOMAIN}
+	handle @zwave {
+		reverse_proxy 127.0.0.1:8091
+	}
+	@esphome host esphome.home.{$HOME_DOMAIN}
+	handle @esphome {
+		# ESPHome's dashboard must not be anonymous, even on the LAN.
+		basic_auth {
+			import /etc/caddy/esphome-users
+		}
+		reverse_proxy 127.0.0.1:6052
+	}
+	@dns host dns.home.{$HOME_DOMAIN}
+	handle @dns {
+		reverse_proxy 127.0.0.1:8081
+	}
+	@alerts host alerts.home.{$HOME_DOMAIN}
+	handle @alerts {
+		basic_auth {
+			import /etc/caddy/alerts-users
+		}
+		reverse_proxy 127.0.0.1:20211
+	}
+	@git host git.home.{$HOME_DOMAIN}
+	handle @git {
+		reverse_proxy 127.0.0.1:3000
+	}
+	@nas host nas.home.{$HOME_DOMAIN}
+	handle @nas {
+		reverse_proxy https://10.0.40.20 {
+			transport http {
+				# NAS uses a self-signed backend certificate.
+				tls_insecure_skip_verify
+			}
+		}
+	}
+	@unifi host unifi.home.{$HOME_DOMAIN}
+	handle @unifi {
+		reverse_proxy https://10.0.10.1 {
+			transport http {
+				# Local UniFi controller uses a self-signed certificate.
+				tls_insecure_skip_verify
+			}
+		}
+	}
+	@status host status.home.{$HOME_DOMAIN}
+	handle @status {
+		reverse_proxy {$PI_IP}:3001
+	}
+	handle {
+		respond "Unknown service" 404
+	}
+}
