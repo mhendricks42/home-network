@@ -167,17 +167,17 @@ serves those SSIDs. Do not use the architecture's old abbreviated tag list.
 Use explicit tag allowlists instead of "Allow All". No native Mgmt SSID exists.
 
 1. Configure a spare physical UCG LAN port as Recovery. Keep the laptop there.
-2. Apply Gateway/core uplink on the UCG LAN uplink and core port 1. Core port 1
+2. Apply Gateway/core uplink on the UCG LAN uplink and core port 13. Core port 13
    PoE is **off**. Let switches/APs obtain Mgmt addresses on the native network;
    do not also force a tagged management VLAN override without a tested need.
-3. Core port 2 and office port 1: Office trunk, **PoE off** at core port 2
+3. Core port 14 and office port 1: Office trunk, **PoE off** at core port 14
    (office switch has its own AC adapter).
-4. Core port 3 and office port 5: AP trunk; enable suitable PoE for each AP.
-5. Core ports 5-9: Camera access/PoE. Core port 10: Server/Pi/NAS access/PoE
+4. Core port 15 and office port 5: AP trunk; enable suitable PoE for each AP.
+5. Core ports 1-5: Camera access/PoE. Core port 6: Server/Pi/NAS access/PoE
    for the Pi HAT. Office ports 2/3: Server/Pi/NAS access; port 4: Desk PC.
 6. Reconnect the laptop through Trusted and verify its admin access after
    section 5. Keep local recovery available until acceptance passes.
-7. After the single trunk is stable, configure core port 4 and office port 6
+7. After the single trunk is stable, configure core port 16 and office port 6
    with Office trunk, core PoE off. Set the core as spanning-tree root with
    lower bridge priority than the office switch. Enable RSTP; do not mark
    inter-switch links as edge ports or enable BPDU guard on them.

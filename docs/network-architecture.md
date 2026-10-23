@@ -75,13 +75,13 @@ flowchart TB
 
 | Port | Type | Connected to | Config |
 |---|---|---|---|
-| 1 | 2.5G PoE++ | UCG Max LAN | Uplink; PoE off |
-| 2 | 2.5G PoE++ | Office trunk (existing Cat6) | Native Mgmt 10; tagged 20/30/40/50/55/70 (includes upstairs SSIDs); **PoE off** (office switch has its own adapter) |
-| 3 | 2.5G PoE++ | U7 Pro downstairs | Trunk (AP SSIDs) |
-| 4 | 2.5G PoE++ | Second office link (after Cat6 pull) | Same trunk; spanning tree keeps one link active |
-| 5–9 | 1G PoE+ | Cameras 1–5 | Access, VLAN 60 |
-| 10 | 1G PoE+ | Raspberry Pi 3B+ | Access, VLAN 40 |
-| 11–16 | 1G PoE+ | Spare | — |
+| 1–5 | 1G PoE+ | Cameras 1–5 | Access, VLAN 60 |
+| 6 | 1G PoE+ | Raspberry Pi 3B+ | Access, VLAN 40 |
+| 7–12 | 1G PoE+ | Spare | — |
+| 13 | 2.5G PoE++ | UCG Max LAN | Uplink; PoE off |
+| 14 | 2.5G PoE++ | Office trunk (existing Cat6) | Native Mgmt 10; tagged 20/30/40/50/55/70 (includes upstairs SSIDs); **PoE off** (office switch has its own adapter) |
+| 15 | 2.5G PoE++ | U7 Pro downstairs | Trunk (AP SSIDs) |
+| 16 | 2.5G PoE++ | Second office link (after Cat6 pull) | Same trunk; spanning tree keeps one link active |
 | SFP+ 1–2 | 10G | Unused | — |
 
 ### 4.2 Office switch (Flex 2.5G PoE 8-port) port plan
