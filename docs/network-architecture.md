@@ -4,10 +4,12 @@
 |---|---|
 | **Document** | Home network architecture (physical, logical, security) |
 | **Companion** | `home-server-architecture.md` (services, hosting, IaC) |
-| **Version** | 2 (baseline after decision round, 2026-10-18) |
+| **Version** | 3 (Wi-Fi compatibility decision and configuration runbook, 2026-10-19) |
 | **Rule** | Only decided items are in the baseline. Undecided items are listed in §21 (Pending decisions) and are **not** part of the design until decided. |
 
 ---
+
+**Implementation:** [UCG Max configuration runbook](ucg-max-runbook.md).
 
 ## 1. Overview
 
@@ -74,7 +76,7 @@ flowchart TB
 | Port | Type | Connected to | Config |
 |---|---|---|---|
 | 1 | 2.5G PoE++ | UCG Max LAN | Uplink; PoE off |
-| 2 | 2.5G PoE++ | Office trunk (existing Cat6) | Tagged 10/20/30/40, native Mgmt; **PoE off** (office switch has its own adapter) |
+| 2 | 2.5G PoE++ | Office trunk (existing Cat6) | Native Mgmt 10; tagged 20/30/40/50/55/70 (includes upstairs SSIDs); **PoE off** (office switch has its own adapter) |
 | 3 | 2.5G PoE++ | U7 Pro downstairs | Trunk (AP SSIDs) |
 | 4 | 2.5G PoE++ | Second office link (after Cat6 pull) | Same trunk; spanning tree keeps one link active |
 | 5–9 | 1G PoE+ | Cameras 1–5 | Access, VLAN 60 |
@@ -170,11 +172,15 @@ The UniFi default `192.168.1.0/24` is replaced **before** adopting devices (avoi
 
 | SSID | Bands | Security | Maps to | Notes |
 |---|---|---|---|---|
-| **Home** | 2.4 / 5 / 6 GHz (6 GHz downstairs only) | WPA3 (WPA2/3 transition if needed) | VLAN 20; PPSK second key → VLAN 30 | |
-| **Things** | 2.4 GHz (+5 GHz if needed) | WPA2/WPA3 transition | VLAN 50; PPSK second key → VLAN 55 | Many IoT devices are 2.4 GHz WPA2-only |
+| **Home** | 2.4 / 5 / 6 GHz (6 GHz downstairs only) | WPA3 | VLAN 20 | No PPSK; preserves 6 GHz |
+| **Work** | 2.4 / 5 GHz | WPA2/WPA3 transition | VLAN 30 | Separate key and SSID |
+| **Things** | 2.4 GHz (+5 GHz if needed) | WPA2/WPA3 transition | VLAN 50 | Many IoT devices are 2.4 GHz WPA2-only |
+| **Things-Cloud** | 2.4 GHz (+5 GHz if needed) | WPA2/WPA3 transition | VLAN 55 | Separate quarantine SSID/key |
 | **Guest** | 2.4 / 5 GHz | WPA2/3 | VLAN 70 | Client isolation; printed QR code |
 
 BGW320 Wi-Fi disabled. Cameras and servers wired only.
+PPSK is not used: it is incompatible with WPA3/6 GHz. Separate SSIDs retain
+the intended VLAN assignments without downgrading Home.
 
 ---
 
@@ -414,7 +420,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | 1 | Install recessed box, outlet, patch panel; mount gear per §13.2; attempt Cat6 pull via coax |
 | 2 | UCG Max local-only setup (browser → Advanced Setup → local admin); change default subnet; enable backups |
 | 3 | BGW320: Wi-Fi off; WAN mode per §21 P1 |
-| 4 | Adopt switches/APs; create VLANs, SSIDs, PPSK |
+| 4 | Adopt switches/APs; create VLANs and separate SSIDs per §8 |
 | 5 | Server + Pi DNS (companion doc); DHCP DNS → 10.0.40.10/.11 |
 | 6 | Zone policies; one week of logging; fix breakage |
 | 7 | Move devices VLAN by VLAN (IoT → Cameras → Work) |
@@ -438,6 +444,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | D-N8 | Backup WAN | None; hotspot procedure in runbook | 2026-10-18 |
 | D-N9 | UniFi config management | Manual now; OpenTofu `ubiquiti-community/unifi` future | 2026-10-18 |
 | D-N10 | Cameras | 5× Amcrest 5MP | 2026-10-18 |
+| D-N11 | Wi-Fi VLAN assignment | Separate Work and Things-Cloud SSIDs, no PPSK; retain WPA3/6 GHz Home | 2026-10-19 |
 | — | Raspberry Pi | Pi 3B+ (owned) | 2026-10-18 |
 | — | NAS | Ugreen, in office | 2026-10-18 |
 

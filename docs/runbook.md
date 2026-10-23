@@ -6,6 +6,9 @@ This implements the container layer in [the architecture](home-server-architectu
 Commands below run in a Bash shell on the **target Linux host**. Do not run them
 on the Windows development machine. Keep an independent laptop clone.
 
+Configure the gateway and network policy with the
+[UCG Max runbook](ucg-max-runbook.md), coordinating its DNS cutover with section 4.
+
 - Server: Debian, Docker Engine and Compose **2.24.4+**, SSH, `mountpoint`, and
   working host DNS/NTP. Pi: **64-bit** Raspberry Pi OS, Docker and Compose.
 - Fixed addresses: server `10.0.40.10`, Pi `10.0.40.11`. The NAS and gateway
