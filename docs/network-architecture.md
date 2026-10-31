@@ -163,7 +163,7 @@ The UniFi default `192.168.1.0/24` is replaced **before** adopting devices (avoi
 | 80 | Lab | 10.0.80.0/24 | 10.0.80.1 | Yes | Optional | Future experiments | Spare office switch ports |
 | — | Tailscale | 100.64.0.0/10 | — | Tailscale | Per ACL | Remote devices | Phones/laptops away |
 
-**DHCP options (all VLANs):** DNS 1 = 10.0.40.10, DNS 2 = 10.0.40.11; domain per VLAN (`home.arpa`, `iot.home.arpa`, `cam.home.arpa`); NTP = gateway.
+**DHCP options (all VLANs):** DNS 1 = 10.0.40.10, DNS 2 = 10.0.40.11 (Cameras: none, §9.5); domain per VLAN (`home.arpa`, `iot.home.arpa`, `cam.home.arpa`); NTP = gateway.
 **IPv6:** enabled on Trusted, Servers and IoT-Local (Matter/Thread).
 
 ---
@@ -186,42 +186,113 @@ the intended VLAN assignments without downgrading Home.
 
 ## 9. Firewall and zone policy
 
-UniFi zone-based firewall, default deny between custom zones; established/related return traffic allowed.
+UniFi zone-based firewall. **Design rule: rely on UniFi's built-in zone defaults and add a policy only where a default doesn't already do the job.** This section is the single source for the policy set; the [UCG Max runbook](ucg-max-runbook.md) §5 only covers how to enter it.
 
 **Tailscale note:** remote users enter through the home server (Tailscale subnet router). To UniFi, their traffic appears to come from 10.0.40.10 (Servers zone). **Who may reach what remotely is enforced by the Tailscale ACL policy**, not UniFi (see companion doc §7.8).
 
-### 9.1 Zone matrix (source → destination)
+### 9.1 Built-in defaults this design relies on
 
-| From \ To | Mgmt | Trusted | Work | Servers | IoT-Local | IoT-Cloud | Cameras | Guest | Internet |
-|---|---|---|---|---|---|---|---|---|---|
-| **Mgmt** | — | ✗ | ✗ | Limited | ✗ | ✗ | ✗ | ✗ | Updates |
-| **Trusted** | Admin devices only | — | ✗ | 443, 53, SMB, 22 (admin) | Limited (cast/control) | Limited | ✗ | ✗ | ✓ |
-| **Work** | ✗ | ✗ | — | 53 only | ✗ | ✗ | ✗ | ✗ | ✓ |
-| **Servers** | 443 to gateway UI | ✗ | ✗ | — | ✓ | ✓ | RTSP/ONVIF | ✗ | ✓ |
-| **IoT-Local** | ✗ | ✗ | ✗ | 53, HA/MQTT as needed | — | ✗ | ✗ | ✗ | **✗ (logged)** |
-| **IoT-Cloud** | ✗ | ✗ | ✗ | 53 | ✗ | — | ✗ | ✗ | ✓ |
-| **Cameras** | NTP/DHCP to gateway | ✗ | ✗ | ✗ | ✗ | ✗ | — | ✗ | **✗ (logged)** |
-| **Guest** | ✗ | ✗ | ✗ | 53 only (optional) | ✗ | ✗ | ✗ | Isolated | ✓ |
+Observed on the UCG Max default matrix (88 built-in policies):
 
-### 9.2 Specific policies
+| Source → destination | Default | What it gives us for free |
+|---|---|---|
+| External → every zone | Allow Return | No unsolicited inbound traffic; no WAN-block policy needed |
+| Gateway → every zone | Allow All | DHCP replies, adoption, mDNS proxy; the gateway is trusted |
+| Hotspot → Internal / VPN | Allow Return | Hotspot clients can't start connections to household zones |
+| Hotspot → Gateway | Allow Return + 10 built-ins | DHCP/DNS only; the gateway UI and SSH are already closed |
+| Hotspot → Hotspot / DMZ | Block All | Networks in Hotspot can't reach each other |
+| Hotspot → External | Allow All | Internet |
+| Internal → everything | Allow All | Not used: Internal is left empty (see 9.2) |
 
-| # | Policy | Source | Destination | Ports | Action | Why |
+Assumed for **new custom zones** (third-party sources; Ubiquiti doesn't document it): Block All to and from the other internal zones, Allow All to External and Gateway. **Check the matrix after creating the zones.** If a cell differs, stop and adjust §9.4 before moving clients. Each custom zone holds a single network, so the intra-zone default doesn't matter: traffic within one subnet is switched, not routed through the firewall.
+
+### 9.2 Zone assignment
+
+| Zone | Type | Networks | Reasoning |
+|---|---|---|---|
+| Trusted | Custom | Trusted 20 | Not in Internal: Internal is allow-all to every zone, so Trusted would need a block policy for each zone. A custom zone starts closed. |
+| Mgmt | Custom | Mgmt | Infrastructure only; reaches the gateway (adoption, DHCP, NTP) by default. |
+| Servers | Custom | Servers 40 | Server, Pi and NAS share one subnet, so the gateway can't filter between them; the host firewalls do that (Docker runbook). |
+| IoT-Local | Custom | IoT-Local 50 | Needs its own no-internet and gateway lockdown policies. |
+| Cameras | Custom | Cameras 60 | Kept apart from IoT-Local: a compromised camera (Dahua firmware) must not reach IoT devices, and vice versa. |
+| Hotspot | Built-in | Guest 70, Work 30, IoT-Cloud 55 | All three are "internet only, DNS to our resolvers, no household access". Hotspot's defaults already do that, including closing the gateway UI and isolating these three networks from each other. That saves 6–9 policies compared with three custom zones. |
+| Internal | Built-in | None | Allow-all defaults; kept empty. If the Default network is not used as Mgmt, leave it here with no ports or clients. |
+| VPN, DMZ | Built-in | None | No UniFi VPN server (Tailscale runs on the server host) and no DMZ. |
+
+Within one network, Wi-Fi client isolation (Guest SSID) and the mDNS proxy are network/Wi-Fi settings, not zone policies.
+
+### 9.3 Effective access (source → destination)
+
+| From \ To | Trusted | Mgmt | Servers | IoT-Local | Cameras | Hotspot | Gateway | External |
+|---|---|---|---|---|---|---|---|---|
+| **Trusted** | — | ✗ | DNS; 443 server; 445 NAS; 22 admin | ✓ | ✗ | IoT-Cloud only | Admin devices: all. Others: no UI/SSH/DNS | ✓ except DNS bypass and ISP LAN (non-admin) |
+| **Mgmt** | ✗ | — | DNS | ✗ | ✗ | ✗ | ✓ | TCP 443 only |
+| **Servers** | ✗ | ✗ | — | Server only | Server only: 554/80/443 | Server → IoT-Cloud | ✓ | ✓ |
+| **IoT-Local** | ✗ | ✗ | DNS | — | ✗ | ✗ | DHCP, NTP, mDNS only | **✗ (logged)** |
+| **Cameras** | ✗ | ✗ | ✗ | ✗ | — | ✗ | DHCP, NTP only | **✗ (logged)** |
+| **Hotspot** (Guest, Work, IoT-Cloud) | Return only | ✗ | DNS | ✗ | ✗ | ✗ between networks | Built-in DHCP/DNS | ✓; Guest/IoT-Cloud: no DNS bypass; no ISP LAN |
+
+✗ means blocked by a default; only the cells that differ from a default have a policy in §9.4.
+
+### 9.4 Final policy set
+
+22 baseline policies. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
+
+| ID | Source zone (match) | Destination zone (match) | Protocol / ports | Action | Replaces | Reasoning |
 |---|---|---|---|---|---|---|
-| F1 | DNS to resolvers | All internal zones | 10.0.40.10, 10.0.40.11 | 53 TCP/UDP | Allow | Single filtered DNS path |
-| F2 | DNS bypass block | All internal zones | Any other | 53, 853 | Block | Stops hard-coded DNS / DNS-over-TLS |
-| F3 | NTP to gateway | All | Gateway | 123 | Allow | Time without internet |
-| F4 | Reverse proxy | Trusted | 10.0.40.10 | 443 | Allow | Single HTTPS entry point |
-| F5 | SSH admin | Admin devices (Trusted) | Servers | 22 | Allow | Server management |
-| F6 | File shares | Trusted | NAS 10.0.40.20 | 445 (SMB) | Allow | Not HTTP |
-| F7 | Camera streams | Servers | Cameras | 554, 80/443, 8000 | Allow | Frigate pulls RTSP/ONVIF |
-| F8 | Device control | Servers | IoT-Local, IoT-Cloud | Any | Allow | Home Assistant |
-| F9 | IoT/camera no-internet | IoT-Local, Cameras | Internet | Any | Block + log | Phone-home attempts visible |
-| F10 | ISP subnet block | All internal zones | BGW320 LAN subnet | Any | Block | ISP network untrusted |
-| F11 | Gateway admin | Trusted admin devices, Servers | Gateway UI | 443 | Allow | Restrict network management |
-| F12 | Tailscale outbound | Servers (10.0.40.10) | Internet | UDP 41641 + HTTPS | Allow | Tailscale coordination and direct connections |
+| Z1 | Trusted | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Custom→custom is blocked by default; this is the only DNS path for household devices. |
+| Z2 | Mgmt | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Switches/APs resolve firmware hosts. |
+| Z3 | IoT-Local | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Local names (HA, `home.<domain>`) for wall panels and ESPHome; AdGuard's strict IoT profile logs everything. |
+| Z4 | Hotspot | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Guest, Work and IoT-Cloud get filtered DNS. One policy covers all three networks. |
+| Z5 | Trusted | Servers: `SERVER` | TCP 443 | Allow | F4 | Caddy is the only HTTPS entry point; app ports stay closed. |
+| Z6 | Trusted | Servers: `NAS` | TCP 445 | Allow | F6 | SMB only; the NAS web UI goes through Caddy. |
+| Z7 | Trusted: `ADMIN_CLIENTS` | Servers | TCP 22 | Allow | F5 | Admin SSH to server, Pi and NAS. |
+| Z8 | Trusted | IoT-Local | Any | Allow | Matrix "Limited" | IoT still can't start connections back. Casting/AirPlay use many dynamic ports, so a port list is brittle and gives little security in this direction. Narrow it later if wanted. |
+| Z9 | Trusted | Hotspot: network IoT-Cloud | Any | Allow | Matrix "Limited" | Casting/control of the smart TV and appliances; Work and Guest stay unreachable. |
+| Z10 | Servers: `SERVER` | IoT-Local | Any | Allow | F8 | Home Assistant control. Narrowed from the whole Servers network to the server, since the NAS and Pi don't need IoT access. |
+| Z11 | Servers: `SERVER` | Hotspot: network IoT-Cloud | Any | Allow | F8 | Same, for cloud devices. |
+| Z12 | Servers: `SERVER` | Cameras | TCP 554, 80, 443 | Allow | F7 | Frigate RTSP plus HTTP/ONVIF. Port 8000 (Hikvision SDK) dropped: Amcrest doesn't use it. Confirm the ONVIF port on the cameras. |
+| Z13 | Trusted: NOT `ADMIN_CLIENTS` | Gateway | TCP/UDP 22, 53, 80, 443, 853 | Block | F11, F2 (gateway part) | Custom→Gateway is allow-all, which exposes the UI and SSH. A port block (not an allowlist) keeps DHCP, NTP and mDNS working for everyone, while 53/853 closes the gateway-DNS bypass. Admin devices keep full access. |
+| Z14 | Trusted | External | TCP/UDP 53, 853 | Block + log | F2 | Forces AdGuard filtering. Covers IPv6, since no address object is used. |
+| Z15 | Hotspot: networks Guest, IoT-Cloud | External | TCP/UDP 53, 853 | Block + log | F2 | Same. **Work is exempt:** employer laptops often hard-code corporate DNS (Umbrella, Zscaler), and the Docker runbook already leaves Work unfiltered. |
+| Z16 | Trusted: NOT `ADMIN_CLIENTS` | External: `ISP_LAN` | Any | Block | F10 | The BGW320 is untrusted. Admins keep access for troubleshooting. |
+| Z17 | Hotspot | External: `ISP_LAN` | Any | Block | F10 | Guests, work and cloud devices have no reason to reach the ISP box. |
+| Z18 | IoT-Local | External | Any | Block + log | F9 | No phone-home; IP version Both covers IPv6 (Matter devices get global addresses). |
+| Z19 | Cameras | External | Any | Block + log | F9 | Same. |
+| Z20 | IoT-Local | Gateway | TCP/UDP, ports NOT 67, 123, 5353 | Block | F3 (new lockdown) | Allowlist for untrusted devices: DHCP, NTP and mDNS proxy only, so no UI/SSH/DNS on the gateway. Limited to TCP/UDP so ICMPv6 (router/neighbor discovery) still works for IPv6. |
+| Z21 | Cameras | Gateway | TCP/UDP, ports NOT 67, 123 | Block | F3 (new lockdown) | DHCP and NTP only. |
+| Z22 | Mgmt | External | TCP/UDP, ports NOT 443 | Block | Mgmt "updates only" | Firmware downloads use HTTPS. Verify one switch and one AP update after enabling. |
+
+**Conditional (create disabled; enable when needed):**
+
+| ID | Source → destination | Ports | Enable when |
+|---|---|---|---|
+| Z23 | IoT-Local: wall-panel IPs → Servers: `SERVER` | TCP 443 | Wall panels are deployed (HA through Caddy) |
+| Z24 | Trusted: `ADMIN_CLIENTS` → Mgmt | TCP 22 | Device recovery only (`set-inform`), then disable again |
+
+**If Match Opposite isn't available** for Z13, Z16, Z20, Z21 or Z22, replace each with an Allow for the exception placed *above* a Block for the rest (two policies each). Otherwise no zone pair mixes allows and blocks, so policy order doesn't matter.
+
+### 9.5 Original policies dropped or covered by defaults
+
+| Original | Outcome | Reasoning |
+|---|---|---|
+| F1 for Cameras | Dropped | Cameras are offline and use NTP by IP, so they don't need names. Recursive DNS would also give them a DNS-tunnel path to the internet. Cameras DHCP leaves DNS empty. |
+| F1 for Servers | Not needed | Same zone and same subnet. |
+| F2 for Servers, Mgmt | Dropped | The server is a resolver. The NAS and Pi are trusted infrastructure using DHCP DNS. Mgmt is limited to TCP 443 by Z22. |
+| F2 for Work | Dropped | See Z15. |
+| F3 NTP to gateway | Covered | Custom→Gateway is allow-all; Z20/Z21 keep UDP 123. **The UCG Max serving NTP on the LAN still needs testing** (runbook §6). |
+| F10 for Mgmt, Servers | Dropped | Trusted infrastructure. The BGW320 UI also requires its device access code for changes. |
+| F11 for Servers | Covered | Servers→Gateway is allow-all (Caddy proxy, HA UniFi integration, Tailscale admins via SNAT). |
+| F12 Tailscale | Covered | Servers→External is allow-all. The old rule also had the port wrong: 41641 is Tailscale's *source* port. If Servers egress is ever restricted, follow Tailscale's guidance: UDP from source 41641, UDP 3478 and TCP 443 to any. |
+| Resolver recursion exception | Covered | Servers→External is allow-all and has no DNS-bypass block. |
+| DNS forwarding to gateway (`home.arpa`) | Covered | Servers→Gateway is allow-all. |
+| General internet allows | Covered | Custom/Hotspot→External defaults. |
+| WAN inbound deny | Covered | External defaults are return-only. |
+| Adoption ports (8080, 3478, 10001) | Covered | Mgmt→Gateway is allow-all. |
+| Guest isolation | Covered + setting | Hotspot→Hotspot is Block All between networks; Guest SSID client isolation covers clients within one network. |
 
 **No inbound port forwards exist.**
-**mDNS proxy:** Trusted ↔ IoT-Local only.
+**mDNS proxy:** Trusted ↔ IoT-Local only (a gateway setting, not a policy).
 **DoH:** blocked by AdGuard Home policy (DoH-provider lists, Firefox canary domain).
 
 ---
@@ -330,7 +401,7 @@ Both resolvers filter and receive identical config pushed from Git. Per-VLAN pro
 | Perimeter | No inbound port forwards; UPnP off |
 | Remote access | Tailscale with Tailnet Lock; ACL limits family to the proxy |
 | Detection | UniFi IDS/IPS: detect mode first, then prevent |
-| DNS | Forced resolvers; 53/853 blocked elsewhere; DoH blocking; per-VLAN filtering; query logs |
+| DNS | Forced resolvers; 53/853 blocked elsewhere (Work exempt, §9.4 Z15); DoH blocking; per-VLAN filtering; query logs |
 | IoT | No internet by default; cloud devices quarantined in IoT-Cloud; egress attempts logged |
 | Cameras | No internet; only Frigate pulls streams; P2P/UPnP/cloud off; unique creds; low-privilege Frigate user. Amcrest (Dahua rebrand, FCC Covered List) contained by isolation |
 | Wireless | WPA3 where supported; Guest isolation; PPSK |
@@ -460,7 +531,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | B. Leave as-is (double NAT) | No ISP changes | Two NAT layers; more Tailscale relayed connections; UCG Max sees a private WAN IP |
 
 - **Trade-off:** small one-time setup vs. a cleaner, more predictable WAN.
-- **Dependencies:** Tailscale connection quality; UCG Max WAN monitoring; F10 (ISP subnet block) applies either way.
+- **Dependencies:** Tailscale connection quality; UCG Max WAN monitoring; the ISP subnet blocks (Z16/Z17) apply either way.
 - **Recommendation:** A.
 
 ### P2 — Domain registrar and DNS host

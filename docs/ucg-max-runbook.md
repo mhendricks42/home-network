@@ -91,7 +91,7 @@ For either mode:
 - Keep unsolicited WAN -> LAN and WAN -> Gateway traffic denied, apart from
   required system return/control traffic. Check this again after firewall edits.
 - Test public DNS/IP connectivity and record the WAN address, link rate and
-  actual BGW320 subnet for F10.
+  actual BGW320 subnet for `ISP_LAN` (Z16/Z17).
 
 ## 3. Create networks, leases and address objects
 
@@ -127,8 +127,9 @@ unknown DHCP clients. Keep unused ports disabled.
   strong device authentication; protect admin credentials separately.
 - Set DHCP domain to `home.arpa` for Mgmt/Trusted/Work/Servers/Guest,
   `iot.home.arpa` for both IoT networks, and `cam.home.arpa` for Cameras.
-- Once section 6 passes, set **manual DHCP DNS** on every network to only
-  `10.0.40.10`, `10.0.40.11`. Do not add a public "third DNS".
+- Once section 6 passes, set **manual DHCP DNS** on every network except
+  Cameras to only `10.0.40.10`, `10.0.40.11`. Do not add a public "third DNS".
+  Cameras get no DNS server (architecture §9.5).
 - Set DHCP NTP option 42 to that network's gateway **only after** section 6
   proves it serves NTP. Manually configure cameras that ignore option 42.
 
@@ -143,6 +144,10 @@ Create reusable address/port objects using the UI's supported groups:
 | `ISP_LAN` | Actual BGW320 LAN subnet |
 | `DNS_PORTS` | TCP/UDP 53 |
 | `DNS_BYPASS_PORTS` | TCP/UDP 53 and 853 (includes DoQ) |
+| `GW_ADMIN_PORTS` | TCP/UDP 22, 53, 80, 443, 853 (Z13) |
+| `CAMERA_PORTS` | TCP 554, 80, 443 (Z12; confirm the ONVIF port) |
+| `IOT_GW_PORTS` | UDP 67, 123, 5353 (Z20, used with Match Opposite) |
+| `CAM_GW_PORTS` | UDP 67, 123 (Z21, used with Match Opposite) |
 
 ## 4. Adopt devices and apply port profiles
 
@@ -190,89 +195,44 @@ Use explicit tag allowlists instead of "Allow All". No native Mgmt SSID exists.
 
 ## 5. Build the zone firewall before moving clients
 
-Create one custom zone for each of the eight production networks. Keep them
-separate: putting all VLANs in Internal with an allow-all intra-zone policy
-does not implement this design. Gateway services belong to **Gateway**, not
-Mgmt; internet/WAN traffic belongs to **External**.
+The zones, the defaults relied on and the final policy set (Z1–Z24) are in
+[architecture §9](network-architecture.md#9-firewall-and-zone-policy). Enter them
+from that table; don't keep a second copy here.
 
-Use a default block between distinct internal zones, internal -> Gateway and
-Gateway -> internal except for the explicit infrastructure services below.
-Only enable same-zone traffic where needed; intra-VLAN switching is not
-normally filtered by the routed zone firewall. Guest isolation needs section 7.
+1. Screenshot the default zone matrix and record the UniFi Network version.
+2. Create custom zones **Trusted, Mgmt, Servers, IoT-Local, Cameras** and assign
+   one network to each. Assign **Guest, Work and IoT-Cloud to Hotspot**. Leave
+   Internal, VPN and DMZ without production networks.
+3. Screenshot the matrix again and compare it with architecture §9.1. Every
+   custom zone should show Block All to the other internal zones and Allow All
+   to External and Gateway. If any cell differs, **stop** and update §9.4
+   before continuing.
+4. Create the address/port objects from section 3, then Z1–Z22 in ID order.
+   Create Z23/Z24 **disabled**. Enable logging on Z14, Z15, Z18 and Z19.
+5. Before saving Z13, confirm the admin laptop's address is in `ADMIN_CLIENTS`
+   and keep the Recovery port connected: Z13 is the policy that can lock you
+   out of the gateway UI.
+6. If Match Opposite is missing for a field, use the two-policy fallback in
+   §9.4 and put the Allow above the Block.
+7. Don't edit or reorder UniFi's built-in policies. Custom policies sit above
+   them.
 
-### Rule ordering and infrastructure exceptions
+Boundaries the zone firewall can't enforce:
 
-Preserve UniFi's required system rules. Inspect generated policies and the
-effective ordering for each source/destination pair:
-
-1. Drop invalid traffic; allow established/related replies (or UniFi's
-   auto-return mechanism). Do not add a reverse "allow any" as a substitute.
-2. Allow essential DHCP client/server traffic on each LAN (UDP 68 -> 67 and
-   replies), necessary ARP, IPv6 control in section 8, and adoption/management
-   between the Mgmt infrastructure and the controller. Scope adoption to
-   infrastructure, normally TCP 8080 inform and UDP 3478; permit UDP 10001
-   discovery only if needed during local adoption. Verify installed-release
-   requirements instead of opening all Gateway ports.
-3. Add the explicit exceptions below above their corresponding deny rules.
-4. Block client DNS bypass before general internet allows, then F9/F10 and
-   final default-deny policies. Inspect any built-in External allow rules.
-
-Create rules for **both IP families** where available. These IPv4 address
-objects do not authorize IPv6 equivalents automatically.
-
-| Rule | Source -> destination | Service / action |
-|---|---|---|
-| F1 | All internal zones -> `DNS_NODES` in Servers | Allow TCP/UDP 53 |
-| Resolver recursion | `DNS_NODES` -> External | Allow TCP/UDP 53 **before F2**; Unbound must reach authoritative DNS |
-| DHCP-name forwarding | `DNS_NODES` -> Gateway | Allow TCP/UDP 53 to `10.0.10.1` only |
-| F2 | Internal clients -> all other destinations, including Gateway | Block/log TCP/UDP 53 and 853 after the above exceptions |
-| F3 | Internal clients -> their gateway | Allow UDP 123 only if NTP service is verified |
-| F4 | Trusted -> `SERVER` | Allow TCP 443 |
-| F5 | `ADMIN_CLIENTS` -> Servers | Allow TCP 22; narrow to managed host addresses when inventoried |
-| F6 | Trusted -> `NAS` | Allow TCP 445 |
-| F7 | `SERVER` -> Cameras | Allow TCP 554, 80, 443, 8000; add UDP only if a tested camera transport needs it |
-| F8 | Servers -> IoT-Local / IoT-Cloud | Allow device control (baseline permits any protocol/port); log/refine after inventory |
-| F9 | IoT-Local / Cameras -> External | Block + log all; above internet allows |
-| F10 | All internal zones -> `ISP_LAN` via External | Block all; above internet allows |
-| F11 | `ADMIN_CLIENTS`, `SERVER` -> Gateway `10.0.10.1` | Allow TCP 443 |
-| F12 | `SERVER` -> External | Allow UDP 41641 and TCP 443 for Tailscale; no inbound forward |
-| Internet | Trusted, Work, Servers, IoT-Cloud, Guest -> External | Allow after F2/F10; replies only inbound |
-| Mgmt updates | Mgmt -> External | Allow required update downloads (TCP 443; TCP 80 only if observed necessary), after F2/F10 |
-| Default deny | Every unlisted inter-zone or Gateway access | Block |
-
-Gateway-originated bootstrap DNS, time sync and update traffic needs its own
-Gateway -> External allowances; F2 is for internal clients. Keep DHCP replies,
-controller provisioning and gateway DNS replies working without allowing the
-gateway to initiate arbitrary sessions to every client.
-
-Important boundaries:
-
-- F1 includes Cameras and Guest despite the shorter matrix's conflicting
-  cells: the explicit all-VLAN DHCP/DNS requirement takes precedence.
-- The resolvers' recursion exception is essential; a blanket F2 would break
-  Unbound. Neither clients nor Mgmt devices get that exception.
-- Mgmt "updates only" is enforced by allowed service ports here, not by proof
-  that every HTTPS connection is an update. Strict vendor-only egress needs a
-  maintained destination inventory; do not claim that generic TCP 443 provides it.
-- Servers share VLAN 40. The gateway cannot enforce server -> Pi TCP 3001
-  restrictions on same-subnet traffic; use the host/Docker firewall from the
-  deployment runbook. The same limitation applies to lateral camera traffic.
-- Tailscale subnet traffic is normally SNATed to `10.0.40.10`. Tailnet ACLs
-  distinguish remote people; UniFi cannot. Preserve subnet-router SNAT unless
-  redesigning routing and policy together.
-- Caddy proxies `unifi.home.<domain>` to the gateway. Its connection matches
-  the `SERVER` F11 exception, not `ADMIN_CLIENTS`. Trusted proxy users can
-  therefore reach the UniFi login through Caddy; the local UniFi login remains
-  mandatory. If admin-only access to that *proxy route* is required, add an
-  explicit proxy access policy before enabling it; the IP firewall alone is
-  not an end-to-end identity restriction.
-- No IoT -> MQTT 1883 or HA 8123 allow is needed for this repository's
-  loopback/internal-only services. Wall panels need a specifically approved
-  IoT device -> `SERVER` TCP 443 exception before use. Do not open direct app
-  ports or blanket IoT -> Servers to make discovery work.
-- Trusted -> IoT cast/control ports are device-specific and undecided. Add
-  named endpoints and observed ports only after inventory; mDNS discovery
-  alone does not authorize streaming/control. Do not allow all as a shortcut.
+- Servers share VLAN 40. Server ↔ Pi (Kuma TCP 3001) and NAS traffic is
+  switched, not routed; use the host/Docker firewalls from the Docker runbook.
+  The same applies to devices inside IoT-Local or Cameras.
+- Tailscale subnet traffic is SNATed to `10.0.40.10`, so UniFi sees remote
+  users as `SERVER`. Tailnet ACLs separate admins from family; UniFi can't.
+- Caddy proxies `unifi.home.<domain>` to the gateway. That connection comes from
+  `SERVER`, so every proxy user can reach the UniFi login page; the local
+  UniFi login remains mandatory. If admin-only access is required, add proxy
+  authentication before enabling that route.
+- No IoT → MQTT 1883 or HA 8123 allow is needed: those services are
+  loopback/internal. Wall panels use Z23 (TCP 443 through Caddy).
+- Z8/Z9 allow Trusted to start any connection to IoT devices. IoT devices still
+  can't start connections back; casting that needs the device to connect to the
+  phone (e.g., DLNA pull) won't work and needs a specific, inventoried exception.
 
 ## 6. Verify DNS and time, then change DHCP
 
@@ -300,7 +260,7 @@ Important boundaries:
 
 Keep AdGuard's encrypted-DNS lists and Firefox canary enabled. This blocks
 known providers, **not all DoH over HTTPS, VPNs or hard-coded HTTPS endpoints**.
-Do not claim F2 prevents every bypass or break Work HTTPS with speculative
+Do not claim Z14/Z15 prevent every bypass or break Work HTTPS with speculative
 TLS interception.
 
 ## 7. Configure Wi-Fi and mDNS
@@ -344,9 +304,9 @@ after IPv4 rules work; an IPv4-only test is not completion of this design.
 2. Assign a distinct delegated `/64` to each of Trusted, Servers and IoT-Local;
    enable SLAAC/router advertisements. Keep it disabled on other VLANs unless
    the architecture is explicitly changed. WAN IPv6 alone is not LAN IPv6.
-3. Mirror default deny, return traffic, WAN unsolicited-inbound denial, DNS
-   bypass controls and IoT-Local no-internet policy for IPv6. A global address
-   on IoT-Local is not permission for internet access.
+3. Confirm Z14, Z18, Z19 and Z20 are set to IP version **Both**, and that the
+   zone defaults block unsolicited inbound IPv6 just as for IPv4. A global
+   address on IoT-Local is not permission for internet access.
 4. Preserve essential ICMPv6 (including neighbor/router discovery and Packet
    Too Big), multicast listener discovery and required DHCPv6 control traffic.
    Do not block all ICMPv6; do not enable broad multicast forwarding.
@@ -364,7 +324,7 @@ after IPv4 rules work; an IPv4-only test is not completion of this design.
 
 Enable IDS/IPS in **detect** mode first. After a week reviewing events and
 allowlist needs, change to prevention and repeat throughput/application tests.
-Enable local alerts/logging for IDS and F9; review volume and retention so
+Enable local alerts/logging for IDS and Z18/Z19; review volume and retention so
 blocked IoT chatter does not exhaust storage. Remote push/email/HA alerts are
 not proven by an entry in the UniFi event log; test the selected delivery path.
 
@@ -373,13 +333,13 @@ a working wired Trusted admin connection. Export a backup at each stable stage.
 
 | Test location | Required result |
 |---|---|
-| Every VLAN | Correct lease/subnet; both DNS nodes work over UDP and TCP |
-| Non-resolver clients | Public DNS TCP/UDP 53 and TCP/UDP 853 denied, including gateway DNS bypass; approved DNS still works |
+| Every VLAN | Correct lease/subnet; both DNS nodes work over UDP and TCP (Cameras: DNS denied by design) |
+| Trusted, Guest, IoT-Cloud | Public DNS TCP/UDP 53 and 853 denied, including gateway DNS for non-admins; approved DNS works. Work may use external DNS (exempt) |
 | DNS nodes | External authoritative TCP/UDP 53 succeeds; `home.arpa`/PTR forwarding works |
 | Trusted admin / non-admin | Admin reaches gateway 443 and SSH hosts; non-admin cannot directly manage gateway/SSH |
 | Trusted | Proxy TCP 443 and NAS TCP 445 work; Work and Cameras denied |
-| Work / IoT-Cloud / Guest | Intended internet works; Servers reachable only for DNS; household/admin access denied |
-| IoT-Local / Cameras | External IPv4 and applicable IPv6 denied and logged; DNS/NTP work; no client-initiated pivot |
+| Work / IoT-Cloud / Guest | Intended internet works; Servers reachable only for DNS; household, gateway UI and each other denied |
+| IoT-Local / Cameras | External IPv4 and applicable IPv6 denied and logged; NTP works (DNS too on IoT-Local); gateway UI/SSH denied; no client-initiated pivot |
 | Server | Camera streams/ONVIF and IoT control work; arbitrary Trusted/Work access denied |
 | Guest clients | Cannot reach each other, including across APs; rate limit measured |
 | Trusted + IoT-Local | Intended mDNS discovery/control works; other VLANs see no reflected services |
