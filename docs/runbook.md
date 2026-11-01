@@ -33,14 +33,150 @@ the gateway policy and Docker forwarding rules, not just `ufw allow/deny`:
 | Host | Allowed inbound |
 |---|---|
 | Server | TCP/UDP 53 from intended client networks; TCP 443 from Trusted and approved tailnet clients; SSH from admin devices |
-| Pi | TCP/UDP 53 from intended client networks; TCP 3001 **only from `10.0.40.10`**; SSH from admin devices |
+| Pi | TCP/UDP 53 from intended client networks; TCP 3001 **only from `10.0.40.10`**; SSH from admin devices; TCP 3493 (NUT) from the server and NAS |
 
 All app port mappings on the server bind to loopback. Caddy and NetAlertX use
 host networking: Caddy is the only public HTTP entry point; NetAlertX explicitly
-listens on loopback. Deny externally reachable NetAlertX ports 20211/20212 and
-Caddy admin 2019 as defense in depth. Unbound and MQTT publish no ports.
+listens on loopback. Unbound and MQTT publish no ports.
 Uptime Kuma's server-only backend port is the deliberate cross-host exception.
 Its proxy is unavailable when the server fails, but Pi monitoring continues.
+
+**Why two layers.** The gateway can't filter the Servers VLAN internally:
+the server, Pi and NAS share `10.0.40.0/24`, so their traffic is switched, not
+routed. Each host must enforce its own row above. On the host, there are two
+paths:
+
+- **Host-network services** (SSH, Caddy 443, NUT, and loopback-only Caddy
+  admin 2019 and NetAlertX 20211/20212) go through the INPUT chain, which
+  `ufw` controls.
+- **Docker-published ports** (AdGuard 53 on both nodes, Kuma 3001 on the Pi)
+  are DNAT'd (their destination is rewritten to the container) and go through
+  the FORWARD chain. `ufw allow/deny` never sees them. Docker sends that traffic
+  through the `DOCKER-USER` chain first, which it never edits, so the rules
+  go there.
+
+Keep Docker's default iptables backend: these rules assume it. Ports bound to
+`127.0.0.1` are unreachable from other hosts and need no rule.
+
+#### 1. ufw base rules (INPUT)
+
+Run this on the console, or in an SSH session with a second session open.
+Add SSH **before** enabling, then check it from the second session.
+
+Server (replace `ADMIN_IP` with each address in `ADMIN_CLIENTS`; repeat the
+first line per admin device):
+
+```bash
+sudo apt install ufw
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow from ADMIN_IP to any port 22 proto tcp
+sudo ufw allow in on tailscale0 to any port 22 proto tcp     # Tailscale ACL limits this to admins
+sudo ufw allow from 10.0.0.0/16 to 10.0.40.10 port 443 proto tcp
+sudo ufw allow from 100.64.0.0/10 to 10.0.40.10 port 443 proto tcp
+```
+
+Pi:
+
+```bash
+sudo apt install ufw
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow from ADMIN_IP to any port 22 proto tcp
+sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # NUT client: server
+sudo ufw allow from 10.0.40.20 to any port 3493 proto tcp   # NUT client: NAS
+```
+
+Default deny already covers Caddy admin 2019 and NetAlertX 20211/20212; no
+extra deny rules are needed. Port 80 stays closed (DNS-01, no redirects). The
+tailnet line uses `tailscale0` because Tailscale ACLs, not source IPs, decide
+which remote users may SSH. Add it only after Tailscale is installed.
+
+#### 2. Docker forwarding rules (`DOCKER-USER`)
+
+Append the block for that host to the **end** of `/etc/ufw/after.rules`, after
+the existing `COMMIT`. `ufw` loads it at boot before Docker starts and
+reloads it with `ufw reload`. Declaring `:DOCKER-USER` in the file replaces
+the chain's contents on each load, so rules don't pile up.
+
+Server:
+
+```text
+# Docker-published ports (AdGuard DNS) - see docs/runbook.md
+*filter
+:DOCKER-USER - [0:0]
+-A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
+-A DOCKER-USER -i docker0 -j RETURN
+-A DOCKER-USER -i br-+ -j RETURN
+-A DOCKER-USER -p udp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 10.0.0.0/16 -j RETURN
+-A DOCKER-USER -p tcp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 10.0.0.0/16 -j RETURN
+-A DOCKER-USER -p udp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 100.64.0.0/10 -j RETURN
+-A DOCKER-USER -p tcp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 100.64.0.0/10 -j RETURN
+-A DOCKER-USER -j DROP
+COMMIT
+```
+
+Pi:
+
+```text
+# Docker-published ports (AdGuard DNS, Uptime Kuma) - see docs/runbook.md
+*filter
+:DOCKER-USER - [0:0]
+-A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
+-A DOCKER-USER -i docker0 -j RETURN
+-A DOCKER-USER -i br-+ -j RETURN
+-A DOCKER-USER -p udp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 10.0.0.0/16 -j RETURN
+-A DOCKER-USER -p tcp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 10.0.0.0/16 -j RETURN
+-A DOCKER-USER -p tcp -m conntrack --ctorigdstport 3001 --ctdir ORIGINAL -s 10.0.40.10 -j RETURN
+-A DOCKER-USER -j DROP
+COMMIT
+```
+
+What each line does:
+
+| Rule | Reason |
+|---|---|
+| `RELATED,ESTABLISHED` | Replies to connections that are already allowed, including container traffic going out |
+| `-i docker0`, `-i br-+` | Traffic that starts inside containers (Unbound recursion, HA → IoT, Frigate → cameras) isn't filtered here. Compose networks are named `br-<id>` |
+| `--ctorigdstport` | Matches the port the client asked for (53/3001) before Docker rewrote it, so the rule doesn't depend on container IPs |
+| `10.0.0.0/16` | All home VLANs. The gateway decides which zones may query DNS (architecture §9.4 Z1–Z4); this layer only stops anything else |
+| `100.64.0.0/10` (server only) | Tailscale clients using split DNS through the `10.0.40.10/32` route. The Pi doesn't run Tailscale |
+| `3001` from `10.0.40.10` (Pi only) | Caddy on the server proxies `status.home.<domain>`; nobody else reaches Kuma directly |
+| `DROP` | Everything else forwarded to a container from outside |
+
+The published ports bind IPv4 addresses only, so there's no IPv6 Docker
+exposure to filter.
+
+#### 3. Enable and check
+
+```bash
+sudo ufw enable                         # or: sudo ufw reload, if already enabled
+sudo ufw status verbose
+sudo iptables -L DOCKER-USER -v -n --line-numbers
+```
+
+Expect the rules above in `DOCKER-USER`, ending in `DROP`, and the ufw rules
+from step 1. Then reboot once and run the last command again: the chain must
+still be there after Docker starts.
+
+Test after the stacks are running (section 4), because the drop counters only
+move once there's traffic:
+
+1. From a Trusted client: `nslookup example.com 10.0.40.10` and `... 10.0.40.11`
+   both answer.
+2. On the server: `curl -sI http://10.0.40.11:3001` answers.
+3. **Same-subnet test** (the gap the gateway can't cover): temporarily set a
+   spare core-switch port to the Servers access profile and plug in a laptop
+   with a free `10.0.40.x` address. `curl -m 5 http://10.0.40.11:3001`,
+   `curl -m 5 http://10.0.40.10:8123` and `nc -zv -w 5 10.0.40.10 2019` must
+   all fail. The `DROP` counter in `DOCKER-USER` rises for the 3001 attempt.
+   Return the port to its normal profile afterwards.
+4. From that laptop or a Trusted client, `ssh` from a non-admin address fails;
+   from an admin device it works.
+
+If DNS from a VLAN stops working, check the `DOCKER-USER` counters before
+changing gateway policies: a `DROP` count that grows with each query means
+the source isn't covered by `10.0.0.0/16`.
 
 No HTTP port 80 is opened: Caddy obtains certificates through DNS-01 and serves
 HTTPS only. Use explicit `https://` URLs. Leave router port forwarding/UPnP off.
