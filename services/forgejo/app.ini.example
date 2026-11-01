@@ -1,6 +1,6 @@
 [server]
-DOMAIN = git.home.REPLACE_DOMAIN
-ROOT_URL = https://git.home.REPLACE_DOMAIN/
+DOMAIN = git.home.foxhound.nexus
+ROOT_URL = https://git.home.foxhound.nexus/
 HTTP_PORT = 3000
 DISABLE_SSH = true
 OFFLINE_MODE = true

@@ -21,8 +21,8 @@ Do not cut over household devices until these gates pass:
 - Verify gateway NTP service, conditional DNS forwarding, and IPv6 isolation
   as described below. A DHCP option does not create an NTP server.
 - Choose a Guest bandwidth limit before enabling Guest; no limit was decided.
-- The purchased HTTPS domain can remain pending, but proxy acceptance checks
-  cannot pass until the domain and Caddy are configured.
+- Proxy acceptance checks need Caddy's `foxhound.nexus` certificate first
+  (Docker runbook, Caddy section).
 
 Wi-Fi decision: separate **Work** and **Things-Cloud** SSIDs replace PPSK to
 preserve WPA3/6 GHz on Home. PPSK is not compatible with WPA3/6 GHz. Do not

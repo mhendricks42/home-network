@@ -186,7 +186,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 
 ### 7.2 Caddy
 
-- Image built with the DNS-provider plugin for the chosen domain host (pending §19 P2).
+- Image built with the `caddy-dns/cloudflare` plugin; DNS-01 through a Cloudflare API token scoped to the `foxhound.nexus` zone (setup in the Docker runbook).
 - Wildcard `*.home.<domain>` via DNS-01: no inbound ports; individual names never published.
 - Routes: `ha.` → 8123 · `frigate.` → 8971 · `z2m.` → 8080 · `zwave.` → 8091 · `esphome.` → 6052 · `dns.` → AdGuard · `alerts.` → NetAlertX · `git.` → Forgejo · `unifi.` → 10.0.10.1 · `nas.` → NAS · `status.` → Uptime Kuma (Pi).
 
@@ -281,7 +281,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | `home.arpa` | DHCP hostnames | `nas.home.arpa` |
 | `home.<domain>` | Services with trusted HTTPS | `ha.home.<domain>` |
 
-`.local` is avoided (mDNS). The domain is to be purchased (§19 P2).
+`.local` is avoided (mDNS). `<domain>` is `foxhound.nexus` (Cloudflare Registrar and DNS); no `home` records are published.
 
 ---
 
@@ -426,7 +426,7 @@ The Compose layer alone is not a completed production deployment.
 |---|---|
 | 1 | Buy/verify ProDesk; BIOS settings; Debian; SSH hardening |
 | 2 | AdGuard + Unbound on server and Pi; DHCP DNS → both |
-| 3 | Buy domain (§19 P2); Caddy with wildcard cert |
+| 3 | Cloudflare token, CAA, DNSSEC; Caddy with wildcard cert |
 | 4 | Mosquitto, Home Assistant, Zigbee2MQTT, Z-Wave JS UI, ESPHome |
 | 5 | Frigate + USB drive; cameras on VLAN 60 |
 | 6 | NetAlertX; NUT; Uptime Kuma |
@@ -452,6 +452,7 @@ The Compose layer alone is not a completed production deployment.
 | D-S9b | Git hosting | Forgejo on server (+ NAS mirror, laptop clone) | 2026-10-18 |
 | D-S10 | Pi role | Pi 3B+: DNS 2, NUT, Uptime Kuma; NetAlertX on server | 2026-10-18 |
 | D-S11 | Local AI | Deferred | 2026-10-18 |
+| D-S12 | Domain and DNS host | `foxhound.nexus` on Cloudflare Registrar + DNS; Let's Encrypt via `caddy-dns/cloudflare` | 2026-11-01 |
 | D-N1 | Remote access | Tailscale on host, Tailnet Lock, no exit node | 2026-10-18 |
 
 ---
@@ -467,16 +468,6 @@ The Compose layer alone is not a completed production deployment.
 ---
 
 ## 19. Pending decisions (not in baseline)
-
-### P2 — Domain registrar and DNS host
-
-| Requirement | Why |
-|---|---|
-| API supported by a Caddy DNS plugin | Automatic wildcard issuance/renewal |
-| DNS hosting included at no extra cost | Avoid a subscription |
-| WHOIS privacy | Keeps personal details off public records |
-
-- **Dependencies:** Caddy image build; `home.<domain>` rewrite; Tailscale split DNS.
 
 ### P3 — Camera mount locations
 

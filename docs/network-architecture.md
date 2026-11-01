@@ -314,7 +314,7 @@ flowchart LR
 | Name space | Source | Example |
 |---|---|---|
 | `*.home.arpa` | Gateway DHCP hostnames via conditional forwarding | `nas.home.arpa` |
-| `*.home.<domain>` | Wildcard rewrite in AdGuard Home → reverse proxy 10.0.40.10 | `frigate.home.<domain>` (domain pending purchase, §21 P2) |
+| `*.home.<domain>` | Wildcard rewrite in AdGuard Home → reverse proxy 10.0.40.10 | `frigate.home.foxhound.nexus` (Cloudflare DNS; no public `home` records) |
 
 Both resolvers filter and receive identical config pushed from Git. Per-VLAN profiles: strict IoT, standard Trusted, family filters + blocked services for kids' devices, light Guest, minimal Work.
 
@@ -516,6 +516,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | D-N9 | UniFi config management | Manual now; OpenTofu `ubiquiti-community/unifi` future | 2026-10-18 |
 | D-N10 | Cameras | 5× Amcrest 5MP | 2026-10-18 |
 | D-N11 | Wi-Fi VLAN assignment | Separate Work and Things-Cloud SSIDs, no PPSK; retain WPA3/6 GHz Home | 2026-10-19 |
+| D-N12 | Domain and DNS host | `foxhound.nexus`, Cloudflare Registrar + DNS (closes former P2) | 2026-11-01 |
 | — | Raspberry Pi | Pi 3B+ (owned) | 2026-10-18 |
 | — | NAS | Ugreen, in office | 2026-10-18 |
 
@@ -533,18 +534,6 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 - **Trade-off:** small one-time setup vs. a cleaner, more predictable WAN.
 - **Dependencies:** Tailscale connection quality; UCG Max WAN monitoring; the ISP subnet blocks (Z16/Z17) apply either way.
 - **Recommendation:** A.
-
-### P2 — Domain registrar and DNS host
-
-- Required by the HTTPS decision (Let's Encrypt wildcard via DNS-01). The DNS host **must offer an API** supported by Caddy's DNS plugins.
-
-| Consideration | Why it matters |
-|---|---|
-| API support in Caddy's DNS modules | Automatic certificate issuance/renewal |
-| Free DNS hosting with the registration | Avoid an extra subscription |
-| Privacy (WHOIS redaction) | Keeps your name off public records |
-
-- **Dependencies:** reverse proxy image build, wildcard rewrite name `home.<domain>`.
 
 ### P3 — Camera mount locations
 

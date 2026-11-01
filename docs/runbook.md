@@ -18,7 +18,7 @@ Configure the gateway and network policy with the
   Home Assistant `trusted_proxies` together.
 - Install host security updates, key-only SSH, firewall, Tailscale, NUT and
   restic separately. The Compose stacks do **not** configure or replace these.
-- The domain and DNS host are still pending. Pick them before enabling HTTPS.
+- The domain is `foxhound.nexus` on Cloudflare DNS (see the Caddy section).
   No publicly reachable port or public DNS A record is required for DNS-01.
 - Image tags are explicit release pins, not immutable digests. Review release
   notes and resolve digests before a production rollout. Unbound's Debian
@@ -69,13 +69,12 @@ separate deployment step; do not treat the gitignore as encryption.
 
 Edit `/srv/adguard/config/AdGuardHome.yaml` while AdGuard is stopped:
 
-1. Replace `REPLACE_DOMAIN` with the purchased domain, without `home.`.
-2. Replace `REPLACE_WITH_BCRYPT_HASH` with a bcrypt password hash. One way to
+1. Replace `REPLACE_WITH_BCRYPT_HASH` with a bcrypt password hash. One way to
    generate it interactively without putting a password in shell history:
    `docker run --rm -it caddy:2.11.7 caddy hash-password`.
-3. Keep the hash inside YAML quotes if necessary; do **not** put it in `.env`
+2. Keep the hash inside YAML quotes if necessary; do **not** put it in `.env`
    (Compose interprets dollar signs). Restrict the file to root (`chmod 600`).
-4. Add kids' device IPs as a more-specific client profile with local family
+3. Add kids' device IPs as a more-specific client profile with local family
    blocklists, safe search, and desired blocked services. Their addresses and
    policy are not decided in the architecture, so no kids are guessed here.
 
@@ -117,8 +116,8 @@ Reload/restart Mosquitto after changing credentials.
 
 ### Forgejo
 
-Edit `/srv/forgejo/data/gitea/conf/app.ini`: replace the domain in `DOMAIN`
-and `ROOT_URL`. Registration and anonymous repository access are disabled.
+`/srv/forgejo/data/gitea/conf/app.ini` is prefilled for
+`git.home.foxhound.nexus`. Registration and anonymous repository access are disabled.
 SQLite, HTTPS Git and local storage are used; no Git SSH port is published.
 Forgejo manages its generated signing/token material in this writable config.
 After startup create an initial administrator:
@@ -132,26 +131,77 @@ sudo docker compose -f compose.server.yml exec --user 1000:1000 forgejo \
 
 Store the printed password securely and change it at first login.
 
-### Caddy (`https` profile)
+### Caddy (`https` profile): Cloudflare DNS and Let's Encrypt
 
-Set these in `.env`:
+The domain is `foxhound.nexus`, registered and hosted on Cloudflare. Caddy
+gets one Let's Encrypt wildcard certificate, `*.home.foxhound.nexus`, through
+the DNS-01 challenge: it adds a temporary `_acme-challenge` TXT record using the
+Cloudflare API, then removes it. Nothing is published: no public A records, no
+open ports. Household and tailnet clients resolve the names only through the
+AdGuard rewrite.
 
-- `HOME_DOMAIN`: purchased domain, e.g. `example.net`, not `home.example.net`.
-- `ACME_EMAIL`: certificate account contact.
-- `CADDY_DNS_MODULE`: an xcaddy module spec with a reviewed version,
-  e.g. `github.com/caddy-dns/PROVIDER@VERSION`.
-- `DNS_PROVIDER`: that module's Caddy directive name.
-- `DNS_API_TOKEN`: least-privilege token for DNS challenge records.
+**Cloudflare dashboard (once):**
 
-The generic Caddyfile supports a **single-token** provider directive. Providers
-requiring multiple fields need a matching `tls dns` block in the Caddyfile;
-the DNS host has deliberately not been chosen for you.
+1. **DNS → Records:** create **no** `home` or `*.home` records. A public
+   wildcard would expose internal names and addresses for no benefit.
+2. **DNS → Records → Add CAA:** name `@`, tag *Only allow specific hostnames*
+   (`issue`), CA `letsencrypt.org`; add the same with *Only allow wildcards*
+   (`issuewild`). Other CAs can then never issue for the domain. (Caddy's
+   ZeroSSL fallback is blocked too, which is intended.)
+3. **DNS → Settings → DNSSEC:** enable. Cloudflare Registrar adds the DS
+   record itself. Unbound validates it.
+4. **My Profile → API Tokens → Create Token → Custom token:**
+   - Permissions: **Zone · Zone · Read** and **Zone · DNS · Edit**.
+   - Zone resources: **Include → Specific zone → `foxhound.nexus`**.
+   - Client IP filtering: leave empty; the AT&T public IP can change.
+   - TTL: no expiry. Caddy needs the token at every renewal, so an expired
+     token silently breaks renewal ~60 days later. Rotate it yearly instead.
+5. Verify the token without putting it in shell history:
+
+   ```bash
+   read -rs CF && curl -sS -H "Authorization: Bearer $CF" \
+     https://api.cloudflare.com/client/v4/user/tokens/verify; unset CF
+   ```
+
+   Expect `"status":"active"`.
+
+**Server `.env`:** `HOME_DOMAIN`, `CADDY_DNS_MODULE` and `DNS_PROVIDER` come
+prefilled from `.env.example`. Set `ACME_EMAIL` (expiry notices) and
+`DNS_API_TOKEN` (the token above). `.env` stays `chmod 600`.
+
+The Caddyfile sends the challenge's DNS lookups to `1.1.1.1`/`1.0.0.1`. The
+local AdGuard rewrite answers for `*.home.foxhound.nexus`, and the Cloudflare
+module fails with `expected 1 zone, got 0` if it asks AdGuard. The Servers zone
+allows outbound DNS (architecture §9.5), so no firewall change is needed.
 
 Create two root-readable Caddy import files:
 `/srv/caddy/config/esphome-users` and `/srv/caddy/config/alerts-users`.
 Each contains `admin BCRYPT_HASH` on one line. Generate a **separate** password
 with the interactive `caddy hash-password` command above. ESPHome and NetAlertX
 are authenticated at the proxy. Other routes retain their own app login.
+
+**First certificate:**
+
+1. Start with `sudo sh scripts/start.sh server https` (plus other configured
+   profiles). The first run builds Caddy with the Cloudflare module.
+2. Watch `sudo docker compose -f compose.server.yml --profile https logs -f caddy`
+   for `certificate obtained successfully` for `*.home.foxhound.nexus`.
+   `HTTP 403`/`Invalid request headers` means a token or permission problem.
+3. Let's Encrypt allows 5 identical certificates per week. If you need several
+   attempts, add `ca https://acme-staging-v02.api.letsencrypt.org/directory`
+   inside the `tls` block until it works, then remove it and delete
+   `/srv/caddy/data/caddy/certificates/acme-staging*` before the real run.
+4. From a Trusted client: open `https://ha.home.foxhound.nexus` and check the
+   issuer is Let's Encrypt with no browser warning; an unconfigured name
+   such as `https://nope.home.foxhound.nexus` returns 404.
+
+**Renewal and upkeep:** Caddy renews automatically about a third of the way
+before expiry and keeps the certificate in `/srv/caddy/data`. Add an Uptime
+Kuma HTTPS monitor for `https://ha.home.foxhound.nexus` with *Certificate
+Expiry Notification* on, so a failed renewal alerts before it breaks access.
+To rotate the token: create a new one, update `DNS_API_TOKEN`, run
+`sudo docker compose -f compose.server.yml --profile https up -d caddy`,
+confirm the next renewal or restart logs no errors, then delete the old token.
 
 Caddy runs on the host network to reach loopback backends without Docker socket
 access or exposing them on the LAN. Its wildcard certificate covers only
