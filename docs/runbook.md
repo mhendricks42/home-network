@@ -6,26 +6,84 @@ This implements the container layer in [the architecture](home-server-architectu
 Commands below run in a Bash shell on the **target Linux host**. Do not run them
 on the Windows development machine. Keep an independent laptop clone.
 
-Configure the gateway and network policy with the
-[UCG Max runbook](ucg-max-runbook.md), coordinating its DNS cutover with section 4.
+The network ([UCG Max runbook](ucg-max-runbook.md)) and this runbook depend on
+each other. Do the steps below **in order**; each one lists what must already
+be done. "UCG §n" is the UCG Max runbook; "§n" is this runbook.
 
-- Server: Debian, Docker Engine and Compose **2.24.4+**, SSH, `mountpoint`, and
-  working host DNS/NTP. Pi: **64-bit** Raspberry Pi OS, Docker and Compose.
-- Fixed addresses: server `10.0.40.10`, Pi `10.0.40.11`. The NAS and gateway
-  addresses in the Caddyfile are `10.0.40.20` and `10.0.10.1`.
-- Docker networks `172.28.0.0/24` and `172.29.0.0/24` must not overlap existing
-  networks/VPNs. If changed, update Unbound ACL/address, AdGuard upstream, and
-  Home Assistant `trusted_proxies` together.
-- Install host security updates, key-only SSH, firewall, Tailscale, NUT and
-  restic separately. The Compose stacks do **not** configure or replace these.
+### Prerequisite order
+
+**A. Network foundation**
+
+| # | Step | Where | Needs | Done when |
+|---|---|---|---|---|
+| A1 | Gateway local setup, WAN, final LAN subnet | UCG §1–2 | — | Gateway reachable by IP from the wired admin laptop |
+| A2 | Create networks; reserve server `10.0.40.10`, Pi `10.0.40.11`, NAS `10.0.40.20` and admin devices (`ADMIN_CLIENTS`) by MAC | UCG §3 | A1, host MACs | Reservations recorded in the operations inventory |
+| A3 | Adopt switches/APs; set port profiles: Pi on core port 6, server and NAS on office ports 2/3 (Servers access) | UCG §4 | A2 | Hosts' ports carry VLAN 40 untagged |
+| A4 | Zone firewall Z1–Z22, with **Z13 created disabled** | UCG §5 | A2 (the address objects use those IPs) | Matrix matches architecture §9 |
+
+Z13 blocks gateway DNS for non-admin Trusted devices. Until D3, DHCP still
+advertises the gateway as DNS, so enabling Z13 earlier would cut their name
+lookups. It is enabled in D3.
+
+**B. Hosts**
+
+| # | Step | Where | Needs | Done when |
+|---|---|---|---|---|
+| B1 | NAS on `10.0.40.20`: HTTPS admin UI on, Ugreen cloud and UPnP off | NAS UI | A3 | `https://10.0.40.20` loads from the admin laptop |
+| B2 | Install OS: Debian 13 on the server, **64-bit** Raspberry Pi OS Lite on the Pi | Console | A3 | `ip -br addr` shows `.10` / `.11` |
+| B3 | Host basics: security updates and unattended-upgrades, key-only SSH, time sync. Point each **host's own** resolver at its gateway `10.0.40.1`, not at AdGuard | Host | B2 | `apt update` works; `timedatectl` shows synchronized |
+| B4 | Docker Engine and Compose **2.24.4+** from Docker's apt repository; keep the default iptables backend | Host | B3 | `docker compose version` ≥ 2.24.4 |
+| B5 | Check that `172.28.0.0/24` and `172.29.0.0/24` don't overlap any route or VPN | Host | B4 | `ip route` shows no overlap |
+| B6 | Host firewall: ufw rules and `DOCKER-USER` rules, then enable (Firewall prerequisites, steps 1–2). Skip the `tailscale0` line until E1 | Host | A2 (`ADMIN_CLIENTS`), B4 | `iptables -L DOCKER-USER` ends in `DROP`; SSH still works from an admin device |
+
+B3 keeps the hosts independent of their own containers: image pulls, the Caddy
+build and reboots must work before (or without) AdGuard.
+
+**C. Configuration before first start**
+
+| # | Step | Where | Needs | Done when |
+|---|---|---|---|---|
+| C1 | Clone the repository; `cp .env.example .env`; run `prepare.sh` | §1 | B4 | `/srv` folders exist on both nodes |
+| C2 | AdGuard admin bcrypt hash on both nodes | §1 "DNS on both nodes" | C1 | No `REPLACE` left in `AdGuardHome.yaml` |
+| C3 | MQTT accounts and matching `.env` passwords; Forgejo config check | §2 | C1 | `start.sh server` passes its credential checks |
+| C4 | *(https)* Cloudflare token, CAA, DNSSEC; `ACME_EMAIL`, `DNS_API_TOKEN`; Caddy basic-auth files | §2 Caddy | C1, B3 (outbound DNS/HTTPS) | Token verify returns `active`; both auth files exist |
+| C5 | *(radios)* Both USB radios attached; `/dev/serial/by-id` paths and `Z2M_AUTH_TOKEN` in `.env` | §3 Radios | C1 | Both device paths exist |
+| C6 | *(cameras)* Cameras configured offline and reserved on VLAN 60 (UCG §3); recording disk mounted by UUID with mount ordering before Docker; marker file; GPU and RTSP values in `.env` | §3 Cameras | A4 (Z12 lets the server reach cameras), C1 | `mountpoint /mnt/recordings` succeeds; `ffprobe -rtsp_transport tcp 'URL'` (from `apt install ffmpeg`) lists the streams for one camera |
+| C7 | *(production)* Review release notes and resolve image digests | §2 intro note | C1 | Pinned versions accepted |
+
+Profiles marked *(…)* are needed only when that profile is enabled.
+
+**D. Start, accept, cut over**
+
+| # | Step | Where | Needs | Done when |
+|---|---|---|---|---|
+| D1 | Start the Pi, then the server base, then each configured profile | §4 | B6, C2–C6 | `start.sh` succeeds; all containers running |
+| D2 | Acceptance checks 1–6, plus the host-firewall tests (Firewall prerequisites, step 3) | §4 | D1, A4 (Trusted test clients need Z1/Z5) | Every check passes |
+| D3 | DNS cutover: set DHCP DNS to `.10`/`.11` **and enable Z13** in the same change; then NTP | UCG §6 | D2 checks 1–2 (both resolvers answer) | Clients show both resolvers; Trusted non-admins can't use gateway DNS |
+| D4 | Move devices VLAN by VLAN; IDS/IPS in detect mode | UCG §7–9 | D3 | UCG acceptance table passes |
+
+**E. Go-live (after cutover)**
+
+| # | Step | Where | Needs | Done when |
+|---|---|---|---|---|
+| E1 | Tailscale on the server host: advertise `10.0.10.1/32`, `10.0.40.10/32`, `10.0.40.20/32`; approve routes; Tailnet Lock; ACLs; split DNS → `10.0.40.10`; add the `tailscale0` ufw line | Architecture §11 | D1 (AdGuard answering), B6 | From mobile data, `https://ha.home.foxhound.nexus` loads |
+| E2 | NUT: Pi as NUT server on the closet UPS; server and NAS as clients | Host | B6 (Pi TCP 3493 rule) | `upsc` works from the server; a pulled-plug test shuts hosts down cleanly |
+| E3 | Backups: restic to the NAS, UniFi config export, off-device copy | §6, UCG §10 | B1, D1 | One restore completes on a clean target |
+| E4 | Final checks: reboot, missing recording disk, power-loss shutdown, backup restore | §4 check 7 | E2, E3 | All pass; record the date |
+
+### Notes
+
+- If the Docker subnets change, update the Unbound ACL/address, AdGuard
+  upstream and Home Assistant `trusted_proxies` together.
+- Host security, SSH, firewall, Tailscale, NUT and restic are host jobs. The
+  Compose stacks don't configure or replace them.
 - The domain is `foxhound.nexus` on Cloudflare DNS (see the Caddy section).
   No publicly reachable port or public DNS A record is required for DNS-01.
-- Image tags are explicit release pins, not immutable digests. Review release
-  notes and resolve digests before a production rollout. Unbound's Debian
-  packages and the selected Caddy plugin resolve at build time; retain built
-  image digests if reproducible rebuilds are required.
+- Image tags are explicit release pins, not immutable digests. Unbound's Debian
+  packages and the Caddy plugin resolve at build time; retain built image
+  digests if reproducible rebuilds are required.
 
-### Firewall prerequisites (before startup)
+### Firewall prerequisites (step B6)
 
 Docker-published ports can bypass a host firewall's normal INPUT rules. Apply
 the gateway policy and Docker forwarding rules, not just `ufw allow/deny`:
@@ -457,8 +515,9 @@ Acceptance checks on the real targets:
 6. Create/login to Kuma **before granting its backend firewall access broadly**.
    Add server/gateway/internet/DNS/HTTPS monitors and a notification destination.
    Simulate server failure; verify an alert arrives independently from the Pi.
-7. Only then change DHCP to advertise both DNS addresses. Verify reboot,
-   missing-disk behavior, power-loss shutdown, backups and a restore.
+7. Only then change DHCP to advertise both DNS addresses (step D3). After
+   NUT and backups exist (E2, E3), verify reboot, missing-disk behavior,
+   power-loss shutdown, backups and a restore (E4).
 
 Kuma monitors, NetAlertX integrations, HA integrations, Z-Wave keys/auth and
 zones/masks need real devices/accounts and remain explicit first-run tasks,
