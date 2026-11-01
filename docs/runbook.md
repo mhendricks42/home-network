@@ -19,7 +19,7 @@ be done. "UCG §n" is the UCG Max runbook; "§n" is this runbook.
 | A1 | Gateway local setup, WAN, final LAN subnet | UCG §1–2 | — | Gateway reachable by IP from the wired admin laptop |
 | A2 | Create networks; reserve server `10.0.40.10`, Pi `10.0.40.11`, NAS `10.0.40.20` and admin devices (`ADMIN_CLIENTS`) by MAC | UCG §3 | A1, host MACs | Reservations recorded in the operations inventory |
 | A3 | Adopt switches/APs; set port profiles: Pi on core port 6, server and NAS on office ports 2/3 (Servers access) | UCG §4 | A2 | Hosts' ports carry VLAN 40 untagged |
-| A4 | Zone firewall Z1–Z22, with **Z13 created disabled** | UCG §5 | A2 (the address objects use those IPs) | Matrix matches architecture §9 |
+| A4 | Zone firewall Z1–Z22 and Z25, with **Z13 created disabled** | UCG §5 | A2 (the address objects use those IPs) | Matrix matches architecture §9 |
 
 Z13 blocks gateway DNS for non-admin Trusted devices. Until D3, DHCP still
 advertises the gateway as DNS, so enabling Z13 earlier would cut their name
@@ -31,10 +31,11 @@ lookups. It is enabled in D3.
 |---|---|---|---|---|
 | B1 | NAS on `10.0.40.20`: HTTPS admin UI on, Ugreen cloud and UPnP off | NAS UI | A3 | `https://10.0.40.20` loads from the admin laptop |
 | B2 | Install OS: Debian 13 on the server, **64-bit** Raspberry Pi OS Lite on the Pi | Console | A3 | `ip -br addr` shows `.10` / `.11` |
-| B3 | Host basics: security updates and unattended-upgrades, key-only SSH, time sync. Point each **host's own** resolver at its gateway `10.0.40.1`, not at AdGuard | Host | B2 | `apt update` works; `timedatectl` shows synchronized |
+| B3 | Host basics: security updates and unattended-upgrades, key-only SSH. Point each **host's own** resolver at its gateway `10.0.40.1`, not at AdGuard | Host | B2 | `apt update` works |
+| B3a | chrony NTP server on both hosts (Time service) | Host | B3 | `chronyc tracking` shows `Leap status: Normal` on both |
 | B4 | Docker Engine and Compose **2.24.4+** from Docker's apt repository; keep the default iptables backend | Host | B3 | `docker compose version` ≥ 2.24.4 |
 | B5 | Check that `172.28.0.0/24` and `172.29.0.0/24` don't overlap any route or VPN | Host | B4 | `ip route` shows no overlap |
-| B6 | Host firewall: ufw rules and `DOCKER-USER` rules, then enable (Firewall prerequisites, steps 1–2). Skip the `tailscale0` line until E1 | Host | A2 (`ADMIN_CLIENTS`), B4 | `iptables -L DOCKER-USER` ends in `DROP`; SSH still works from an admin device |
+| B6 | Host firewall: ufw rules and `DOCKER-USER` rules, then enable (Firewall prerequisites, steps 1–2). Skip the `tailscale0` line until E1 | Host | A2 (`ADMIN_CLIENTS`), B3a, B4 | `iptables -L DOCKER-USER` ends in `DROP`; SSH still works from an admin device |
 
 B3 keeps the hosts independent of their own containers: image pulls, the Caddy
 build and reboots must work before (or without) AdGuard.
@@ -59,7 +60,7 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 |---|---|---|---|---|
 | D1 | Start the Pi, then the server base, then each configured profile | §4 | B6, C2–C6 | `start.sh` succeeds; all containers running |
 | D2 | Acceptance checks 1–6, plus the host-firewall tests (Firewall prerequisites, step 3) | §4 | D1, A4 (Trusted test clients need Z1/Z5) | Every check passes |
-| D3 | DNS cutover: set DHCP DNS to `.10`/`.11` **and enable Z13** in the same change; then NTP | UCG §6 | D2 checks 1–2 (both resolvers answer) | Clients show both resolvers; Trusted non-admins can't use gateway DNS |
+| D3 | DNS and NTP cutover: set DHCP DNS and NTP to `.10`/`.11` **and enable Z13** in the same change; set UniFi device NTP | UCG §6 | D2 checks 1–2, B3a | Clients show both resolvers; a camera shows correct time; Trusted non-admins can't use gateway DNS |
 | D4 | Move devices VLAN by VLAN; IDS/IPS in detect mode | UCG §7–9 | D3 | UCG acceptance table passes |
 
 **E. Go-live (after cutover)**
@@ -83,6 +84,44 @@ Profiles marked *(…)* are needed only when that profile is enabled.
   packages and the Caddy plugin resolve at build time; retain built image
   digests if reproducible rebuilds are required.
 
+### Time service (step B3a)
+
+The UCG Max does not serve NTP to LAN clients. chrony on the server and Pi
+**hosts** serves time to every VLAN instead (architecture §10.1). It replaces
+`systemd-timesyncd`, which only acts as a client.
+
+On both hosts:
+
+```bash
+sudo apt install chrony        # removes systemd-timesyncd
+```
+
+Create `/etc/chrony/conf.d/homelab.conf`. On the server use `10.0.40.11` as
+`PEER`; on the Pi use `10.0.40.10`:
+
+```text
+# NTS-authenticated upstream; the default Debian pool stays as a fallback.
+server time.cloudflare.com iburst nts
+# The other node: keeps both in agreement if one loses upstream.
+server PEER iburst
+# Serve all home VLANs.
+allow 10.0.0.0/16
+# Keep serving during an internet outage; the server's RTC anchors the Pi.
+local stratum 10 orphan
+```
+
+```bash
+sudo systemctl restart chrony
+chronyc sources -v      # time.cloudflare.com and the pool reachable (^* or ^+)
+chronyc tracking        # Leap status: Normal
+chronyc -N authdata     # time.cloudflare.com shows NTS
+```
+
+NTS (authenticated NTP) needs outbound TCP 4460 as well as UDP 123. The
+Servers zone allows all outbound traffic, so no gateway policy is needed.
+After the firewall (B6) is on, check from a Trusted Windows client:
+`w32tm /stripchart /computer:10.0.40.10 /samples:3 /dataonly`, then `.11`.
+`sudo chronyc clients` on each host lists who is using it.
 ### Firewall prerequisites (step B6)
 
 Docker-published ports can bypass a host firewall's normal INPUT rules. Apply
@@ -90,8 +129,8 @@ the gateway policy and Docker forwarding rules, not just `ufw allow/deny`:
 
 | Host | Allowed inbound |
 |---|---|
-| Server | TCP/UDP 53 from intended client networks; TCP 443 from Trusted and approved tailnet clients; SSH from admin devices |
-| Pi | TCP/UDP 53 from intended client networks; TCP 3001 **only from `10.0.40.10`**; SSH from admin devices; TCP 3493 (NUT) from the server and NAS |
+| Server | TCP/UDP 53 and UDP 123 from intended client networks; TCP 443 from Trusted and approved tailnet clients; SSH from admin devices |
+| Pi | TCP/UDP 53 and UDP 123 from intended client networks; TCP 3001 **only from `10.0.40.10`**; SSH from admin devices; TCP 3493 (NUT) from the server and NAS |
 
 All app port mappings on the server bind to loopback. Caddy and NetAlertX use
 host networking: Caddy is the only public HTTP entry point; NetAlertX explicitly
@@ -104,7 +143,7 @@ the server, Pi and NAS share `10.0.40.0/24`, so their traffic is switched, not
 routed. Each host must enforce its own row above. On the host, there are two
 paths:
 
-- **Host-network services** (SSH, Caddy 443, NUT, and loopback-only Caddy
+- **Host-network services** (SSH, chrony NTP, Caddy 443, NUT, and loopback-only Caddy
   admin 2019 and NetAlertX 20211/20212) go through the INPUT chain, which
   `ufw` controls.
 - **Docker-published ports** (AdGuard 53 on both nodes, Kuma 3001 on the Pi)
@@ -130,6 +169,7 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow from ADMIN_IP to any port 22 proto tcp
 sudo ufw allow in on tailscale0 to any port 22 proto tcp     # Tailscale ACL limits this to admins
+sudo ufw allow from 10.0.0.0/16 to any port 123 proto udp   # chrony NTP for all VLANs
 sudo ufw allow from 10.0.0.0/16 to 10.0.40.10 port 443 proto tcp
 sudo ufw allow from 100.64.0.0/10 to 10.0.40.10 port 443 proto tcp
 ```
@@ -141,6 +181,7 @@ sudo apt install ufw
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow from ADMIN_IP to any port 22 proto tcp
+sudo ufw allow from 10.0.0.0/16 to any port 123 proto udp   # chrony NTP for all VLANs
 sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # NUT client: server
 sudo ufw allow from 10.0.40.20 to any port 3493 proto tcp   # NUT client: NAS
 ```

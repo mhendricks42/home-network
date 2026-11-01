@@ -20,7 +20,7 @@ A single HP ProDesk 400 G4 mini PC in the office runs the household's infrastruc
 - device monitoring (NetAlertX)
 - the configuration Git server (Forgejo)
 
-Tailscale runs on the host for remote access. A Raspberry Pi 3B+ in the network closet provides the services that must survive a server outage: secondary DNS, UPS signaling (NUT) and uptime checks. The office Ugreen NAS holds backups and file shares.
+Tailscale runs on the host for remote access. A Raspberry Pi 3B+ in the network closet provides the services that must survive a server outage: secondary DNS, secondary NTP, UPS signaling (NUT) and uptime checks. The office Ugreen NAS holds backups and file shares.
 
 ---
 
@@ -63,8 +63,9 @@ BIOS settings on the server: admin password set, virtualization on, **power-on a
 | NUT client | Server, NAS | Clean shutdown on power-loss signal |
 | NUT server | Pi | USB link to closet UPS |
 | unattended-upgrades | Server, Pi | Automatic OS security patches |
+| chrony | Server, Pi | NTP server for all VLANs (the UCG Max serves none); NTS upstream, orphan mode, each other as fallback |
 | restic (systemd timer) | Server | Nightly encrypted backups to NAS |
-| nftables/ufw | Server, Pi | Allow 22 (admin sources), 53, 80/443, Tailscale; deny rest |
+| nftables/ufw | Server, Pi | Allow 22 (admin sources), 53, 123/udp, 443 (server), Tailscale; deny rest |
 
 **Not on the server:** UniFi controller (in UCG Max); OpenTofu/Ansible (run from the admin laptop).
 
@@ -450,9 +451,10 @@ The Compose layer alone is not a completed production deployment.
 | D-S8 | Availability | Tier 1: backups + restore tests | 2026-10-18 |
 | D-S9 | DNS config sync | IaC push from Git | 2026-10-18 |
 | D-S9b | Git hosting | Forgejo on server (+ NAS mirror, laptop clone) | 2026-10-18 |
-| D-S10 | Pi role | Pi 3B+: DNS 2, NUT, Uptime Kuma; NetAlertX on server | 2026-10-18 |
+| D-S10 | Pi role | Pi 3B+: DNS 2, NTP 2, NUT, Uptime Kuma; NetAlertX on server | 2026-10-18 |
 | D-S11 | Local AI | Deferred | 2026-10-18 |
 | D-S12 | Domain and DNS host | `foxhound.nexus` on Cloudflare Registrar + DNS; Let's Encrypt via `caddy-dns/cloudflare` | 2026-11-01 |
+| D-S13 | Time service | chrony on server and Pi hosts as LAN NTP servers | 2026-11-01 |
 | D-N1 | Remote access | Tailscale on host, Tailnet Lock, no exit node | 2026-10-18 |
 
 ---

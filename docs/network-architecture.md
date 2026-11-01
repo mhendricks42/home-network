@@ -56,7 +56,7 @@ flowchart TB
     BGW -->|"WAN"| UCG["UniFi Cloud Gateway Max<br/>firewall, router, controller"]
     UCG -->|"2.5G"| SW["UniFi Pro Max 16 PoE<br/>180 W, fanless"]
     SW --> PP["12-port keystone patch panel"]
-    SW --> PI["Raspberry Pi 3B+ + PoE HAT<br/>DNS 2, NUT, Uptime Kuma"]
+    SW --> PI["Raspberry Pi 3B+ + PoE HAT<br/>DNS 2, NTP 2, NUT, Uptime Kuma"]
   end
   PP -->|"Cat6 PoE+ x5"| CAM["5x Amcrest 5MP cameras"]
   PP -->|"Cat6 PoE++"| AP1["U7 Pro - downstairs ceiling"]
@@ -136,10 +136,10 @@ flowchart LR
 | AP downstairs | UniFi U7 Pro | Downstairs ceiling | Wi-Fi 7 incl. 6 GHz | SSIDs per §8 |
 | AP upstairs | UniFi U7 Lite | Upstairs hallway ceiling | 2nd-floor Wi-Fi (2.4/5 GHz) | Powered by office switch |
 | Patch panel | 12-port wall-mount keystone | Closet (in box, below ISP gear) | Terminate in-wall runs | ~10 × 2.6 × 2.75 in |
-| Secondary infra node | Raspberry Pi 3B+ + PoE HAT | Closet (in box) | Secondary DNS, NUT server, Uptime Kuma | VLAN 40, 10.0.40.11; 3B+ Ethernet tops out around 300 Mbps (ample for DNS) |
+| Secondary infra node | Raspberry Pi 3B+ + PoE HAT | Closet (in box) | Secondary DNS, NTP server, NUT server, Uptime Kuma | VLAN 40, 10.0.40.11; 3B+ Ethernet tops out around 300 Mbps (ample for DNS) |
 | UPS (closet) | APC BE600M1 (600 VA / 330 W) | Closet (in box, bottom) | Battery for BGW320, gateway, switch, and via PoE the cameras, U7 Pro and Pi | Wall-mount; USB → Pi (NUT). ~23 min at 100 W, so expect roughly 15–20 min at ~110–125 W |
 | UPS (office) | ~650–950 VA (e.g., APC BE650G1) | Office | Server, NAS, office switch (and U7 Lite) | Reports to NUT on the Pi |
-| Cameras | 5× Amcrest 5MP PoE (bullets + domes) | Exterior | Recorded and analyzed by Frigate | Configured offline: firmware updated, P2P/UPnP/cloud off, unique creds, substream ≤720p/5 fps, NTP → gateway |
+| Cameras | 5× Amcrest 5MP PoE (bullets + domes) | Exterior | Recorded and analyzed by Frigate | Configured offline: firmware updated, P2P/UPnP/cloud off, unique creds, substream ≤720p/5 fps, NTP → 10.0.40.10 (set manually) |
 | Home server | HP ProDesk 400 G4 DM (i5-8500T, 16 GB) | Office | All services (companion doc) | VLAN 40, 10.0.40.10, Debian + Docker |
 | NAS | Ugreen | Office | File shares, backup target | VLAN 40, 10.0.40.20; Ugreen cloud remote access and UPnP off |
 | Old smartphones | Various | Around house | HA wall panels, Wi-Fi survey, segmentation tester, offline 2FA backup | IoT-Local VLAN, no internet; charging cycled 30–80% |
@@ -163,7 +163,7 @@ The UniFi default `192.168.1.0/24` is replaced **before** adopting devices (avoi
 | 80 | Lab | 10.0.80.0/24 | 10.0.80.1 | Yes | Optional | Future experiments | Spare office switch ports |
 | — | Tailscale | 100.64.0.0/10 | — | Tailscale | Per ACL | Remote devices | Phones/laptops away |
 
-**DHCP options (all VLANs):** DNS 1 = 10.0.40.10, DNS 2 = 10.0.40.11 (Cameras: none, §9.5); domain per VLAN (`home.arpa`, `iot.home.arpa`, `cam.home.arpa`); NTP = gateway.
+**DHCP options (all VLANs):** DNS 1 = 10.0.40.10, DNS 2 = 10.0.40.11 (Cameras: none, §9.5); domain per VLAN (`home.arpa`, `iot.home.arpa`, `cam.home.arpa`); NTP 1 = 10.0.40.10, NTP 2 = 10.0.40.11 (option 42; the UCG Max does not serve NTP, see §10).
 **IPv6:** enabled on Trusted, Servers and IoT-Local (Matter/Thread).
 
 ---
@@ -211,7 +211,7 @@ Assumed for **new custom zones** (third-party sources; Ubiquiti doesn't document
 | Zone | Type | Networks | Reasoning |
 |---|---|---|---|
 | Trusted | Custom | Trusted 20 | Not in Internal: Internal is allow-all to every zone, so Trusted would need a block policy for each zone. A custom zone starts closed. |
-| Mgmt | Custom | Mgmt | Infrastructure only; reaches the gateway (adoption, DHCP, NTP) by default. |
+| Mgmt | Custom | Mgmt | Infrastructure only; reaches the gateway (adoption, DHCP) by default. |
 | Servers | Custom | Servers 40 | Server, Pi and NAS share one subnet, so the gateway can't filter between them; the host firewalls do that (Docker runbook). |
 | IoT-Local | Custom | IoT-Local 50 | Needs its own no-internet and gateway lockdown policies. |
 | Cameras | Custom | Cameras 60 | Kept apart from IoT-Local: a compromised camera (Dahua firmware) must not reach IoT devices, and vice versa. |
@@ -225,25 +225,25 @@ Within one network, Wi-Fi client isolation (Guest SSID) and the mDNS proxy are n
 
 | From \ To | Trusted | Mgmt | Servers | IoT-Local | Cameras | Hotspot | Gateway | External |
 |---|---|---|---|---|---|---|---|---|
-| **Trusted** | — | ✗ | DNS; 443 server; 445 NAS; 22 admin | ✓ | ✗ | IoT-Cloud only | Admin devices: all. Others: no UI/SSH/DNS | ✓ except DNS bypass and ISP LAN (non-admin) |
-| **Mgmt** | ✗ | — | DNS | ✗ | ✗ | ✗ | ✓ | TCP 443 only |
+| **Trusted** | — | ✗ | DNS, NTP; 443 server; 445 NAS; 22 admin | ✓ | ✗ | IoT-Cloud only | Admin devices: all. Others: no UI/SSH/DNS | ✓ except DNS bypass and ISP LAN (non-admin) |
+| **Mgmt** | ✗ | — | DNS, NTP | ✗ | ✗ | ✗ | ✓ | TCP 443 only |
 | **Servers** | ✗ | ✗ | — | Server only | Server only: 554/80/443 | Server → IoT-Cloud | ✓ | ✓ |
-| **IoT-Local** | ✗ | ✗ | DNS | — | ✗ | ✗ | DHCP, NTP, mDNS only | **✗ (logged)** |
-| **Cameras** | ✗ | ✗ | ✗ | ✗ | — | ✗ | DHCP, NTP only | **✗ (logged)** |
-| **Hotspot** (Guest, Work, IoT-Cloud) | Return only | ✗ | DNS | ✗ | ✗ | ✗ between networks | Built-in DHCP/DNS | ✓; Guest/IoT-Cloud: no DNS bypass; no ISP LAN |
+| **IoT-Local** | ✗ | ✗ | DNS, NTP | — | ✗ | ✗ | DHCP, mDNS only | **✗ (logged)** |
+| **Cameras** | ✗ | ✗ | NTP | ✗ | — | ✗ | DHCP only | **✗ (logged)** |
+| **Hotspot** (Guest, Work, IoT-Cloud) | Return only | ✗ | DNS, NTP | ✗ | ✗ | ✗ between networks | Built-in DHCP/DNS | ✓; Guest/IoT-Cloud: no DNS bypass; no ISP LAN |
 
 ✗ means blocked by a default; only the cells that differ from a default have a policy in §9.4.
 
 ### 9.4 Final policy set
 
-22 baseline policies. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
+23 baseline policies (Z1–Z22 and Z25). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
 
 | ID | Source zone (match) | Destination zone (match) | Protocol / ports | Action | Replaces | Reasoning |
 |---|---|---|---|---|---|---|
-| Z1 | Trusted | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Custom→custom is blocked by default; this is the only DNS path for household devices. |
-| Z2 | Mgmt | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Switches/APs resolve firmware hosts. |
-| Z3 | IoT-Local | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Local names (HA, `home.<domain>`) for wall panels and ESPHome; AdGuard's strict IoT profile logs everything. |
-| Z4 | Hotspot | Servers: `DNS_NODES` | TCP/UDP 53 | Allow | F1 | Guest, Work and IoT-Cloud get filtered DNS. One policy covers all three networks. |
+| Z1 | Trusted | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Custom→custom is blocked by default; this is the only DNS path for household devices. |
+| Z2 | Mgmt | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Switches/APs resolve firmware hosts. |
+| Z3 | IoT-Local | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Local names (HA, `home.<domain>`) for wall panels and ESPHome; AdGuard's strict IoT profile logs everything. |
+| Z4 | Hotspot | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Guest, Work and IoT-Cloud get filtered DNS. One policy covers all three networks. |
 | Z5 | Trusted | Servers: `SERVER` | TCP 443 | Allow | F4 | Caddy is the only HTTPS entry point; app ports stay closed. |
 | Z6 | Trusted | Servers: `NAS` | TCP 445 | Allow | F6 | SMB only; the NAS web UI goes through Caddy. |
 | Z7 | Trusted: `ADMIN_CLIENTS` | Servers | TCP 22 | Allow | F5 | Admin SSH to server, Pi and NAS. |
@@ -252,16 +252,17 @@ Within one network, Wi-Fi client isolation (Guest SSID) and the mDNS proxy are n
 | Z10 | Servers: `SERVER` | IoT-Local | Any | Allow | F8 | Home Assistant control. Narrowed from the whole Servers network to the server, since the NAS and Pi don't need IoT access. |
 | Z11 | Servers: `SERVER` | Hotspot: network IoT-Cloud | Any | Allow | F8 | Same, for cloud devices. |
 | Z12 | Servers: `SERVER` | Cameras | TCP 554, 80, 443 | Allow | F7 | Frigate RTSP plus HTTP/ONVIF. Port 8000 (Hikvision SDK) dropped: Amcrest doesn't use it. Confirm the ONVIF port on the cameras. |
-| Z13 | Trusted: NOT `ADMIN_CLIENTS` | Gateway | TCP/UDP 22, 53, 80, 443, 853 | Block | F11, F2 (gateway part) | Custom→Gateway is allow-all, which exposes the UI and SSH. A port block (not an allowlist) keeps DHCP, NTP and mDNS working for everyone, while 53/853 closes the gateway-DNS bypass. Admin devices keep full access. |
+| Z13 | Trusted: NOT `ADMIN_CLIENTS` | Gateway | TCP/UDP 22, 53, 80, 443, 853 | Block | F11, F2 (gateway part) | Custom→Gateway is allow-all, which exposes the UI and SSH. A port block (not an allowlist) keeps DHCP and mDNS working for everyone, while 53/853 closes the gateway-DNS bypass. Admin devices keep full access. |
 | Z14 | Trusted | External | TCP/UDP 53, 853 | Block + log | F2 | Forces AdGuard filtering. Covers IPv6, since no address object is used. |
 | Z15 | Hotspot: networks Guest, IoT-Cloud | External | TCP/UDP 53, 853 | Block + log | F2 | Same. **Work is exempt:** employer laptops often hard-code corporate DNS (Umbrella, Zscaler), and the Docker runbook already leaves Work unfiltered. |
 | Z16 | Trusted: NOT `ADMIN_CLIENTS` | External: `ISP_LAN` | Any | Block | F10 | The BGW320 is untrusted. Admins keep access for troubleshooting. |
 | Z17 | Hotspot | External: `ISP_LAN` | Any | Block | F10 | Guests, work and cloud devices have no reason to reach the ISP box. |
 | Z18 | IoT-Local | External | Any | Block + log | F9 | No phone-home; IP version Both covers IPv6 (Matter devices get global addresses). |
 | Z19 | Cameras | External | Any | Block + log | F9 | Same. |
-| Z20 | IoT-Local | Gateway | TCP/UDP, ports NOT 67, 123, 5353 | Block | F3 (new lockdown) | Allowlist for untrusted devices: DHCP, NTP and mDNS proxy only, so no UI/SSH/DNS on the gateway. Limited to TCP/UDP so ICMPv6 (router/neighbor discovery) still works for IPv6. |
-| Z21 | Cameras | Gateway | TCP/UDP, ports NOT 67, 123 | Block | F3 (new lockdown) | DHCP and NTP only. |
+| Z20 | IoT-Local | Gateway | TCP/UDP, ports NOT 67, 5353 | Block | New lockdown | Allowlist for untrusted devices: DHCP and mDNS proxy only, so no UI/SSH/DNS on the gateway. Limited to TCP/UDP so ICMPv6 (router/neighbor discovery) still works for IPv6. |
+| Z21 | Cameras | Gateway | TCP/UDP, ports NOT 67 | Block | New lockdown | DHCP only. |
 | Z22 | Mgmt | External | TCP/UDP, ports NOT 443 | Block | Mgmt "updates only" | Firmware downloads use HTTPS. Verify one switch and one AP update after enabling. |
+| Z25 | Cameras | Servers: `DNS_NODES` | UDP 123 | Allow | F3 | Cameras get time from chrony on the server/Pi; still no DNS (see §9.5). |
 
 **Conditional (create disabled; enable when needed):**
 
@@ -280,7 +281,7 @@ Within one network, Wi-Fi client isolation (Guest SSID) and the mDNS proxy are n
 | F1 for Servers | Not needed | Same zone and same subnet. |
 | F2 for Servers, Mgmt | Dropped | The server is a resolver. The NAS and Pi are trusted infrastructure using DHCP DNS. Mgmt is limited to TCP 443 by Z22. |
 | F2 for Work | Dropped | See Z15. |
-| F3 NTP to gateway | Covered | Custom→Gateway is allow-all; Z20/Z21 keep UDP 123. **The UCG Max serving NTP on the LAN still needs testing** (runbook §6). |
+| F3 NTP to gateway | Replaced | The UCG Max does not serve NTP to the LAN. chrony on the server and Pi serves it instead; Z1–Z4 and Z25 allow UDP 123 to `DNS_NODES`. |
 | F10 for Mgmt, Servers | Dropped | Trusted infrastructure. The BGW320 UI also requires its device access code for changes. |
 | F11 for Servers | Covered | Servers→Gateway is allow-all (Caddy proxy, HA UniFi integration, Tailscale admins via SNAT). |
 | F12 Tailscale | Covered | Servers→External is allow-all. The old rule also had the port wrong: 41641 is Tailscale's *source* port. If Servers egress is ever restricted, follow Tailscale's guidance: UDP from source 41641, UDP 3478 and TCP 443 to any. |
@@ -317,6 +318,10 @@ flowchart LR
 | `*.home.<domain>` | Wildcard rewrite in AdGuard Home → reverse proxy 10.0.40.10 | `frigate.home.foxhound.nexus` (Cloudflare DNS; no public `home` records) |
 
 Both resolvers filter and receive identical config pushed from Git. Per-VLAN profiles: strict IoT, standard Trusted, family filters + blocked services for kids' devices, light Guest, minimal Work.
+
+### 10.1 Time (NTP)
+
+The UCG Max does not serve NTP to LAN clients, so the two DNS nodes also serve time. **chrony** runs on the server and Pi **hosts** (not in containers). Each syncs from Cloudflare's NTS-authenticated time service plus the Debian pool, and they use each other as a fallback. In `orphan` mode they keep serving a consistent time during an internet outage; the server's real-time clock covers the Pi, which has none. DHCP option 42 advertises both; offline devices (cameras, IoT-Local, UniFi switches/APs) depend on them.
 
 ---
 
@@ -449,7 +454,7 @@ Both resolvers filter and receive identical config pushed from Git. Per-VLAN pro
 | Firewall rule documentation | Git | Re-enter manually (until IaC) |
 | Runbook | IP plan, VLANs, rules, backup locations, hotspot procedure | Printed + phone |
 
-Single points of failure (fiber, gateway, PoE switch, home server for remote access) are accepted; recovery is by restore. DNS is the only redundant service.
+Single points of failure (fiber, gateway, PoE switch, home server for remote access) are accepted; recovery is by restore. DNS and NTP are the only redundant services.
 
 ---
 
@@ -517,6 +522,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | D-N10 | Cameras | 5× Amcrest 5MP | 2026-10-18 |
 | D-N11 | Wi-Fi VLAN assignment | Separate Work and Things-Cloud SSIDs, no PPSK; retain WPA3/6 GHz Home | 2026-10-19 |
 | D-N12 | Domain and DNS host | `foxhound.nexus`, Cloudflare Registrar + DNS (closes former P2) | 2026-11-01 |
+| D-N13 | Time service | chrony on the server and Pi hosts serves NTP to all VLANs (UCG Max has no LAN NTP server) | 2026-11-01 |
 | — | Raspberry Pi | Pi 3B+ (owned) | 2026-10-18 |
 | — | NAS | Ugreen, in office | 2026-10-18 |
 

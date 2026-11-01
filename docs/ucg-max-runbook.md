@@ -18,8 +18,9 @@ Do not cut over household devices until these gates pass:
 - Both DNS nodes answer independently before advertising them through DHCP.
 - Identify admin device MACs/IPs, camera MACs/IPs, the actual BGW320 subnet,
   and the physical WAN/LAN port assignments. Do not guess them.
-- Verify gateway NTP service, conditional DNS forwarding, and IPv6 isolation
-  as described below. A DHCP option does not create an NTP server.
+- Verify chrony on the server and Pi serves NTP (Docker runbook, Time
+  service), conditional DNS forwarding, and IPv6 isolation as described below.
+  The UCG Max does not serve NTP to the LAN.
 - Choose a Guest bandwidth limit before enabling Guest; no limit was decided.
 - Proxy acceptance checks need Caddy's `foxhound.nexus` certificate first
   (Docker runbook, Caddy section).
@@ -130,8 +131,12 @@ unknown DHCP clients. Keep unused ports disabled.
 - Once section 6 passes, set **manual DHCP DNS** on every network except
   Cameras to only `10.0.40.10`, `10.0.40.11`. Do not add a public "third DNS".
   Cameras get no DNS server (architecture §9.5).
-- Set DHCP NTP option 42 to that network's gateway **only after** section 6
-  proves it serves NTP. Manually configure cameras that ignore option 42.
+- Set DHCP NTP (option 42) on every network to `10.0.40.10`, `10.0.40.11`
+  **only after** section 6 proves both answer. Manually set each camera's NTP
+  server to `10.0.40.10`; cameras often ignore option 42.
+- Point UniFi devices at the same servers: in the Network application's NTP
+  setting choose manual and enter `10.0.40.10`, `10.0.40.11`. Mgmt has no
+  internet NTP (Z22), so switches/APs otherwise drift.
 
 Create reusable address/port objects using the UI's supported groups:
 
@@ -142,12 +147,12 @@ Create reusable address/port objects using the UI's supported groups:
 | `NAS` | `10.0.40.20` |
 | `ADMIN_CLIENTS` | Recorded Trusted admin `/32` addresses only |
 | `ISP_LAN` | Actual BGW320 LAN subnet |
-| `DNS_PORTS` | TCP/UDP 53 |
+| `DNS_PORTS` | TCP/UDP 53, UDP 123 (Z1–Z4: DNS and NTP to `DNS_NODES`) |
 | `DNS_BYPASS_PORTS` | TCP/UDP 53 and 853 (includes DoQ) |
 | `GW_ADMIN_PORTS` | TCP/UDP 22, 53, 80, 443, 853 (Z13) |
 | `CAMERA_PORTS` | TCP 554, 80, 443 (Z12; confirm the ONVIF port) |
-| `IOT_GW_PORTS` | UDP 67, 123, 5353 (Z20, used with Match Opposite) |
-| `CAM_GW_PORTS` | UDP 67, 123 (Z21, used with Match Opposite) |
+| `IOT_GW_PORTS` | UDP 67, 5353 (Z20, used with Match Opposite) |
+| `CAM_GW_PORTS` | UDP 67 (Z21, used with Match Opposite) |
 
 ## 4. Adopt devices and apply port profiles
 
@@ -207,7 +212,7 @@ from that table; don't keep a second copy here.
    custom zone should show Block All to the other internal zones and Allow All
    to External and Gateway. If any cell differs, **stop** and update §9.4
    before continuing.
-4. Create the address/port objects from section 3, then Z1–Z22 in ID order.
+4. Create the address/port objects from section 3, then Z1–Z22 and Z25 in ID order.
    Create Z13, Z23 and Z24 **disabled**; Z13 is enabled at the DNS cutover
    (section 6, step 5). Enable logging on Z14, Z15, Z18 and Z19.
 5. Before enabling Z13, confirm the admin laptop's address is in `ADMIN_CLIENTS`
@@ -245,13 +250,13 @@ Boundaries the zone firewall can't enforce:
    answers locally for reservations in all configured DHCP domains. Do not
    configure gateway DNS upstream exclusively to AdGuard if unknown local
    names would loop back. Fix forwarding/records before claiming this works.
-3. Test NTP at a VLAN gateway from a client, for example on Windows:
-   `w32tm /stripchart /computer:10.0.60.1 /samples:3 /dataonly` from a temporary
-   Cameras test port. Repeat for used VLANs and verify packet counters/time.
-   A WAN time-sync setting on UniFi does not prove it serves LAN NTP.
-4. If the firmware does not serve NTP, **stop the NTP rollout**. Record an
-   architecture change selecting a local NTP server and corresponding narrow
-   firewall/DHCP changes; do not silently give offline cameras internet.
+3. Test NTP on both servers from a client, for example on Windows:
+   `w32tm /stripchart /computer:10.0.40.10 /samples:3 /dataonly`, then `.11`.
+   Repeat from a temporary Cameras test port (Z25) and an IoT-Local port (Z3).
+   `sudo chronyc clients` on each host shows the test clients.
+4. If either server doesn't answer, check its ufw UDP 123 rule and
+   `chronyc tracking` before changing gateway policies. Never give offline
+   cameras or IoT devices internet to fix time.
 5. Set DHCP DNS/NTP as in section 3 only after their tests pass, and enable
    Z13 in the same change: before this, non-admin Trusted devices still use
    gateway DNS, which Z13 blocks. Renew leases
@@ -342,7 +347,7 @@ a working wired Trusted admin connection. Export a backup at each stable stage.
 | Trusted admin / non-admin | Admin reaches gateway 443 and SSH hosts; non-admin cannot directly manage gateway/SSH |
 | Trusted | Proxy TCP 443 and NAS TCP 445 work; Work and Cameras denied |
 | Work / IoT-Cloud / Guest | Intended internet works; Servers reachable only for DNS; household, gateway UI and each other denied |
-| IoT-Local / Cameras | External IPv4 and applicable IPv6 denied and logged; NTP works (DNS too on IoT-Local); gateway UI/SSH denied; no client-initiated pivot |
+| IoT-Local / Cameras | External IPv4 and applicable IPv6 denied and logged; NTP from `.10`/`.11` works (DNS too on IoT-Local); gateway UI/SSH denied; no client-initiated pivot |
 | Server | Camera streams/ONVIF and IoT control work; arbitrary Trusted/Work access denied |
 | Guest clients | Cannot reach each other, including across APs; rate limit measured |
 | Trusted + IoT-Local | Intended mDNS discovery/control works; other VLANs see no reflected services |
