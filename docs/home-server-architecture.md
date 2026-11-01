@@ -238,11 +238,11 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | Setting | Value |
 |---|---|
 | Install | Debian package on host |
-| Subnet routes | 10.0.10.1/32 (gateway UI), 10.0.40.20/32 (NAS) |
+| Subnet routes | 10.0.10.1/32 (gateway UI), 10.0.40.10/32 (server: AdGuard answers `*.home.<domain>` with this address), 10.0.40.20/32 (NAS) |
 | Tailnet Lock | On; sign new devices from a trusted node |
 | Exit node | Off |
-| DNS | Split DNS for `home.arpa` and `home.<domain>` → server's Tailscale IP; override local DNS on |
-| ACL policy | `group:admins` → server (22, 443), gateway UI, NAS; `group:family` → server 443 only |
+| DNS | Split DNS for `home.arpa` and `home.<domain>` → 10.0.40.10 (via the subnet route); override local DNS on |
+| ACL policy | `group:admins` → 10.0.40.10 (22, 53, 443), gateway UI, NAS; `group:family` → 10.0.40.10 (53, 443) only |
 | Key expiry | Disable expiry for the server node only |
 
 ---

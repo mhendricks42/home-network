@@ -19,7 +19,8 @@ dns:
   use_private_ptr_resolvers: true
   local_ptr_upstreams: [10.0.10.1]
   enable_dnssec: true
-  ratelimit: 20
+  # Off: only our VLANs reach the resolvers, and a /24-wide limit would starve busy VLANs.
+  ratelimit: 0
 filtering:
   protection_enabled: true
   filtering_enabled: true

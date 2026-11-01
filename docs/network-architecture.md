@@ -326,12 +326,12 @@ Both resolvers filter and receive identical config pushed from Git. Per-VLAN pro
 |---|---|
 | Plan | Tailscale free Personal plan (no subscription) |
 | Where it runs | Home server **host OS** (not a container), as a subnet router |
-| Advertised routes | Only specific addresses needed remotely: gateway UI (10.0.10.1/32), NAS (10.0.40.20/32). Server services are reached on the server's own Tailscale IP |
+| Advertised routes | Only specific addresses needed remotely: gateway UI (10.0.10.1/32), server (10.0.40.10/32), NAS (10.0.40.20/32). The server route is required because AdGuard answers `*.home.<domain>` with 10.0.40.10 |
 | Tailnet Lock | **On**: Tailscale's servers can't add devices you haven't signed |
 | Exit node | Not used |
 | WireGuard break-glass on UCG Max | Not used |
-| DNS | Tailscale split DNS: `home.arpa` and `home.<domain>` → AdGuard Home (server Tailscale IP); "override local DNS" for filtering away from home |
-| Access control | Tailscale ACL policy: admins → server, gateway UI, NAS; family → reverse proxy 443 only |
+| DNS | Tailscale split DNS: `home.arpa` and `home.<domain>` → AdGuard Home at 10.0.40.10 (via the subnet route); "override local DNS" for filtering away from home |
+| Access control | Tailscale ACL policy: admins → server, gateway UI, NAS; family → 10.0.40.10 TCP 443 and TCP/UDP 53 only |
 | Devices at home | Don't "accept routes" on devices that live on the LAN (avoids routing loops) |
 | Exposure | None inbound; connects outbound. Dynamic DNS is **not needed** |
 

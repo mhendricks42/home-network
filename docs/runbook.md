@@ -86,10 +86,10 @@ Further per-client lists/rules must be chosen explicitly. Local lists do not
 prevent every encrypted-DNS bypass; gateway egress policy is still required.
 
 The service wildcard resolves to `10.0.40.10`. Do not switch DHCP resolvers yet.
-The DNS bindings intentionally target each LAN IP. Once Tailscale is configured,
-add the server's actual Tailscale IP as an additional TCP/UDP 53 binding in a
-local Compose override, and allow intended tailnet clients DNS in the ACL.
-Remote split DNS otherwise cannot work; do not expose an unrestricted resolver.
+The DNS bindings intentionally target each LAN IP. For remote access, the
+server advertises `10.0.40.10/32` as a Tailscale subnet route and split DNS
+points at `10.0.40.10`, so no extra binding is needed. Allow tailnet clients
+only TCP/UDP 53 and TCP 443 on that address in the ACL.
 
 ## 2. Server credentials and application configuration
 
