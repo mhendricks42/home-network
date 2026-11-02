@@ -355,12 +355,13 @@ Reload/restart Mosquitto after changing credentials.
 `git.home.foxhound.nexus`. Registration and anonymous repository access are disabled.
 SQLite, HTTPS Git and local storage are used; no Git SSH port is published.
 Forgejo manages its generated signing/token material in this writable config.
-After startup create an initial administrator:
+After startup create an initial administrator. Forgejo reserves the name
+`admin`, so pick another (for example your own name):
 
 ```bash
 sudo docker compose -f compose.server.yml exec --user 1000:1000 forgejo \
   forgejo --config /data/gitea/conf/app.ini admin user create \
-  --username admin --email YOUR_EMAIL --admin --random-password \
+  --username YOUR_USERNAME --email YOUR_EMAIL --admin --random-password \
   --must-change-password
 ```
 
