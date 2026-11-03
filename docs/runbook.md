@@ -458,6 +458,17 @@ certificates. Their network paths must remain trusted/restricted.
 
 HA's initial config includes packages and UI-managed automations/scripts/scenes.
 Keep `.storage` and the database in the writable `/srv/homeassistant/config`.
+
+**Reverse-proxy settings are imported once.** Since 2026.10, HA copies the
+`http:` block from `configuration.yaml` into `.storage/http` on its **first**
+start and ignores the YAML afterwards. If HA ever started without that block
+(for example before `prepare.sh` copied the template), proxied requests fail
+with `400: Bad Request` and the log says *"not set-up for reverse proxies"*.
+Fix: stop HA, delete `/srv/homeassistant/config/.storage/http`, and start it
+again so the YAML is imported. After onboarding, HA shows a repair asking you
+to remove the `http:` block; do that and restart. From then on, change proxy
+settings under **Settings → System → Network**.
+
 During HA onboarding, configure:
 
 - MQTT at `mqtt:1883`, user `homeassistant`.
