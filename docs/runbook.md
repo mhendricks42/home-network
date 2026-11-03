@@ -380,10 +380,19 @@ AdGuard rewrite.
 
 1. **DNS → Records:** create **no** `home` or `*.home` records. A public
    wildcard would expose internal names and addresses for no benefit.
-2. **DNS → Records → Add CAA:** name `@`, tag *Only allow specific hostnames*
-   (`issue`), CA `letsencrypt.org`; add the same with *Only allow wildcards*
-   (`issuewild`). Other CAs can then never issue for the domain. (Caddy's
-   ZeroSSL fallback is blocked too, which is intended.)
+2. **CAA records (optional hardening):** a CAA record lists which certificate
+   authorities may issue certificates for the domain; all others must refuse.
+   In **DNS → Records → Add record**, add two records:
+
+   | Type | Name | Flags | Tag | CA domain name |
+   |---|---|---|---|---|
+   | CAA | `@` | 0 | Only allow specific hostnames | `letsencrypt.org` |
+   | CAA | `@` | 0 | Only allow wildcards | `letsencrypt.org` |
+
+   The second one matters most: the certificate is a wildcard
+   (`*.home.foxhound.nexus`). Check with `dig CAA foxhound.nexus +short`.
+   Caddy falls back to ZeroSSL if Let's Encrypt fails; these records block
+   that, so a failed renewal simply retries Let's Encrypt later.
 3. **DNS → Settings → DNSSEC:** enable. Cloudflare Registrar adds the DS
    record itself. Unbound validates it.
 4. **My Profile → API Tokens → Create Token → Custom token:**
