@@ -213,8 +213,8 @@ from that table; don't keep a second copy here.
    to External and Gateway. If any cell differs, **stop** and update §9.4
    before continuing.
 4. Create the address/port objects from section 3, then Z1–Z22 and Z25 in ID order.
-   Create Z13, Z23 and Z24 **disabled**; Z13 is enabled at the DNS cutover
-   (section 6, step 5). Enable logging on Z14, Z15, Z18 and Z19.
+   Create Z13, Z23 and Z24 **disabled**; Z13 is enabled one lease time after
+   the DNS cutover (section 6, step 5). Enable logging on Z14, Z15, Z18 and Z19.
 5. Before enabling Z13, confirm the admin laptop's address is in `ADMIN_CLIENTS`
    and keep the Recovery port connected: Z13 is the policy that can lock you
    out of the gateway UI.
@@ -257,11 +257,11 @@ Boundaries the zone firewall can't enforce:
 4. If either server doesn't answer, check its ufw UDP 123 rule and
    `chronyc tracking` before changing gateway policies. Never give offline
    cameras or IoT devices internet to fix time.
-5. Set DHCP DNS/NTP as in section 3 only after their tests pass, and enable
-   Z13 in the same change: before this, non-admin Trusted devices still use
-   gateway DNS, which Z13 blocks. Renew leases
+5. Set DHCP DNS/NTP as in section 3 only after their tests pass. Renew leases
    and inspect actual client DNS, search domain and gateway settings. Clients
-   may use either advertised resolver, not just DNS 1.
+   may use either advertised resolver, not just DNS 1. Enable Z13 only after
+   one full DHCP lease time (UniFi default: 24 hours), once Trusted clients
+   have renewed: until then some still use gateway DNS, which Z13 blocks.
 6. Stop server DNS briefly and query public/local names through ordinary
    client resolution; confirm Pi queries in its logs. Restore, then test the
    other direction. Do not delete data or stop both resolvers together.

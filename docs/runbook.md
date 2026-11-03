@@ -23,7 +23,7 @@ be done. "UCG §n" is the UCG Max runbook; "§n" is this runbook.
 
 Z13 blocks gateway DNS for non-admin Trusted devices. Until D3, DHCP still
 advertises the gateway as DNS, so enabling Z13 earlier would cut their name
-lookups. It is enabled in D3.
+lookups. It is enabled one DHCP lease time after D3.
 
 **B. Hosts**
 
@@ -60,7 +60,7 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 |---|---|---|---|---|
 | D1 | Start the Pi, then the server base, then each configured profile | §4 | B6, C2–C6 | `start.sh` succeeds; all containers running |
 | D2 | Acceptance checks 1–6, plus the host-firewall tests (Firewall prerequisites, step 3) | §4 | D1, A4 (Trusted test clients need Z1/Z5) | Every check passes |
-| D3 | DNS and NTP cutover: set DHCP DNS and NTP to `.10`/`.11` **and enable Z13** in the same change; set UniFi device NTP | UCG §6 | D2 checks 1–2, B3a | Clients show both resolvers; a camera shows correct time; Trusted non-admins can't use gateway DNS |
+| D3 | DNS and NTP cutover: set DHCP DNS and NTP to `.10`/`.11`; set UniFi device NTP; **enable Z13 one lease time later** | UCG §6 | D2 checks 1–2, B3a | Clients show both resolvers; a camera shows correct time; Trusted non-admins can't use gateway DNS |
 | D4 | Move devices VLAN by VLAN; IDS/IPS in detect mode | UCG §7–9 | D3 | UCG acceptance table passes |
 
 **E. Go-live (after cutover)**
