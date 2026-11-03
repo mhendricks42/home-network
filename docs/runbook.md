@@ -31,7 +31,7 @@ lookups. It is enabled in D3.
 |---|---|---|---|---|
 | B1 | NAS on `10.0.40.20`: HTTPS admin UI on, Ugreen cloud and UPnP off | NAS UI | A3 | `https://10.0.40.20` loads from the admin laptop |
 | B2 | Install OS: Debian 13 on the server, **64-bit** Raspberry Pi OS Lite on the Pi | Console | A3 | `ip -br addr` shows `.10` / `.11` |
-| B3 | Host basics: security updates and unattended-upgrades, key-only SSH. Point each **host's own** resolver at its gateway `10.0.40.1`, not at AdGuard | Host | B2 | `apt update` works |
+| B3 | Host basics: security updates and unattended-upgrades, key-only SSH (SSH access from admin devices). Point each **host's own** resolver at its gateway `10.0.40.1`, not at AdGuard | Host | B2, A2 (admin device reservations) | `apt update` works; password SSH login is refused |
 | B3a | chrony NTP server on both hosts (Time service) | Host | B3 | `chronyc tracking` shows `Leap status: Normal` on both |
 | B4 | Docker Engine and Compose **2.24.4+** from Docker's apt repository; keep the default iptables backend | Host | B3 | `docker compose version` ≥ 2.24.4 |
 | B5 | Check that `172.28.0.0/24` and `172.29.0.0/24` don't overlap any route or VPN | Host | B4 | `ip route` shows no overlap |
@@ -83,6 +83,141 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 - Image tags are explicit release pins, not immutable digests. Unbound's Debian
   packages and the Caddy plugin resolve at build time; retain built image
   digests if reproducible rebuilds are required.
+
+### SSH access from admin devices (step B3)
+
+Admins sign in with an **SSH key**, never a password. Each admin device gets
+its own key, protected by a passphrase. **Dashlane** holds the secrets; the
+private key file stays on the device. (Dashlane has no SSH agent, so it
+can't hold the key for `ssh` itself.)
+
+Store these in Dashlane before you start:
+
+| Dashlane item | Type | Content |
+|---|---|---|
+| `SSH passphrase – <device>` | Password | Generated passphrase (Dashlane generator, 24+ characters), one per admin device |
+| `sudo – oden` / `sudo – pi` | Password | Your Linux user's password on each host (used for `sudo`, not SSH) |
+| `SSH host keys` | Secure note | Each host's key fingerprint, recorded from the console (step 2) |
+
+#### 1. Create a key on each admin device
+
+Windows PowerShell (built-in OpenSSH). Paste the Dashlane passphrase when asked:
+
+```powershell
+ssh-keygen -t ed25519 -a 100 -C "matt@$env:COMPUTERNAME"
+Get-Service ssh-agent | Set-Service -StartupType Automatic
+Start-Service ssh-agent
+ssh-add $env:USERPROFILE\.ssh\id_ed25519
+```
+
+`ssh-add` stores the unlocked key in the Windows agent, so you type the
+passphrase once instead of on every connection. WSL is a separate system:
+give it its own key (the same `ssh-keygen` command in WSL) and treat it as a
+separate device, or use Windows' `ssh.exe` from WSL.
+
+#### 2. Record each host's fingerprint (console)
+
+On the server and on the Pi, at the local console:
+
+```bash
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+Save both lines in the Dashlane note. The first time you connect, `ssh` shows a
+fingerprint: continue only if it matches. Later warnings that the host key
+changed mean either a reinstall or someone in the middle; check before
+accepting.
+
+#### 3. Install the public key on each host
+
+Password login is still on at this point. From PowerShell (Windows has no
+`ssh-copy-id`):
+
+```powershell
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh matt@10.0.40.10 "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh matt@10.0.40.11 "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
+```
+
+Repeat for every admin device. Check `ssh matt@10.0.40.10` now logs in
+without asking for the Linux password.
+
+#### 4. Turn off password login (both hosts)
+
+Keep your current session open while you do this, so a mistake can't lock you
+out. Create `/etc/ssh/sshd_config.d/10-admin.conf`:
+
+```text
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+AuthenticationMethods publickey
+PermitRootLogin no
+AllowUsers matt
+MaxAuthTries 3
+X11Forwarding no
+```
+
+```bash
+sudo sshd -t && sudo systemctl reload ssh
+```
+
+sshd uses the **first** value it reads, and files in `sshd_config.d` are read
+in name order. `10-` therefore wins over files such as `50-cloud-init.conf`
+that some images ship with `PasswordAuthentication yes`. Port forwarding stays
+on: the tunnels below need it.
+
+Check from a **new** window:
+
+```powershell
+ssh matt@10.0.40.10                                        # works with the key
+ssh -o PubkeyAuthentication=no matt@10.0.40.10             # must fail: Permission denied (publickey)
+```
+
+The firewall already limits port 22 to `ADMIN_CLIENTS` (zone policy Z7 and
+the host ufw rules, step B6), and to admins over Tailscale (ACL).
+
+#### 5. Shortcuts on the admin device
+
+Create `%USERPROFILE%\.ssh\config` (Windows) or `~/.ssh/config`:
+
+```text
+Host oden
+  HostName 10.0.40.10
+  User matt
+  IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes
+
+Host pi
+  HostName 10.0.40.11
+  User matt
+  IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes
+
+# Admin UIs that are deliberately loopback-only on the server.
+Host oden-tunnels
+  HostName 10.0.40.10
+  User matt
+  IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes
+  LocalForward 8123 127.0.0.1:8123
+  LocalForward 8091 127.0.0.1:8091
+  LocalForward 8081 127.0.0.1:8081
+```
+
+Then `ssh oden`, `ssh pi`, or `ssh oden-tunnels` (and browse to
+`http://localhost:8123`, `:8091` or `:8081`). The same entries work away from
+home over Tailscale, because the server advertises `10.0.40.10/32`. The Pi is
+reached from the server: `ssh -J oden pi`.
+
+For `sudo`, paste the host's password from Dashlane.
+
+#### Lost device or key
+
+From another admin device (or the console), delete that device's line from
+`~/.ssh/authorized_keys` on each host. Each line ends with the `-C` comment
+from step 1, which names the device. Remove its address from `ADMIN_CLIENTS`
+and its Dashlane passphrase item. Keep at least two admin devices with keys,
+plus console access (keyboard and monitor on the server; the Pi's SD card),
+so losing one device never locks you out.
 
 ### Time service (step B3a)
 
