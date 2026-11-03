@@ -31,6 +31,8 @@ filtering:
   rewrites:
     - domain: "*.home.foxhound.nexus"
       answer: 10.0.40.10
+      # Newer AdGuard versions treat a rewrite without this as disabled.
+      enabled: true
 user_rules:
   - "||use-application-dns.net^"
 filters:
