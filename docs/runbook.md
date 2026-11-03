@@ -75,7 +75,7 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 ### Notes
 
 - If the Docker subnets change, update the Unbound ACL/address, AdGuard
-  upstream and Home Assistant `trusted_proxies` together.
+  upstream and the Home Assistant trusted proxy (Settings → System → Network) together.
 - Host security, SSH, firewall, Tailscale, NUT and restic are host jobs. The
   Compose stacks don't configure or replace them.
 - The domain is `foxhound.nexus` on Cloudflare DNS (see the Caddy section).
@@ -459,15 +459,19 @@ certificates. Their network paths must remain trusted/restricted.
 HA's initial config includes packages and UI-managed automations/scripts/scenes.
 Keep `.storage` and the database in the writable `/srv/homeassistant/config`.
 
-**Reverse-proxy settings are imported once.** Since 2026.10, HA copies the
-`http:` block from `configuration.yaml` into `.storage/http` on its **first**
-start and ignores the YAML afterwards. If HA ever started without that block
-(for example before `prepare.sh` copied the template), proxied requests fail
-with `400: Bad Request` and the log says *"not set-up for reverse proxies"*.
-Fix: stop HA, delete `/srv/homeassistant/config/.storage/http`, and start it
-again so the YAML is imported. After onboarding, HA shows a repair asking you
-to remove the `http:` block; do that and restart. From then on, change proxy
-settings under **Settings → System → Network**.
+**Reverse-proxy settings are set in the UI, not YAML.** Since 2026.10, HA keeps
+its `http` settings in `.storage/http`. A changed setting runs as a 5-minute
+trial: unless you confirm it, HA restarts with the previous settings. Until
+proxying is confirmed, requests through Caddy fail with `400: Bad Request`
+(log: *"not set-up for reverse proxies"*). So onboard directly, not via Caddy:
+
+1. From the admin laptop: `ssh -L 8123:127.0.0.1:8123 ADMIN@10.0.40.10`,
+   then open `http://localhost:8123` and finish onboarding.
+2. **Settings → System → Network:** enable *Use X-Forwarded-For* and add
+   trusted proxy `172.28.0.1` (the Docker gateway Caddy's requests arrive
+   from). Save, then **confirm** the change when HA asks; it reverts after
+   5 minutes otherwise.
+3. Open `https://ha.home.foxhound.nexus` and log in.
 
 During HA onboarding, configure:
 
