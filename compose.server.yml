@@ -51,7 +51,6 @@ services:
     volumes:
       - ./services/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ${DATA_ROOT:-/srv}/caddy/config/esphome-users:/etc/caddy/esphome-users:ro
-      - ${DATA_ROOT:-/srv}/caddy/config/alerts-users:/etc/caddy/alerts-users:ro
       - ${DATA_ROOT:-/srv}/caddy/data:/data
       - ${DATA_ROOT:-/srv}/caddy/config:/config
 

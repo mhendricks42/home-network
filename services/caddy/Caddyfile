@@ -46,9 +46,8 @@
 	}
 	@alerts host alerts.home.{$HOME_DOMAIN}
 	handle @alerts {
-		basic_auth {
-			import /etc/caddy/alerts-users
-		}
+		# No basic_auth: NetAlertX's UI sends its own Authorization: Bearer header,
+		# which replaces the browser's Basic credentials. Use NetAlertX's login.
 		reverse_proxy 127.0.0.1:20211
 	}
 	@git host git.home.{$HOME_DOMAIN}

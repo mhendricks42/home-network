@@ -554,11 +554,13 @@ local AdGuard rewrite answers for `*.home.foxhound.nexus`, and the Cloudflare
 module fails with `expected 1 zone, got 0` if it asks AdGuard. The Servers zone
 allows outbound DNS (architecture §9.5), so no firewall change is needed.
 
-Create two root-readable Caddy import files:
-`/srv/caddy/config/esphome-users` and `/srv/caddy/config/alerts-users`.
-Each contains `admin BCRYPT_HASH` on one line. Generate a **separate** password
-with the interactive `caddy hash-password` command above. ESPHome and NetAlertX
-are authenticated at the proxy. Other routes retain their own app login.
+Create the root-readable Caddy import file `/srv/caddy/config/esphome-users`
+containing `admin BCRYPT_HASH` on one line. Generate the hash with the
+interactive `caddy hash-password` command above. ESPHome is authenticated at
+the proxy because it has no login of its own. Every other route uses its app's
+login. NetAlertX can't sit behind proxy Basic auth (its UI sends its own
+`Authorization` header), so turn on its password under **Settings → Security**
+and change the default `123456`.
 
 **First certificate:**
 
@@ -674,7 +676,7 @@ NetAlertX requires host networking and scoped raw-network capabilities; it is
 not privileged. Configure routed VLAN scans and AdGuard imports in its UI and
 back up `/srv/netalertx/data`. ARP cannot scan across routers: use routed
 ICMP/SNMP/controller plugins as applicable and grant only documented firewall
-flows. Caddy adds authentication to the loopback dashboard.
+flows. Its own password protects the dashboard (see the Caddy section).
 
 ## 4. Start and verify
 

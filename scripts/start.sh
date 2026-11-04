@@ -40,9 +40,7 @@ if [ "$node" = server ]; then
 fi
 case "$profiles" in *" https "*)
     for key in HOME_DOMAIN ACME_EMAIL CADDY_DNS_MODULE DNS_PROVIDER DNS_API_TOKEN; do require "$key"; done
-    for file in esphome-users alerts-users; do
-        [ -s "$root/caddy/config/$file" ] || fail "Create Caddy credentials: $file"
-    done
+    [ -s "$root/caddy/config/esphome-users" ] || fail "Create Caddy credentials: esphome-users"
     ;;
 esac
 case "$profiles" in *" radios "*)
