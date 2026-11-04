@@ -201,7 +201,7 @@ Observed on the UCG Max default matrix (88 built-in policies):
 | Hotspot → Internal / VPN | Allow Return | Hotspot clients can't start connections to household zones |
 | Hotspot → Gateway | Allow Return + 10 built-ins | DHCP/DNS only; the gateway UI and SSH are already closed |
 | Hotspot → Hotspot / DMZ | Block All | Networks in Hotspot can't reach each other |
-| Hotspot → External | Allow All | Internet |
+| Hotspot → External | Allow All, after portal authorization | Internet, but only once the client has clicked through the UniFi portal ("Block Unauthorized Traffic" built-in). Fine for guests; headless devices can't do it |
 | Internal → everything | Allow All | Not used: Internal is left empty (see 9.2) |
 
 Assumed for **new custom zones** (third-party sources; Ubiquiti doesn't document it): Block All to and from the other internal zones, Allow All to External and Gateway. **Check the matrix after creating the zones.** If a cell differs, stop and adjust §9.4 before moving clients. Each custom zone holds a single network, so the intra-zone default doesn't matter: traffic within one subnet is switched, not routed through the firewall.
@@ -215,7 +215,9 @@ Assumed for **new custom zones** (third-party sources; Ubiquiti doesn't document
 | Servers | Custom | Servers 40 | Server, Pi and NAS share one subnet, so the gateway can't filter between them; the host firewalls do that (Docker runbook). |
 | IoT-Local | Custom | IoT-Local 50 | Needs its own no-internet and gateway lockdown policies. |
 | Cameras | Custom | Cameras 60 | Kept apart from IoT-Local: a compromised camera (Dahua firmware) must not reach IoT devices, and vice versa. |
-| Hotspot | Built-in | Guest 70, Work 30, IoT-Cloud 55 | All three are "internet only, DNS to our resolvers, no household access". Hotspot's defaults already do that, including closing the gateway UI and isolating these three networks from each other. That saves 6–9 policies compared with three custom zones. |
+| Work | Custom | Work 30 | Internet only, DNS to our resolvers. Not in Hotspot: its portal would interrupt employer laptops and VPN clients. |
+| IoT-Cloud | Custom | IoT-Cloud 55 | Internet only, DNS to our resolvers. Not in Hotspot: devices like a Roomba or doorbell can't click through the portal, so they never get internet. |
+| Hotspot | Built-in | Guest 70 | Guests only. Hotspot's defaults already isolate them and close the gateway UI; the click-through portal is acceptable for visitors. |
 | Internal | Built-in | None | Allow-all defaults; kept empty. If the Default network is not used as Mgmt, leave it here with no ports or clients. |
 | VPN, DMZ | Built-in | None | No UniFi VPN server (Tailscale runs on the server host) and no DMZ. |
 
@@ -223,46 +225,55 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 
 ### 9.3 Effective access (source → destination)
 
-| From \ To | Trusted | Mgmt | Servers | IoT-Local | Cameras | Hotspot | Gateway | External |
-|---|---|---|---|---|---|---|---|---|
-| **Trusted** | — | ✗ | DNS, NTP; 443 server; 445 NAS; 22 admin | ✓ | ✗ | IoT-Cloud only | Admin devices: all. Others: no UI/SSH/DNS | ✓ except DNS bypass and ISP LAN (non-admin) |
-| **Mgmt** | ✗ | — | DNS, NTP | ✗ | ✗ | ✗ | ✓ | TCP 443 only |
-| **Servers** | ✗ | ✗ | — | Server only | Server only: 554/80/443 | Server → IoT-Cloud | ✓ | ✓ |
-| **IoT-Local** | ✗ | ✗ | DNS, NTP | — | ✗ | ✗ | DHCP, mDNS only | **✗ (logged)** |
-| **Cameras** | ✗ | ✗ | NTP | ✗ | — | ✗ | DHCP only | **✗ (logged)** |
-| **Hotspot** (Guest, Work, IoT-Cloud) | Return only | ✗ | DNS, NTP | ✗ | ✗ | ✗ between networks | Built-in DHCP/DNS | ✓; Guest/IoT-Cloud: no DNS bypass; no ISP LAN |
+| From \ To | Trusted | Mgmt | Servers | IoT-Local | Cameras | Work | IoT-Cloud | Guest | Gateway | External |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Trusted** | — | ✗ | DNS, NTP; 443 server; 445 NAS; 22 admin | ✓ | ✗ | ✗ | ✓ | ✗ | Admin devices: all. Others: no UI/SSH/DNS | ✓ except DNS bypass and ISP LAN (non-admin) |
+| **Mgmt** | ✗ | — | DNS, NTP | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | TCP 443 only |
+| **Servers** | ✗ | ✗ | — | Server only | Server only: 554/80/443 | ✗ | Server only | ✗ | ✓ | ✓ |
+| **IoT-Local** | ✗ | ✗ | DNS, NTP | — | ✗ | ✗ | ✗ | ✗ | DHCP, mDNS only | **✗ (logged)** |
+| **Cameras** | ✗ | ✗ | NTP | ✗ | — | ✗ | ✗ | ✗ | DHCP only | **✗ (logged)** |
+| **Work** | ✗ | ✗ | DNS, NTP | ✗ | ✗ | — | ✗ | ✗ | No UI/SSH/DNS | ✓ except ISP LAN |
+| **IoT-Cloud** | ✗ | ✗ | DNS, NTP | ✗ | ✗ | ✗ | — | ✗ | DHCP only | ✓ except DNS bypass and ISP LAN |
+| **Guest** (Hotspot) | Return only | ✗ | DNS, NTP | ✗ | ✗ | ✗ | ✗ | — | Built-in DHCP/DNS | ✓ after the portal click; no DNS bypass; no ISP LAN |
 
 ✗ means blocked by a default; only the cells that differ from a default have a policy in §9.4.
 
 ### 9.4 Final policy set
 
-23 baseline policies (Z1–Z22 and Z25). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
+30 baseline policies (Z1–Z22 and Z25–Z32). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
 
 | ID | Source zone (match) | Destination zone (match) | Protocol / ports | Action | Replaces | Reasoning |
 |---|---|---|---|---|---|---|
 | Z1 | Trusted | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Custom→custom is blocked by default; this is the only DNS path for household devices. |
 | Z2 | Mgmt | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Switches/APs resolve firmware hosts. |
 | Z3 | IoT-Local | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Local names (HA, `home.<domain>`) for wall panels and ESPHome; AdGuard's strict IoT profile logs everything. |
-| Z4 | Hotspot | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Guest, Work and IoT-Cloud get filtered DNS. One policy covers all three networks. |
+| Z4 | Hotspot | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Guests get filtered DNS. |
 | Z5 | Trusted | Servers: `SERVER` | TCP 443 | Allow | F4 | Caddy is the only HTTPS entry point; app ports stay closed. |
 | Z6 | Trusted | Servers: `NAS` | TCP 445 | Allow | F6 | SMB only; the NAS web UI goes through Caddy. |
 | Z7 | Trusted: `ADMIN_CLIENTS` | Servers | TCP 22 | Allow | F5 | Admin SSH to server, Pi and NAS. |
 | Z8 | Trusted | IoT-Local | Any | Allow | Matrix "Limited" | IoT still can't start connections back. Casting/AirPlay use many dynamic ports, so a port list is brittle and gives little security in this direction. Narrow it later if wanted. |
-| Z9 | Trusted | Hotspot: network IoT-Cloud | Any | Allow | Matrix "Limited" | Casting/control of the smart TV and appliances; Work and Guest stay unreachable. |
+| Z9 | Trusted | IoT-Cloud | Any | Allow | Matrix "Limited" | Casting/control of the smart TV and appliances; Work and Guest stay unreachable. |
 | Z10 | Servers: `SERVER` | IoT-Local | Any | Allow | F8 | Home Assistant control. Narrowed from the whole Servers network to the server, since the NAS and Pi don't need IoT access. |
-| Z11 | Servers: `SERVER` | Hotspot: network IoT-Cloud | Any | Allow | F8 | Same, for cloud devices. |
+| Z11 | Servers: `SERVER` | IoT-Cloud | Any | Allow | F8 | Same, for cloud devices. |
 | Z12 | Servers: `SERVER` | Cameras | TCP 554, 80, 443 | Allow | F7 | Frigate RTSP plus HTTP/ONVIF. Port 8000 (Hikvision SDK) dropped: Amcrest doesn't use it. Confirm the ONVIF port on the cameras. |
 | Z13 | Trusted: NOT `ADMIN_CLIENTS` | Gateway | TCP/UDP 22, 53, 80, 443, 853 | Block | F11, F2 (gateway part) | Custom→Gateway is allow-all, which exposes the UI and SSH. A port block (not an allowlist) keeps DHCP and mDNS working for everyone, while 53/853 closes the gateway-DNS bypass. Admin devices keep full access. |
 | Z14 | Trusted | External | TCP/UDP 53, 853 | Block + log | F2 | Forces AdGuard filtering. Covers IPv6, since no address object is used. |
-| Z15 | Hotspot: networks Guest, IoT-Cloud | External | TCP/UDP 53, 853 | Block + log | F2 | Same. **Work is exempt:** employer laptops often hard-code corporate DNS (Umbrella, Zscaler), and the Docker runbook already leaves Work unfiltered. |
+| Z15 | Hotspot | External | TCP/UDP 53, 853 | Block + log | F2 | Same, for guests. **Work has no such policy:** employer laptops often hard-code corporate DNS (Umbrella, Zscaler), and the Docker runbook already leaves Work unfiltered. |
 | Z16 | Trusted: NOT `ADMIN_CLIENTS` | External: `ISP_LAN` | Any | Block | F10 | The BGW320 is untrusted. Admins keep access for troubleshooting. |
-| Z17 | Hotspot | External: `ISP_LAN` | Any | Block | F10 | Guests, work and cloud devices have no reason to reach the ISP box. |
+| Z17 | Hotspot | External: `ISP_LAN` | Any | Block | F10 | Guests have no reason to reach the ISP box. |
 | Z18 | IoT-Local | External | Any | Block + log | F9 | No phone-home; IP version Both covers IPv6 (Matter devices get global addresses). |
 | Z19 | Cameras | External | Any | Block + log | F9 | Same. |
 | Z20 | IoT-Local | Gateway | TCP/UDP, ports NOT 67, 5353 | Block | New lockdown | Allowlist for untrusted devices: DHCP and mDNS proxy only, so no UI/SSH/DNS on the gateway. Limited to TCP/UDP so ICMPv6 (router/neighbor discovery) still works for IPv6. |
 | Z21 | Cameras | Gateway | TCP/UDP, ports NOT 67 | Block | New lockdown | DHCP only. |
 | Z22 | Mgmt | External | TCP/UDP, ports NOT 443 | Block | Mgmt "updates only" | Firmware downloads use HTTPS. Verify one switch and one AP update after enabling. |
 | Z25 | Cameras | Servers: `DNS_NODES` | UDP 123 | Allow | F3 | Cameras get time from chrony on the server/Pi; still no DNS (see §9.5). |
+| Z26 | Work | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | DNS and time; nothing else on Servers. |
+| Z27 | IoT-Cloud | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Same, for cloud devices. |
+| Z28 | Work | Gateway | TCP/UDP 22, 53, 80, 443, 853 | Block | New lockdown | Custom→Gateway is allow-all; this closes the UI, SSH and gateway DNS like Z13, leaving DHCP. |
+| Z29 | IoT-Cloud | Gateway | TCP/UDP, ports NOT 67 | Block | New lockdown | Allowlist for untrusted devices, like Z21: DHCP only. |
+| Z30 | IoT-Cloud | External | TCP/UDP 53, 853 | Block + log | F2 | Forces AdGuard filtering. A device that hard-codes DNS shows up here; add a per-device allow above this policy if it must. |
+| Z31 | Work | External: `ISP_LAN` | Any | Block | F10 | No reason to reach the ISP box. |
+| Z32 | IoT-Cloud | External: `ISP_LAN` | Any | Block | F10 | Same. |
 
 **Conditional (create disabled; enable when needed):**
 
@@ -271,7 +282,7 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | Z23 | IoT-Local: wall-panel IPs → Servers: `SERVER` | TCP 443 | Wall panels are deployed (HA through Caddy) |
 | Z24 | Trusted: `ADMIN_CLIENTS` → Mgmt | TCP 22 | Device recovery only (`set-inform`), then disable again |
 
-**If Match Opposite isn't available** for Z13, Z16, Z20, Z21 or Z22, replace each with an Allow for the exception placed *above* a Block for the rest (two policies each). Otherwise no zone pair mixes allows and blocks, so policy order doesn't matter.
+**If Match Opposite isn't available** for Z13, Z16, Z20, Z21, Z22 or Z29, replace each with an Allow for the exception placed *above* a Block for the rest (two policies each). Otherwise no zone pair mixes allows and blocks, so policy order doesn't matter.
 
 ### 9.5 Original policies dropped or covered by defaults
 
@@ -288,9 +299,10 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | Resolver recursion exception | Covered | Servers→External is allow-all and has no DNS-bypass block. |
 | DNS forwarding to gateway (`home.arpa`) | Covered | Servers→Gateway is allow-all. |
 | General internet allows | Covered | Custom/Hotspot→External defaults. |
+| Hotspot zone for Work and IoT-Cloud | Reverted | The Hotspot zone requires portal authorization before internet ("Block Unauthorized Traffic"), which headless devices can't pass. Both are custom zones now (Z26–Z32). |
 | WAN inbound deny | Covered | External defaults are return-only. |
 | Adoption ports (8080, 3478, 10001) | Covered | Mgmt→Gateway is allow-all. |
-| Guest isolation | Covered + setting | Hotspot→Hotspot is Block All between networks; Mead-Hall (Guest SSID) client isolation covers clients within one network. |
+| Guest isolation | Covered + setting | Hotspot defaults keep guests out of every other zone; Mead-Hall (Guest SSID) client isolation covers clients within the Guest network. |
 
 **No inbound port forwards exist.**
 **mDNS proxy:** Trusted ↔ IoT-Local only (a gateway setting, not a policy).

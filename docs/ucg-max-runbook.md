@@ -205,14 +205,15 @@ The zones, the defaults relied on and the final policy set (Z1–Z24) are in
 from that table; don't keep a second copy here.
 
 1. Screenshot the default zone matrix and record the UniFi Network version.
-2. Create custom zones **Trusted, Mgmt, Servers, IoT-Local, Cameras** and assign
-   one network to each. Assign **Guest, Work and IoT-Cloud to Hotspot**. Leave
+2. Create custom zones **Trusted, Mgmt, Servers, IoT-Local, Cameras, Work,
+   IoT-Cloud** and assign one network to each. Assign only **Guest** to
+   Hotspot: Hotspot requires a portal click before internet. Leave
    Internal, VPN and DMZ without production networks.
 3. Screenshot the matrix again and compare it with architecture §9.1. Every
    custom zone should show Block All to the other internal zones and Allow All
    to External and Gateway. If any cell differs, **stop** and update §9.4
    before continuing.
-4. Create the address/port objects from section 3, then Z1–Z22 and Z25 in ID order.
+4. Create the address/port objects from section 3, then Z1–Z22 and Z25–Z32 in ID order.
    Create Z13, Z23 and Z24 **disabled**; Z13 is enabled one lease time after
    the DNS cutover (section 6, step 5). Enable logging on Z14, Z15, Z18 and Z19.
 5. Before enabling Z13, confirm the admin laptop's address is in `ADMIN_CLIENTS`
@@ -274,7 +275,7 @@ TLS interception.
 
 ## 7. Configure Wi-Fi and mDNS
 
-Create these SSIDs with distinct strong passwords; no captive portal or PPSK:
+Create these SSIDs with distinct strong passwords and no PPSK. Only Mead-Hall shows a portal (the Hotspot zone requires a click-through):
 
 | SSID | Network | Bands | Security |
 |---|---|---|---|
