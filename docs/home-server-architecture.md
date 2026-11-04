@@ -178,7 +178,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | Setting | Value |
 |---|---|
 | Upstream | Local Unbound only |
-| Private reverse DNS / conditional | `[/home.arpa/]10.0.10.1` and private reverse zones → gateway |
+| Private reverse DNS / conditional | `[/home.arpa/]10.0.40.1` and private reverse zones → gateway (its Servers-VLAN address) |
 | Rewrite | `*.home.<domain>` → 10.0.40.10 |
 | Clients | Defined by subnet: IoT strict · Trusted standard · Kids family filters + blocked services + safe search · Guest light · Work minimal |
 | Cloud features | Browsing-security and parental-control **web services off** (they query AdGuard servers); use local lists |

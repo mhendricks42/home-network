@@ -246,7 +246,8 @@ Boundaries the zone firewall can't enforce:
    query **each** resolver for public names, a known blocked name, DHCP names,
    reverse lookups and the configured HTTPS wildcard (once the domain exists).
 2. The AdGuard template forwards `home.arpa` and private PTR lookups to
-   `10.0.10.1`. Test that gateway directly from a resolver host and confirm it
+   `10.0.40.1`, the gateway's Servers-VLAN address. (The gateway doesn't answer
+   DNS from VLAN 40 on its Mgmt address `10.0.10.1`.) Test it directly from a resolver host and confirm it
    answers locally for reservations in all configured DHCP domains. Do not
    configure gateway DNS upstream exclusively to AdGuard if unknown local
    names would loop back. Fix forwarding/records before claiming this works.

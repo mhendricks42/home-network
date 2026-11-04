@@ -13,11 +13,12 @@ dns:
   port: 53
   upstream_dns:
     - 172.29.0.2:5335
-    - "[/home.arpa/]10.0.10.1"
+    # The gateway answers DNS on its Servers-VLAN address, not on 10.0.10.1, for queries from VLAN 40.
+    - "[/home.arpa/]10.0.40.1"
   bootstrap_dns: []
   fallback_dns: []
   use_private_ptr_resolvers: true
-  local_ptr_upstreams: [10.0.10.1]
+  local_ptr_upstreams: [10.0.40.1]
   enable_dnssec: true
   # Off: only our VLANs reach the resolvers, and a /24-wide limit would starve busy VLANs.
   ratelimit: 0
