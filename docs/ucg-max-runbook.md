@@ -25,8 +25,8 @@ Do not cut over household devices until these gates pass:
 - Proxy acceptance checks need Caddy's `foxhound.nexus` certificate first
   (Docker runbook, Caddy section).
 
-Wi-Fi decision: separate **Work** and **Things-Cloud** SSIDs replace PPSK to
-preserve WPA3/6 GHz on Home. PPSK is not compatible with WPA3/6 GHz. Do not
+Wi-Fi decision: separate Work (**The-Forge**) and IoT-Cloud (**Niflheim**) SSIDs replace PPSK to
+preserve WPA3/6 GHz on the Trusted SSID (**Mostly-Harmless**). PPSK is not compatible with WPA3/6 GHz. Do not
 implement the old three-SSID/PPSK plan.
 
 ## 1. Prepare a recovery path and initialize locally
@@ -278,21 +278,21 @@ Create these SSIDs with distinct strong passwords; no captive portal or PPSK:
 
 | SSID | Network | Bands | Security |
 |---|---|---|---|
-| Home | Trusted 20 | 2.4/5/6 GHz (6 GHz on downstairs U7 Pro only) | WPA3 |
-| Work | Work 30 | 2.4/5 GHz | WPA2/WPA3 transition |
-| Things | IoT-Local 50 | 2.4 GHz initially | WPA2/WPA3 transition |
-| Things-Cloud | IoT-Cloud 55 | 2.4 GHz initially | WPA2/WPA3 transition |
-| Guest | Guest 70 | 2.4/5 GHz | WPA2/WPA3 transition |
+| Mostly-Harmless | Trusted 20 | 2.4/5/6 GHz (6 GHz on downstairs U7 Pro only) | WPA3 |
+| The-Forge | Work 30 | 2.4/5 GHz | WPA2/WPA3 transition |
+| Alfheim | IoT-Local 50 | 2.4 GHz initially | WPA2/WPA3 transition |
+| Niflheim | IoT-Cloud 55 | 2.4 GHz initially | WPA2/WPA3 transition |
+| Mead-Hall | Guest 70 | 2.4/5 GHz | WPA2/WPA3 transition |
 
 Verify the installed AP/firmware supports this SSID count on each band. Do not
-downgrade Home's 6 GHz security for an older client; record any needed
-compatibility decision first. Add 5 GHz to Things only for a device that needs it.
+downgrade Mostly-Harmless's 6 GHz security for an older client; record any needed
+compatibility decision first. Add 5 GHz to Alfheim only for a device that needs it.
 
 - Enable Guest Wi-Fi client isolation and apply the chosen per-client rate
   limit. Verify Guest isolation across APs and wired ports as well as within
   one AP; use supported switch/network isolation for any wired Guest ports.
   Keep such ports disabled until that test passes.
-- Print the Guest QR code only after confirming its VLAN mapping.
+- Print the Mead-Hall (Guest) QR code only after confirming its VLAN mapping.
 - Disable broad automatic mDNS reflection. Select **Trusted and IoT-Local
   only** in the gateway mDNS proxy. Exclude Mgmt, Work, Servers, IoT-Cloud,
   Cameras and Guest. Verify both permitted and forbidden discovery.

@@ -172,11 +172,11 @@ The UniFi default `192.168.1.0/24` is replaced **before** adopting devices (avoi
 
 | SSID | Bands | Security | Maps to | Notes |
 |---|---|---|---|---|
-| **Home** | 2.4 / 5 / 6 GHz (6 GHz downstairs only) | WPA3 | VLAN 20 | No PPSK; preserves 6 GHz |
-| **Work** | 2.4 / 5 GHz | WPA2/WPA3 transition | VLAN 30 | Separate key and SSID |
-| **Things** | 2.4 GHz (+5 GHz if needed) | WPA2/WPA3 transition | VLAN 50 | Many IoT devices are 2.4 GHz WPA2-only |
-| **Things-Cloud** | 2.4 GHz (+5 GHz if needed) | WPA2/WPA3 transition | VLAN 55 | Separate quarantine SSID/key |
-| **Guest** | 2.4 / 5 GHz | WPA2/3 | VLAN 70 | Client isolation; printed QR code |
+| **Mostly-Harmless** | 2.4 / 5 / 6 GHz (6 GHz downstairs only) | WPA3 | VLAN 20 | No PPSK; preserves 6 GHz |
+| **The-Forge** | 2.4 / 5 GHz | WPA2/WPA3 transition | VLAN 30 | Separate key and SSID |
+| **Alfheim** | 2.4 GHz (+5 GHz if needed) | WPA2/WPA3 transition | VLAN 50 | Many IoT devices are 2.4 GHz WPA2-only |
+| **Niflheim** | 2.4 GHz (+5 GHz if needed) | WPA2/WPA3 transition | VLAN 55 | Separate quarantine SSID/key |
+| **Mead-Hall** | 2.4 / 5 GHz | WPA2/3 | VLAN 70 | Client isolation; printed QR code |
 
 BGW320 Wi-Fi disabled. Cameras and servers wired only.
 PPSK is not used: it is incompatible with WPA3/6 GHz. Separate SSIDs retain
@@ -219,7 +219,7 @@ Assumed for **new custom zones** (third-party sources; Ubiquiti doesn't document
 | Internal | Built-in | None | Allow-all defaults; kept empty. If the Default network is not used as Mgmt, leave it here with no ports or clients. |
 | VPN, DMZ | Built-in | None | No UniFi VPN server (Tailscale runs on the server host) and no DMZ. |
 
-Within one network, Wi-Fi client isolation (Guest SSID) and the mDNS proxy are network/Wi-Fi settings, not zone policies.
+Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS proxy are network/Wi-Fi settings, not zone policies.
 
 ### 9.3 Effective access (source → destination)
 
@@ -290,7 +290,7 @@ Within one network, Wi-Fi client isolation (Guest SSID) and the mDNS proxy are n
 | General internet allows | Covered | Custom/Hotspot→External defaults. |
 | WAN inbound deny | Covered | External defaults are return-only. |
 | Adoption ports (8080, 3478, 10001) | Covered | Mgmt→Gateway is allow-all. |
-| Guest isolation | Covered + setting | Hotspot→Hotspot is Block All between networks; Guest SSID client isolation covers clients within one network. |
+| Guest isolation | Covered + setting | Hotspot→Hotspot is Block All between networks; Mead-Hall (Guest SSID) client isolation covers clients within one network. |
 
 **No inbound port forwards exist.**
 **mDNS proxy:** Trusted ↔ IoT-Local only (a gateway setting, not a policy).
@@ -520,7 +520,8 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | D-N8 | Backup WAN | None; hotspot procedure in runbook | 2026-10-18 |
 | D-N9 | UniFi config management | Manual now; OpenTofu `ubiquiti-community/unifi` future | 2026-10-18 |
 | D-N10 | Cameras | 5× Amcrest 5MP | 2026-10-18 |
-| D-N11 | Wi-Fi VLAN assignment | Separate Work and Things-Cloud SSIDs, no PPSK; retain WPA3/6 GHz Home | 2026-10-19 |
+| D-N11 | Wi-Fi VLAN assignment | Separate Work and IoT-Cloud SSIDs, no PPSK; retain WPA3/6 GHz on the Trusted SSID | 2026-10-19 |
+| D-N14 | SSID names | Mostly-Harmless (Trusted), The-Forge (Work), Alfheim (IoT-Local), Niflheim (IoT-Cloud), Mead-Hall (Guest) | 2026-11-04 |
 | D-N12 | Domain and DNS host | `foxhound.nexus`, Cloudflare Registrar + DNS (closes former P2) | 2026-11-01 |
 | D-N13 | Time service | chrony on the server and Pi hosts serves NTP to all VLANs (UCG Max has no LAN NTP server) | 2026-11-01 |
 | — | Raspberry Pi | Pi 3B+ (owned) | 2026-10-18 |
