@@ -10,6 +10,11 @@ The network ([UCG Max runbook](ucg-max-runbook.md)) and this runbook depend on
 each other. Do the steps below **in order**; each one lists what must already
 be done. "UCG §n" is the UCG Max runbook; "§n" is this runbook.
 
+**vidar (the Pi) is installed natively without Docker:** follow
+[vidar baseline](vidar-baseline.md) for it. Pi steps below that use Docker
+(`compose.pi.yml`, `prepare.sh pi`, `start.sh pi`, the Pi `DOCKER-USER` rules)
+are superseded by that document.
+
 ### Prerequisite order
 
 **A. Network foundation**
