@@ -297,7 +297,7 @@ local stratum 10 orphan
 sudo systemctl restart chrony
 chronyc sources -v      # time.cloudflare.com and the pool reachable (^* or ^+)
 chronyc tracking        # Leap status: Normal
-chronyc -N authdata     # time.cloudflare.com shows NTS
+sudo chronyc -N authdata  # time.cloudflare.com shows NTS (needs root)
 ```
 
 NTS (authenticated NTP) needs outbound TCP 4460 as well as UDP 123. The
