@@ -227,6 +227,11 @@ the host ufw rules, step B6), and to admins over Tailscale (ACL).
 Create `%USERPROFILE%\.ssh\config` (Windows) or `~/.ssh/config`:
 
 ```text
+# Keep idle sessions alive through Wi-Fi and firewall idle timeouts.
+Host *
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
 Host oden
   HostName 10.0.40.10
   User matt
