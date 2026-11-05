@@ -201,6 +201,8 @@ PermitRootLogin no
 AllowUsers matt
 MaxAuthTries 3
 X11Forwarding no
+ClientAliveInterval 60
+ClientAliveCountMax 3
 ```
 
 ```bash
