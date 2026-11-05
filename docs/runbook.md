@@ -752,28 +752,149 @@ For base-service onboarding without HTTPS, use SSH loopback tunnels such as
 `ssh -L 8123:127.0.0.1:8123 ADMIN@10.0.40.10`.
 For Z-Wave authentication setup use a separate 8091 tunnel before proxy access.
 
-Acceptance checks on the real targets:
+Acceptance checks on the real targets. Each says **where** to run it and what
+counts as a pass. "Laptop" means a Trusted admin device using AdGuard for DNS.
 
-1. `docker compose -f compose.server.yml --profile '*' ps` and the Pi equivalent:
-   check every enabled service, then inspect its logs for startup/config errors.
-2. Query each DNS IP with both UDP and TCP; test public recursion, a blocked
-   domain, DHCP `home.arpa`, and wildcard rewrites. Verify DNSSEC with a known
-   broken-signed domain. Stop server DNS and confirm clients still use the Pi.
-3. Validate Caddy with `docker compose -f compose.server.yml --profile https exec
-   caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`.
-   Test every configured HTTPS name and confirm unconfigured names return 404.
-4. From another LAN host, confirm only DNS/443 are reachable on the server;
-   MQTT/5000/5335/application dashboards must not be reachable directly.
-   Confirm Kuma 3001 is reachable from the server but denied from clients.
-5. Verify HA proxy login, MQTT authentication/ACL rejection, Zigbee closed
-   pairing, Z-Wave S2, ESPHome encrypted API, GPU detection, all five camera
-   recordings, and playback. Check free space and memory under load.
-6. Create/login to Kuma **before granting its backend firewall access broadly**.
-   Add server/gateway/internet/DNS/HTTPS monitors and a notification destination.
-   Simulate server failure; verify an alert arrives independently from the Pi.
-7. Only then change DHCP to advertise both DNS addresses (step D3). After
-   NUT and backups exist (E2, E3), verify reboot, missing-disk behavior,
-   power-loss shutdown, backups and a restore (E4).
+**1. Everything is running** (oden, then vidar)
+
+```bash
+# oden: every container Up (healthy where it has a health check)
+sudo docker compose -f compose.server.yml --profile '*' ps
+sudo docker compose -f compose.server.yml --profile '*' logs --since 15m 2>&1 | grep -iE 'error|fatal|denied|refused' | head -40
+# vidar (native, no Docker): every unit "active (running)"
+systemctl --no-pager status chrony unbound AdGuardHome uptime-kuma | grep -E '●|Active:'
+sudo journalctl -b -p err --no-pager | tail -20
+```
+
+Pass: nothing restarting or exited, and no repeating errors. One-off
+startup warnings are fine.
+
+**2. DNS on both nodes** (laptop, with `dig` from `dnsutils`). Run once with
+`S=10.0.40.10`, then with `S=10.0.40.11`:
+
+```bash
+S=10.0.40.10
+dig @$S example.com +short; dig @$S example.com +short +tcp   # an IP both times
+dig @$S ad.doubleclick.net +short                             # 0.0.0.0 (blocked)
+dig @$S "$(hostname).home.arpa" +short                        # this laptop's IP
+dig @$S -x <laptop IP> +short                                 # its name (if the gateway publishes PTRs)
+dig @$S anything.home.foxhound.nexus +short                   # 10.0.40.10
+dig @$S dnssec-failed.org | grep status                       # SERVFAIL
+```
+
+Failover: with the laptop using both resolvers, stop AdGuard on oden
+(`sudo docker compose -f compose.server.yml stop adguard`), then
+`ipconfig /flushdns` and `Resolve-DnsName example.com -DnsOnly` in
+PowerShell still answer. Start it again, then repeat with vidar
+(`sudo systemctl stop AdGuardHome` / `start`). Never stop both.
+
+**3. Caddy** (oden, then laptop)
+
+```bash
+sudo docker compose -f compose.server.yml --profile https exec caddy \
+  caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile      # "Valid configuration"
+```
+
+```bash
+# laptop: every name answers over trusted HTTPS; the unknown one gets 404
+for n in ha frigate z2m zwave esphome dns alerts git nas unifi status nope; do
+  printf '%-8s ' $n; curl -s -o /dev/null -w '%{http_code}\n' https://$n.home.foxhound.nexus/
+done
+```
+
+Pass: no certificate errors; `200`, `302` or `401` (ESPHome's proxy login)
+for configured names; `502` only for a profile you haven't started; `404`
+for `nope`.
+
+**4. Nothing else is reachable** (laptop, then oden)
+
+```bash
+# laptop → oden: only 53 and 443 open (22 too from an admin device)
+for p in 22 53 443 1883 2019 3000 5000 5335 6052 8080 8081 8091 8123 8971 20211; do
+  nc -z -w 3 10.0.40.10 $p && echo "$p open" || echo "$p closed"
+done
+# laptop → vidar: 53 open, 3001 closed (22 from an admin device)
+for p in 22 53 3001 5335 8081; do nc -z -w 3 10.0.40.11 $p && echo "$p open" || echo "$p closed"; done
+```
+
+```bash
+# oden → vidar: Kuma reachable from the server only
+curl -s -o /dev/null -w '%{http_code}\n' http://10.0.40.11:3001/   # 200 or 302
+```
+
+Then the same-subnet test in **Firewall prerequisites, step 3** (a laptop on a
+temporary Servers-VLAN port), because the gateway can't filter inside VLAN 40.
+
+**5. Each service works** (oden unless noted)
+
+| Check | How | Pass |
+|---|---|---|
+| HA login through Caddy | Laptop: `https://ha.home.foxhound.nexus`, log in | Dashboard loads; no `400` |
+| MQTT rejects anonymous clients | `sudo docker compose -f compose.server.yml exec mqtt mosquitto_sub -h localhost -t '#' -C 1 -W 3` | `not authorised` |
+| MQTT ACL | See below | Only the allowed publish arrives |
+| Zigbee pairing closed | Z2M UI (`z2m.`) header | *Permit join* is off |
+| Z-Wave S2 | Z-Wave JS UI (`zwave.`) → Control Panel → each secure device | Security shows **S2** (not S0 or None) |
+| ESPHome encrypted API | HA → ESPHome integration; device YAML has `api: encryption: key:` | Device online in HA |
+| GPU detection | Frigate UI → System → Detectors | `ov` detector listed with an inference speed (tens of ms) |
+| Recordings | Frigate UI → Review/History, each camera | Every camera has segments from the last hour |
+| Playback | Open one recording per camera | Plays without errors |
+| Resources | `df -h / /srv /mnt/recordings; free -h; sudo docker stats --no-stream` with cameras running | Disks under 80 %; memory not swapping heavily |
+
+MQTT ACL test: open two SSH sessions on oden. Passwords are read silently,
+so they don't land in shell history.
+
+```bash
+# session A: listen as frigate
+read -rs P; sudo docker compose -f compose.server.yml exec -T mqtt \
+  mosquitto_sub -h localhost -u frigate -P "$P" -t 'frigate/#' -v
+# session B: zigbee2mqtt may NOT write frigate topics; homeassistant may
+read -rs P; sudo docker compose -f compose.server.yml exec -T mqtt \
+  mosquitto_pub -h localhost -u zigbee2mqtt -P "$P" -t frigate/test/set -m blocked
+read -rs P; sudo docker compose -f compose.server.yml exec -T mqtt \
+  mosquitto_pub -h localhost -u homeassistant -P "$P" -t frigate/test/set -m allowed
+```
+
+Pass: session A prints only `frigate/test/set allowed`. Mosquitto drops a
+forbidden publish silently, so absence is the result.
+
+**6. Uptime Kuma alerts independently of oden** (vidar)
+
+1. Open `https://status.home.foxhound.nexus` and **create the admin account
+   straight away**: the first visitor becomes admin.
+2. Kuma resolves names through vidar's own resolver (the gateway), which
+   doesn't know the `home` names. Add the names it monitors to vidar's
+   `/etc/hosts`:
+   ```bash
+   echo '10.0.40.10 ha.home.foxhound.nexus git.home.foxhound.nexus' | sudo tee -a /etc/hosts
+   ```
+3. Add monitors:
+
+   | Monitor | Type | Target |
+   |---|---|---|
+   | Server | Ping | `10.0.40.10` |
+   | Gateway | Ping | `10.0.40.1` |
+   | Internet | Ping | `1.1.1.1` |
+   | DNS (oden) | DNS | resolver `10.0.40.10`, name `example.com` |
+   | DNS (vidar) | DNS | resolver `10.0.40.11`, name `example.com` |
+   | Home Assistant | HTTP(s) | `https://ha.home.foxhound.nexus` |
+   | Certificate | HTTP(s) | same, with *Certificate Expiry Notification* on |
+
+4. Add a notification that **doesn't depend on oden** (for example Pushover,
+   ntfy or email), not the HA webhook. Send its test message.
+5. Simulate a server failure: unplug oden's network cable (or, from its
+   console, `sudo ip link set enp3s0 down`). Within a few minutes the phone
+   gets the *Server* and *Home Assistant* alerts from vidar, and DNS keeps
+   working through vidar. Reconnect and confirm the *up* alerts.
+
+**7. Cut over, then the final checks.** Only now change DHCP to advertise both
+resolvers (step D3). After NUT and backups exist (E2, E3), run E4:
+
+| Check | How | Pass |
+|---|---|---|
+| Reboot | `sudo reboot` oden, then vidar | Checks 1–3 pass again without manual fixes |
+| Missing recording disk | `sudo docker compose -f compose.server.yml --profile cameras stop frigate`, `sudo umount /mnt/recordings`, then `sudo sh scripts/start.sh server cameras` | `start.sh` refuses with *Recording disk is not mounted*; nothing is written to the system disk. Remount and start again |
+| Power loss | Unplug the UPS from the wall (E2's NUT setup) | Hosts shut down cleanly before the battery runs out and come back when power returns |
+| Backup and restore | Restore one folder (e.g. `/srv/adguard/config`) from the backup into a temporary directory and compare with `diff -r` | No differences |
 
 Kuma monitors, NetAlertX integrations, HA integrations, Z-Wave keys/auth and
 zones/masks need real devices/accounts and remain explicit first-run tasks,
