@@ -55,9 +55,19 @@ swapon --show                          # what swap exists
 systemctl list-units --all '*swap*'    # which unit provides it
 ```
 
-Only `/dev/zram0` listed: swap is compressed RAM, which causes no SD writes
-and helps a 1 GB Pi. Keep it. A file or partition on the card listed: stop and
-disable the unit that provides it (shown by the second command).
+Raspberry Pi OS's `rpi-swap` defaults to **zram + file**: compressed RAM
+(`/dev/zram0`) that can push idle pages to `/var/swap` on the card. Switch to
+zram only, which never writes to the card and is plenty for this Pi:
+
+```bash
+sudo mkdir -p /etc/rpi/swap.conf.d
+printf '[Main]\nMechanism=zram\n' | sudo tee /etc/rpi/swap.conf.d/90-zram-only.conf
+sudo reboot
+```
+
+After the reboot, `swapon --show` lists only `/dev/zram0`,
+`rpi-setup-loop@var-swap` is inactive, and `/var/swap` is gone (removed
+automatically).
 
 After the reboot, check the PoE HAT fan works (`vcgencmd measure_temp` stays
 well under 70 °C under load).
