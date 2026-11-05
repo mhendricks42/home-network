@@ -51,9 +51,13 @@ dtoverlay=disable-bt
 ```bash
 sudo sed -i 's/^#\?Storage=.*/Storage=volatile/' /etc/systemd/journald.conf
 sudo systemctl restart systemd-journald
-swapon --show        # if a swap file on the SD card is listed, disable it:
-                     # sudo systemctl disable --now dphys-swapfile
+swapon --show                          # what swap exists
+systemctl list-units --all '*swap*'    # which unit provides it
 ```
+
+Only `/dev/zram0` listed: swap is compressed RAM, which causes no SD writes
+and helps a 1 GB Pi. Keep it. A file or partition on the card listed: stop and
+disable the unit that provides it (shown by the second command).
 
 After the reboot, check the PoE HAT fan works (`vcgencmd measure_temp` stays
 well under 70 °C under load).
