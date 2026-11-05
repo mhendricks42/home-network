@@ -609,11 +609,25 @@ local AdGuard rewrite answers for `*.home.foxhound.nexus`, and the Cloudflare
 module fails with `expected 1 zone, got 0` if it asks AdGuard. The Servers zone
 allows outbound DNS (architecture §9.5), so no firewall change is needed.
 
-Create the root-readable Caddy import file `/srv/caddy/config/esphome-users`
+Create the root-readable Caddy import file `/srv/caddy/config/proxy-users`
 containing `admin BCRYPT_HASH` on one line. Generate the hash with the
-interactive `caddy hash-password` command above. ESPHome is authenticated at
-the proxy because it has no login of its own. Every other route uses its app's
-login. NetAlertX can't sit behind proxy Basic auth (its UI sends its own
+interactive `caddy hash-password` command above. ESPHome and ErsatzTV are
+authenticated at the proxy because they have no login of their own. Every other
+route uses its app's login.
+
+**Media stack routes** (`qbittorrent.`, `sabnzbd.`, `prowlarr.`, `sonarr.`,
+`radarr.`, `bazarr.`, `jellyfin.`, `seerr.`, `ersatztv.`) go to `MEDIA_IP`
+(default the NAS, `10.0.40.20`), which must be the media stack's `BIND_ADDR`.
+Set these in the apps so they work behind the proxy:
+
+| App | Setting |
+|---|---|
+| qBittorrent | Web UI → enable **reverse proxy support**, trusted proxy `10.0.40.10`; add `qbittorrent.home.foxhound.nexus` to **Server domains** |
+| SABnzbd | Config → Special → add `sabnzbd.home.foxhound.nexus` to `host_whitelist`; turn on a username/password |
+| Bazarr, Prowlarr, Sonarr, Radarr | Settings → General → **Authentication: Forms**, required for all addresses |
+| Jellyfin | Dashboard → Networking → **Known proxies** `10.0.40.10` |
+
+If the NAS firewall is on, allow those ports from `10.0.40.10` only. NetAlertX can't sit behind proxy Basic auth (its UI sends its own
 `Authorization` header), so turn on its password under **Settings → Security**
 and change the default `123456`.
 

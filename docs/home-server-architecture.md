@@ -189,7 +189,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 
 - Image built with the `caddy-dns/cloudflare` plugin; DNS-01 through a Cloudflare API token scoped to the `foxhound.nexus` zone (setup in the Docker runbook).
 - Wildcard `*.home.<domain>` via DNS-01: no inbound ports; individual names never published.
-- Routes: `ha.` → 8123 · `frigate.` → 8971 · `z2m.` → 8080 · `zwave.` → 8091 · `esphome.` → 6052 · `dns.` → AdGuard · `alerts.` → NetAlertX · `git.` → Forgejo · `unifi.` → gateway 10.0.40.1 · `nas.` → NAS :9443 · `status.` → Uptime Kuma (Pi).
+- Routes: `ha.` → 8123 · `frigate.` → 8971 · `z2m.` → 8080 · `zwave.` → 8091 · `esphome.` → 6052 · `dns.` → AdGuard · `alerts.` → NetAlertX · `git.` → Forgejo · `unifi.` → gateway 10.0.40.1 · `nas.` → NAS :9443 · `status.` → Uptime Kuma (Pi) · media stack on the NAS: `qbittorrent.` `sabnzbd.` `prowlarr.` `sonarr.` `radarr.` `bazarr.` `jellyfin.` `seerr.` `ersatztv.`.
 
 ### 7.3 Home Assistant (Container)
 

@@ -4,6 +4,13 @@
 	admin localhost:2019
 }
 
+(media) {
+	@{args[0]} host {args[0]}.home.{$HOME_DOMAIN}
+	handle @{args[0]} {
+		reverse_proxy {$MEDIA_IP}:{args[1]}
+	}
+}
+
 *.home.{$HOME_DOMAIN} {
 	tls {
 		dns {$DNS_PROVIDER} {env.DNS_API_TOKEN}
@@ -36,7 +43,7 @@
 	handle @esphome {
 		# ESPHome's dashboard must not be anonymous, even on the LAN.
 		basic_auth {
-			import /etc/caddy/esphome-users
+			import /etc/caddy/proxy-users
 		}
 		reverse_proxy 127.0.0.1:6052
 	}
@@ -78,6 +85,25 @@
 	handle @status {
 		reverse_proxy {$PI_IP}:3001
 	}
+
+	# Media stack on the NAS. Each app keeps its own login, except ErsatzTV,
+	# which has none and gets the proxy login.
+	import media qbittorrent 8080
+	import media sabnzbd 8081
+	import media prowlarr 9696
+	import media sonarr 8989
+	import media radarr 7878
+	import media bazarr 6767
+	import media jellyfin 8096
+	import media seerr 5055
+	@ersatztv host ersatztv.home.{$HOME_DOMAIN}
+	handle @ersatztv {
+		basic_auth {
+			import /etc/caddy/proxy-users
+		}
+		reverse_proxy {$MEDIA_IP}:8409
+	}
+
 	handle {
 		respond "Unknown service" 404
 	}

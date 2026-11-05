@@ -48,9 +48,10 @@ services:
       DNS_PROVIDER: ${DNS_PROVIDER:-}
       DNS_API_TOKEN: ${DNS_API_TOKEN:-}
       PI_IP: ${PI_IP:-10.0.40.11}
+      MEDIA_IP: ${MEDIA_IP:-10.0.40.20}
     volumes:
       - ./services/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ${DATA_ROOT:-/srv}/caddy/config/esphome-users:/etc/caddy/esphome-users:ro
+      - ${DATA_ROOT:-/srv}/caddy/config/proxy-users:/etc/caddy/proxy-users:ro
       - ${DATA_ROOT:-/srv}/caddy/data:/data
       - ${DATA_ROOT:-/srv}/caddy/config:/config
 
