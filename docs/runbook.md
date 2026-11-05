@@ -96,7 +96,7 @@ Store these in Dashlane before you start:
 | Dashlane item | Type | Content |
 |---|---|---|
 | `SSH passphrase – <device>` | Password | Generated passphrase (Dashlane generator, 24+ characters), one per admin device |
-| `sudo – oden` / `sudo – pi` | Password | Your Linux user's password on each host (used for `sudo`, not SSH) |
+| `sudo – oden` / `sudo – vidar` | Password | Your Linux user's password on each host (used for `sudo`, not SSH) |
 | `SSH host keys` | Secure note | Each host's key fingerprint, recorded from the console (step 2) |
 
 #### 1. Create a key on each admin device
@@ -186,7 +186,7 @@ Host oden
   IdentityFile ~/.ssh/id_ed25519
   IdentitiesOnly yes
 
-Host pi
+Host vidar
   HostName 10.0.40.11
   User matt
   IdentityFile ~/.ssh/id_ed25519
@@ -203,10 +203,11 @@ Host oden-tunnels
   LocalForward 8081 127.0.0.1:8081
 ```
 
-Then `ssh oden`, `ssh pi`, or `ssh oden-tunnels` (and browse to
+Then `ssh oden`, `ssh vidar`, or `ssh oden-tunnels` (and browse to
 `http://localhost:8123`, `:8091` or `:8081`). The same entries work away from
 home over Tailscale, because the server advertises `10.0.40.10/32`. The Pi is
-reached from the server: `ssh -J oden pi`.
+reached from the server: `ssh -J oden vidar`. Host names follow
+[naming conventions](naming-conventions.md).
 
 For `sudo`, paste the host's password from Dashlane.
 
