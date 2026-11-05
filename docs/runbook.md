@@ -609,10 +609,12 @@ local AdGuard rewrite answers for `*.home.foxhound.nexus`, and the Cloudflare
 module fails with `expected 1 zone, got 0` if it asks AdGuard. The Servers zone
 allows outbound DNS (architecture §9.5), so no firewall change is needed.
 
-Create the root-readable Caddy import file `/srv/caddy/config/proxy-users`
-containing `admin BCRYPT_HASH` on one line. Generate the hash with the
-interactive `caddy hash-password` command above. ESPHome and ErsatzTV are
-authenticated at the proxy because they have no login of their own. Every other
+Create two root-readable Caddy import files, `/srv/caddy/config/esphome-users`
+and `/srv/caddy/config/ersatztv-users`, each containing `admin BCRYPT_HASH` on
+one line. Generate each hash with the interactive `caddy hash-password` command
+above, using a **different** password for each (ESPHome's dashboard can flash
+device firmware; don't let a leaked TV password open it). ESPHome and ErsatzTV
+are authenticated at the proxy because they have no login of their own. Every other
 route uses its app's login.
 
 **Media stack routes** (`qbittorrent.`, `sabnzbd.`, `prowlarr.`, `sonarr.`,

@@ -43,7 +43,7 @@
 	handle @esphome {
 		# ESPHome's dashboard must not be anonymous, even on the LAN.
 		basic_auth {
-			import /etc/caddy/proxy-users
+			import /etc/caddy/esphome-users
 		}
 		reverse_proxy 127.0.0.1:6052
 	}
@@ -99,7 +99,7 @@
 	@ersatztv host ersatztv.home.{$HOME_DOMAIN}
 	handle @ersatztv {
 		basic_auth {
-			import /etc/caddy/proxy-users
+			import /etc/caddy/ersatztv-users
 		}
 		reverse_proxy {$MEDIA_IP}:8409
 	}

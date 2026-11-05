@@ -51,7 +51,8 @@ services:
       MEDIA_IP: ${MEDIA_IP:-10.0.40.20}
     volumes:
       - ./services/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ${DATA_ROOT:-/srv}/caddy/config/proxy-users:/etc/caddy/proxy-users:ro
+      - ${DATA_ROOT:-/srv}/caddy/config/esphome-users:/etc/caddy/esphome-users:ro
+      - ${DATA_ROOT:-/srv}/caddy/config/ersatztv-users:/etc/caddy/ersatztv-users:ro
       - ${DATA_ROOT:-/srv}/caddy/data:/data
       - ${DATA_ROOT:-/srv}/caddy/config:/config
 
