@@ -698,8 +698,23 @@ controller firmware can be enforced by Compose; verify firmware 7.22.1+.
 
 ### Cameras (`cameras`)
 
-Mount the recording disk at `/mnt/recordings` using its UUID. Create a marker
-**only on the mounted disk**:
+Mount the recording disk at `/mnt/recordings` using its UUID, so it mounts
+before Docker at boot but a missing disk never stops the server from booting:
+
+```bash
+sudo blkid                                   # note the disk's UUID and TYPE
+sudo mkdir -p /mnt/recordings
+echo 'UUID=YOUR-UUID /mnt/recordings ext4 defaults,nofail,x-systemd.device-timeout=30s 0 2' | sudo tee -a /etc/fstab
+sudo mkdir -p /etc/systemd/system/docker.service.d
+printf '[Unit]\nAfter=mnt-recordings.mount\n' | sudo tee /etc/systemd/system/docker.service.d/recordings.conf
+sudo systemctl daemon-reload && sudo mount -a && mountpoint /mnt/recordings
+```
+
+`nofail` lets the server (and its DNS) boot without the disk; `After=` only
+orders Docker behind the mount, it doesn't make Docker depend on it. Use the
+TYPE `blkid` shows if it isn't `ext4`.
+
+Create a marker **only on the mounted disk**:
 
 ```bash
 mountpoint -q /mnt/recordings && sudo touch /mnt/recordings/.homelab-recording-volume
@@ -708,9 +723,8 @@ mountpoint -q /mnt/recordings && sudo touch /mnt/recordings/.homelab-recording-v
 `start.sh` rejects an unmounted directory. Compose separately requires the
 existing marker file as a read-only bind mount: if the disk is absent on reboot,
 Docker cannot create that mount and Frigate cannot start writing to the SSD.
-Never create a marker in the bare, unmounted directory. Configure systemd/fstab
-mount ordering so the disk is mounted before Docker restores the container.
-The stack does not install those host units or recover a failed drive.
+Never create a marker in the bare, unmounted directory. The stack does not
+recover a failed drive.
 
 Set `DRI_DEVICE`, numeric `RENDER_GID` (`getent group render`) and ten
 `FRIGATE_CAMERA_N_MAIN/SUB` RTSP URLs in `.env`. Use per-camera low-privilege
