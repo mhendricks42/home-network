@@ -140,7 +140,7 @@ flowchart LR
 | UPS (closet) | APC BE600M1 (600 VA / 330 W) | Closet (in box, bottom) | Battery for BGW320, gateway, switch, and via PoE the cameras, U7 Pro and Pi | Wall-mount; USB → Pi (NUT). ~23 min at 100 W, so expect roughly 15–20 min at ~110–125 W |
 | UPS (office) | ~650–950 VA (e.g., APC BE650G1) | Office | Server, NAS, office switch (and U7 Lite) | Reports to NUT on the Pi |
 | Cameras | 5× Amcrest 5MP PoE (bullets + domes) | Exterior | Recorded and analyzed by Frigate | Configured offline: firmware updated, P2P/UPnP/cloud off, unique creds, substream ≤720p/5 fps, NTP → 10.0.40.10 (set manually) |
-| Home server | HP ProDesk 400 G4 DM (i5-8500T, 16 GB) | Office | All services (companion doc) | VLAN 40, 10.0.40.10, Debian + Docker |
+| Home server | HP ProDesk 400 G4 DM (i5-8500T, 16 GB) | Office | All services (companion doc) | VLAN 40, 10.0.40.10, Ubuntu 26.04 LTS + Docker |
 | NAS | Ugreen | Office | File shares, backup target | VLAN 40, 10.0.40.20; Ugreen cloud remote access and UPnP off |
 | Old smartphones | Various | Around house | HA wall panels, Wi-Fi survey, segmentation tester, offline 2FA backup | IoT-Local VLAN, no internet; charging cycled 30–80% |
 

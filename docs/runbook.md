@@ -35,7 +35,7 @@ lookups. It is enabled one DHCP lease time after D3.
 | # | Step | Where | Needs | Done when |
 |---|---|---|---|---|
 | B1 | NAS on `10.0.40.20`: HTTPS admin UI on, Ugreen cloud and UPnP off | NAS UI | A3 | `https://10.0.40.20` loads from the admin laptop |
-| B2 | Install OS: Debian 13 on the server, **64-bit** Raspberry Pi OS Lite on the Pi | Console | A3 | `ip -br addr` shows `.10` / `.11` |
+| B2 | Install OS: Ubuntu Server 26.04 LTS on the server, **64-bit** Raspberry Pi OS Lite on the Pi | Console | A3 | `ip -br addr` shows `.10` / `.11` |
 | B3 | Host basics: security updates and unattended-upgrades, key-only SSH (SSH access from admin devices). Point each **host's own** resolver at its gateway `10.0.40.1`, not at AdGuard | Host | B2, A2 (admin device reservations) | `apt update` works; password SSH login is refused |
 | B3a | chrony NTP server on both hosts (Time service) | Host | B3 | `chronyc tracking` shows `Leap status: Normal` on both |
 | B4 | Docker Engine and Compose **2.24.4+** from Docker's apt repository; keep the default iptables backend | Host | B3 | `docker compose version` ≥ 2.24.4 |
@@ -91,34 +91,45 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 
 ### SSH access from admin devices (step B3)
 
-Admins sign in with an **SSH key**, never a password. Each admin device gets
-its own key, protected by a passphrase. **Dashlane** holds the secrets; the
-private key file stays on the device. (Dashlane has no SSH agent, so it
-can't hold the key for `ssh` itself.)
+Admins sign in with an **SSH key**, never a password. The private key lives
+**only in Dashlane** (as a secure note), protected by its own passphrase. The
+Dashlane CLI (`dcli`) loads it straight into the SSH agent for a limited time;
+it is never written to disk. (Dashlane has no SSH agent of its own.)
 
-Store these in Dashlane before you start:
+Store these in Dashlane:
 
 | Dashlane item | Type | Content |
 |---|---|---|
-| `SSH passphrase – <device>` | Password | Generated passphrase (Dashlane generator, 24+ characters), one per admin device |
+| `homeserver-ssh` | Secure note | The private key (`id_ed25519`, OpenSSH format, passphrase-protected) |
+| `SSH passphrase – homeserver-ssh` | Password | Its passphrase (Dashlane generator, 24+ characters) |
 | `sudo – oden` / `sudo – vidar` | Password | Your Linux user's password on each host (used for `sudo`, not SSH) |
 | `SSH host keys` | Secure note | Each host's key fingerprint, recorded from the console (step 2) |
 
-#### 1. Create a key on each admin device
+#### 1. Create the key and move it into Dashlane
 
-Windows PowerShell (built-in OpenSSH). Paste the Dashlane passphrase when asked:
+On an admin device (WSL or Linux), in a temporary folder, with the Dashlane
+passphrase when asked:
 
-```powershell
-ssh-keygen -t ed25519 -a 100 -C "matt@$env:COMPUTERNAME"
-Get-Service ssh-agent | Set-Service -StartupType Automatic
-Start-Service ssh-agent
-ssh-add $env:USERPROFILE\.ssh\id_ed25519
+```bash
+cd "$(mktemp -d)"
+ssh-keygen -t ed25519 -a 100 -C "matt@DESKTOP-IJ99M1L" -f id_ed25519
+cat id_ed25519        # copy into the Dashlane secure note `homeserver-ssh`
+cp id_ed25519.pub ~/.ssh/id_ed25519.pub
+shred -u id_ed25519   # the private key now exists only in Dashlane
 ```
 
-`ssh-add` stores the unlocked key in the Windows agent, so you type the
-passphrase once instead of on every connection. WSL is a separate system:
-give it its own key (the same `ssh-keygen` command in WSL) and treat it as a
-separate device, or use Windows' `ssh.exe` from WSL.
+**Each session**, load it into the agent for one hour (`dcli n` reads the note;
+`tr` strips Windows line endings that would break the key):
+
+```bash
+ssh-add -l >/dev/null 2>&1; [ $? -eq 2 ] && eval "$(ssh-agent -s)"   # start an agent if none
+ssh-add -t 1h <(dcli n homeserver-ssh | tr -d '\r')
+```
+
+When the hour ends, the agent forgets the key and `ssh` says
+`Permission denied (publickey)`; run the `ssh-add` line again. Use a separate
+key and note per admin device if you want to revoke one device without the
+others (the `-C` comment names it).
 
 #### 2. Record each host's fingerprint (console)
 
@@ -135,12 +146,11 @@ accepting.
 
 #### 3. Install the public key on each host
 
-Password login is still on at this point. From PowerShell (Windows has no
-`ssh-copy-id`):
+Password login is still on at this point. From the admin device:
 
 ```powershell
-type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh matt@10.0.40.10 "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
-type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh matt@10.0.40.11 "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
+ssh-copy-id -i ~/.ssh/id_ed25519.pub matt@10.0.40.10
+ssh-copy-id -i ~/.ssh/id_ed25519.pub matt@10.0.40.11
 ```
 
 Repeat for every admin device. Check `ssh matt@10.0.40.10` now logs in
@@ -241,7 +251,7 @@ Create `/etc/chrony/conf.d/homelab.conf`. On the server use `10.0.40.11` as
 `PEER`; on the Pi use `10.0.40.10`:
 
 ```text
-# NTS-authenticated upstream; the default Debian pool stays as a fallback.
+# NTS-authenticated upstream; the distribution's default pool stays as a fallback.
 server time.cloudflare.com iburst nts
 # The other node: keeps both in agreement if one loses upstream.
 server PEER iburst

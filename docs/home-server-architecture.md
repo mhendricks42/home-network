@@ -11,7 +11,7 @@
 
 ## 1. Overview
 
-A single HP ProDesk 400 G4 mini PC in the office runs the household's infrastructure as Docker containers on Debian:
+A single HP ProDesk 400 G4 mini PC in the office runs the household's infrastructure as Docker containers on Ubuntu Server LTS:
 
 - filtered DNS (AdGuard Home + Unbound)
 - HTTPS reverse proxy (Caddy)
@@ -51,11 +51,11 @@ BIOS settings on the server: admin password set, virtualization on, **power-on a
 
 ---
 
-## 4. Host platform: Debian + Docker
+## 4. Host platform: Ubuntu Server LTS + Docker
 
 | Host component | Runs on | Purpose |
 |---|---|---|
-| Debian (stable) | Server | Base OS |
+| Ubuntu Server 26.04 LTS | Server | Base OS |
 | Raspberry Pi OS Lite | Pi | Base OS |
 | OpenSSH | Server, Pi | Key-only admin access; works when Docker is broken |
 | Docker Engine + Compose | Server, Pi | Runs all app containers |
@@ -80,7 +80,7 @@ flowchart TB
     TS["Tailscale clients"]
     ALL["All VLANs"]
   end
-  subgraph SRV["HP ProDesk - 10.0.40.10 (Debian + Docker)"]
+  subgraph SRV["HP ProDesk - 10.0.40.10 (Ubuntu + Docker)"]
     TSD["Tailscale (host)"]
     CADDY["Caddy :443"]
     DNS1["AdGuard Home :53"] --> UNB1["Unbound :5335"]
@@ -425,7 +425,7 @@ The Compose layer alone is not a completed production deployment.
 
 | Step | Work |
 |---|---|
-| 1 | Buy/verify ProDesk; BIOS settings; Debian; SSH hardening |
+| 1 | Buy/verify ProDesk; BIOS settings; Ubuntu Server LTS; SSH hardening |
 | 2 | AdGuard + Unbound on server and Pi; DHCP DNS → both |
 | 3 | Cloudflare token, CAA, DNSSEC; Caddy with wildcard cert |
 | 4 | Mosquitto, Home Assistant, Zigbee2MQTT, Z-Wave JS UI, ESPHome |
@@ -442,7 +442,7 @@ The Compose layer alone is not a completed production deployment.
 | ID | Decision | Chosen | Date |
 |---|---|---|---|
 | D-S1 | Server hardware | HP ProDesk 400 G4 DM (used) | 2026-10-18 |
-| D-S2 | Host platform | Debian + Docker | 2026-10-18 |
+| D-S2 | Host platform | Ubuntu Server LTS + Docker (was Debian; changed at install) | 2026-11-05 |
 | D-S3 | DNS filter | AdGuard Home (server + Pi) | 2026-10-18 |
 | D-S4 | Reverse proxy | Caddy | 2026-10-18 |
 | D-S5 | Home Assistant install | Container | 2026-10-18 |
