@@ -56,7 +56,8 @@
 	}
 	@nas host nas.home.{$HOME_DOMAIN}
 	handle @nas {
-		reverse_proxy https://10.0.40.20 {
+		# Ugreen UGOS serves its web UI on 9443, not 443.
+		reverse_proxy https://10.0.40.20:9443 {
 			transport http {
 				# NAS uses a self-signed backend certificate.
 				tls_insecure_skip_verify
@@ -65,7 +66,8 @@
 	}
 	@unifi host unifi.home.{$HOME_DOMAIN}
 	handle @unifi {
-		reverse_proxy https://10.0.10.1 {
+		# The gateway answers VLAN 40 on its Servers-VLAN address, not 10.0.10.1.
+		reverse_proxy https://10.0.40.1 {
 			transport http {
 				# Local UniFi controller uses a self-signed certificate.
 				tls_insecure_skip_verify

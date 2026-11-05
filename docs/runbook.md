@@ -34,7 +34,7 @@ lookups. It is enabled one DHCP lease time after D3.
 
 | # | Step | Where | Needs | Done when |
 |---|---|---|---|---|
-| B1 | NAS on `10.0.40.20`: HTTPS admin UI on, Ugreen cloud and UPnP off | NAS UI | A3 | `https://10.0.40.20` loads from the admin laptop |
+| B1 | NAS on `10.0.40.20`: HTTPS admin UI on, Ugreen cloud and UPnP off | NAS UI | A3 | `https://10.0.40.20:9443` loads from the admin laptop |
 | B2 | Install OS: Ubuntu Server 26.04 LTS on the server, **64-bit** Raspberry Pi OS Lite on the Pi | Console | A3 | `ip -br addr` shows `.10` / `.11` |
 | B3 | Host basics: security updates and unattended-upgrades, key-only SSH (SSH access from admin devices). Point each **host's own** resolver at its gateway `10.0.40.1`, not at AdGuard | Host | B2, A2 (admin device reservations) | `apt update` works; password SSH login is refused |
 | B3a | chrony NTP server on both hosts (Time service) | Host | B3 | `chronyc tracking` shows `Leap status: Normal` on both |
@@ -72,7 +72,7 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 
 | # | Step | Where | Needs | Done when |
 |---|---|---|---|---|
-| E1 | Tailscale on the server host: advertise `10.0.10.1/32`, `10.0.40.10/32`, `10.0.40.20/32`; approve routes; Tailnet Lock; ACLs; split DNS → `10.0.40.10`; add the `tailscale0` ufw line | Architecture §11 | D1 (AdGuard answering), B6 | From mobile data, `https://ha.home.foxhound.nexus` loads |
+| E1 | Tailscale on the server host: advertise `10.0.40.1/32`, `10.0.40.10/32`, `10.0.40.20/32`; approve routes; Tailnet Lock; ACLs; split DNS → `10.0.40.10`; add the `tailscale0` ufw line | Architecture §11 | D1 (AdGuard answering), B6 | From mobile data, `https://ha.home.foxhound.nexus` loads |
 | E2 | NUT: Pi as NUT server on the closet UPS; server and NAS as clients | Host | B6 (Pi TCP 3493 rule) | `upsc` works from the server; a pulled-plug test shuts hosts down cleanly |
 | E3 | Backups: restic to the NAS, UniFi config export, off-device copy | §6, UCG §10 | B1, D1 | One restore completes on a clean target |
 | E4 | Final checks: reboot, missing recording disk, power-loss shutdown, backup restore | §4 check 7 | E2, E3 | All pass; record the date |

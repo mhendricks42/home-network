@@ -343,7 +343,7 @@ The UCG Max does not serve NTP to LAN clients, so the two DNS nodes also serve t
 |---|---|
 | Plan | Tailscale free Personal plan (no subscription) |
 | Where it runs | Home server **host OS** (not a container), as a subnet router |
-| Advertised routes | Only specific addresses needed remotely: gateway UI (10.0.10.1/32), server (10.0.40.10/32), NAS (10.0.40.20/32). The server route is required because AdGuard answers `*.home.<domain>` with 10.0.40.10 |
+| Advertised routes | Only specific addresses needed remotely: gateway UI (10.0.40.1/32; the gateway doesn't answer the server on 10.0.10.1), server (10.0.40.10/32), NAS (10.0.40.20/32). The server route is required because AdGuard answers `*.home.<domain>` with 10.0.40.10 |
 | Tailnet Lock | **On**: Tailscale's servers can't add devices you haven't signed |
 | Exit node | Not used |
 | WireGuard break-glass on UCG Max | Not used |

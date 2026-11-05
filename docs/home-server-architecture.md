@@ -189,7 +189,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 
 - Image built with the `caddy-dns/cloudflare` plugin; DNS-01 through a Cloudflare API token scoped to the `foxhound.nexus` zone (setup in the Docker runbook).
 - Wildcard `*.home.<domain>` via DNS-01: no inbound ports; individual names never published.
-- Routes: `ha.` → 8123 · `frigate.` → 8971 · `z2m.` → 8080 · `zwave.` → 8091 · `esphome.` → 6052 · `dns.` → AdGuard · `alerts.` → NetAlertX · `git.` → Forgejo · `unifi.` → 10.0.10.1 · `nas.` → NAS · `status.` → Uptime Kuma (Pi).
+- Routes: `ha.` → 8123 · `frigate.` → 8971 · `z2m.` → 8080 · `zwave.` → 8091 · `esphome.` → 6052 · `dns.` → AdGuard · `alerts.` → NetAlertX · `git.` → Forgejo · `unifi.` → gateway 10.0.40.1 · `nas.` → NAS :9443 · `status.` → Uptime Kuma (Pi).
 
 ### 7.3 Home Assistant (Container)
 
@@ -239,7 +239,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | Setting | Value |
 |---|---|
 | Install | Debian package on host |
-| Subnet routes | 10.0.10.1/32 (gateway UI), 10.0.40.10/32 (server: AdGuard answers `*.home.<domain>` with this address), 10.0.40.20/32 (NAS) |
+| Subnet routes | 10.0.40.1/32 (gateway UI; it doesn't answer the server on 10.0.10.1), 10.0.40.10/32 (server: AdGuard answers `*.home.<domain>` with this address), 10.0.40.20/32 (NAS) |
 | Tailnet Lock | On; sign new devices from a trusted node |
 | Exit node | Off |
 | DNS | Split DNS for `home.arpa` and `home.<domain>` → 10.0.40.10 (via the subnet route); override local DNS on |
