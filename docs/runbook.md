@@ -105,6 +105,34 @@ Store these in Dashlane:
 | `sudo – oden` / `sudo – vidar` | Password | Your Linux user's password on each host (used for `sudo`, not SSH) |
 | `SSH host keys` | Secure note | Each host's key fingerprint, recorded from the console (step 2) |
 
+#### 0. Install the Dashlane CLI (`dcli`) on the admin device
+
+WSL or Linux (x86-64). Pin a release from
+[Dashlane/dashlane-cli releases](https://github.com/Dashlane/dashlane-cli/releases)
+and update it the same way:
+
+```bash
+V=v6.2642.0
+curl -fL -o dcli "https://github.com/Dashlane/dashlane-cli/releases/download/$V/dcli-linux-x64"
+chmod +x dcli && sudo mv dcli /usr/local/bin/dcli
+dcli --version
+```
+
+First login registers this device (email, then the 2FA or emailed code, then
+the master password). WSL has no OS keychain, so don't let `dcli` store the
+master password; it asks for it when needed instead:
+
+```bash
+dcli configure save-master-password false
+dcli sync
+```
+
+| When | Command |
+|---|---|
+| After adding or changing a Dashlane item elsewhere | `dcli sync` (it also syncs itself hourly) |
+| After loading the SSH key, or leaving the desk | `dcli lock` |
+| Retiring or losing the device | `dcli logout` here, and remove the device under Dashlane's account settings |
+
 #### 1. Create the key and move it into Dashlane
 
 On an admin device (WSL or Linux), in a temporary folder, with the Dashlane
@@ -115,8 +143,12 @@ cd "$(mktemp -d)"
 ssh-keygen -t ed25519 -a 100 -C "matt@DESKTOP-IJ99M1L" -f id_ed25519
 cat id_ed25519        # copy into the Dashlane secure note `homeserver-ssh`
 cp id_ed25519.pub ~/.ssh/id_ed25519.pub
+dcli sync
+dcli n homeserver-ssh | tr -d '\r' | ssh-keygen -y -f /dev/stdin   # prints the public key: the note is intact
 shred -u id_ed25519   # the private key now exists only in Dashlane
 ```
+
+Save the note with the `-----BEGIN` and `-----END` lines included.
 
 **Each session**, load it into the agent for one hour (`dcli n` reads the note;
 `tr` strips Windows line endings that would break the key):
