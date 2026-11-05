@@ -139,7 +139,7 @@ V=v0.107.79
 cd /tmp
 curl -fLO https://github.com/AdguardTeam/AdGuardHome/releases/download/$V/AdGuardHome_linux_arm64.tar.gz
 curl -fLO https://github.com/AdguardTeam/AdGuardHome/releases/download/$V/checksums.txt
-grep ' AdGuardHome_linux_arm64.tar.gz$' checksums.txt | sha256sum -c     # must say OK
+grep '/AdGuardHome_linux_arm64.tar.gz$' checksums.txt | sha256sum -c     # must say OK
 sudo tar -C /opt -xzf AdGuardHome_linux_arm64.tar.gz
 ```
 
