@@ -119,7 +119,8 @@ check_docker_engine() {
 get_env_file_value() {
   local name="$1"
   [[ -f .env ]] || return 0
-  awk -F= -v name="$name" '$1 == name {print $2; exit}' .env
+  # Same parsing as install-systemd.sh: keep '=' in values, drop Windows CR.
+  awk -F= -v name="$name" '$1 == name { sub(/^[^=]*=/, ""); sub(/\r$/, ""); print; exit }' .env
 }
 
 get_active_compose_file() {

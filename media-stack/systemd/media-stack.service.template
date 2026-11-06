@@ -1,6 +1,6 @@
 [Unit]
 Description=Media Stack Docker Compose application
-Documentation=https://github.com/mhendricks42/media-stack
+Documentation=https://github.com/mhendricks42/home-network/tree/main/media-stack
 Wants=network-online.target
 After=network-online.target docker.service
 Requires=docker.service
