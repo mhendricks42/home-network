@@ -223,6 +223,11 @@ from that table; don't keep a second copy here.
    §9.4 and put the Allow above the Block.
 7. Don't edit or reorder UniFi's built-in policies. Custom policies sit above
    them.
+8. Re-open each **Block** policy and check its destination: an address or port
+   left empty means *Any*. A Z16 that blocked "Any" instead of `ISP_LAN` cut
+   off the internet for every non-admin Trusted device. Check the hit counters
+   while testing: a block policy that never hits, or hits on normal browsing,
+   is misconfigured.
 
 Boundaries the zone firewall can't enforce:
 
