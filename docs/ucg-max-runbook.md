@@ -13,8 +13,7 @@ resulting policy and rule order rather than relying on a particular menu label.
 
 Do not cut over household devices until these gates pass:
 
-- Choose and record the BGW320 WAN mode (architecture pending decision P1).
-  Section 2 covers either option; passthrough is not assumed approved.
+- BGW320 WAN mode is **IP passthrough** (architecture D-N15); section 2.
 - Both DNS nodes answer independently before advertising them through DHCP.
 - Identify admin device MACs/IPs, camera MACs/IPs, the actual BGW320 subnet,
   and the physical WAN/LAN port assignments. Do not guess them.
@@ -64,23 +63,39 @@ Keep the BGW320's own LAN separate from every UCG LAN. Record its real address,
 subnet and configuration backup/screenshots before changes. Disable its Wi-Fi
 and UPnP; no household clients remain on it.
 
-### If P1 selects IP passthrough
+### IP passthrough (D-N15)
 
-1. In the BGW320 local UI, open **Firewall > IP Passthrough**, select allocation
-   mode **Passthrough**, mode **DHCPS-fixed**, and the UCG's actual WAN MAC.
-   Do not select a camera, switch, or laptop.
-2. Save; renew/restart the WAN connection as required by the BGW320. Keep UCG
-   IPv4 WAN on DHCP. Do not configure PPPoE, clone an unrelated MAC, or remove
-   the BGW320/ONT from the fiber path.
-3. Confirm the UCG receives the expected public IPv4 address, has a default
-   route and can reach the internet. Passthrough is not a transparent bridge:
-   the BGW320 management subnet still needs blocking from clients.
+Do this in a short maintenance window from a **wired** admin device; the
+internet drops for a few minutes. Have the BGW320's **Device Access Code**
+(sticker on the BGW320) ready.
 
-### If P1 selects double NAT
-
-Leave BGW320 routing enabled; UCG WAN uses DHCP and receives a BGW320 LAN
-address. Accept that Tailscale may relay more often. Do not "fix" this by
-adding inbound forwards or placing a server in the BGW320 DMZ.
+1. **Before:** record the BGW320's LAN address and subnet (normally
+   `192.168.1.254`, `192.168.1.0/24`) and screenshot its *Firewall* and
+   *Home Network* pages. In UniFi, note the UCG's current WAN address (a
+   `192.168.1.x` address means double NAT) and its **WAN port MAC**
+   (UniFi device page → Ports → the WAN port).
+2. **BGW320 → Home Network → Wi-Fi:** turn both radios off, if not already.
+3. **BGW320 → Firewall → IP Passthrough:**
+   - Allocation Mode: **Passthrough**
+   - Passthrough Mode: **DHCPS-fixed**
+   - Passthrough Fixed MAC Address: the UCG WAN MAC from step 1 (or pick it
+     from the device list). Never a camera, switch or laptop.
+   - Save, entering the Device Access Code when asked.
+4. **BGW320 → Firewall → Packet Filter / Firewall Advanced:** leave packet
+   filtering **off** and turn off its extra filters (ALGs, flood and scan
+   protection) so it doesn't second-guess the UCG. Keep its IPv6 on: the UCG
+   gets its IPv6 prefix from it.
+5. **Renew the UCG's WAN:** unplug the WAN cable for 10 seconds, or restart
+   the UCG. Keep UCG IPv4 WAN on DHCP; no PPPoE, no MAC cloning.
+6. **Verify:**
+   - UniFi shows a **public** WAN IPv4 address (not `192.168.1.x`), and any
+     "double NAT" warning is gone.
+   - From a Trusted device, `ping 1.1.1.1` and browsing work; the public IP
+     shown by an IP-check site matches the UCG's WAN address.
+   - `Z16`/`Z17`: `192.168.1.254` still answers for admins only. The BGW320
+     keeps its management address in passthrough, so `ISP_LAN` stays as is.
+7. **Rollback:** BGW320 → Firewall → IP Passthrough → Allocation Mode **Off**,
+   save, renew the UCG WAN again.
 
 For either mode:
 

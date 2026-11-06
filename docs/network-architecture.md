@@ -131,7 +131,7 @@ flowchart LR
 | Device | Model | Location | Role / purpose | Key configuration |
 |---|---|---|---|---|
 | Fiber jack | AT&T passive fiber jack | Closet (in box, top) | Fiber termination | None |
-| ISP gateway / ONT | AT&T BGW320 (fiber straight in) | Closet (in box, top) | Built-in ONT, AT&T authentication | Wi-Fi off; WAN mode pending (§21 P1). 7.8 × 3.9 × 7.5 in; mounted on its side in the 5-in box, temps monitored |
+| ISP gateway / ONT | AT&T BGW320 (fiber straight in) | Closet (in box, top) | Built-in ONT, AT&T authentication | Wi-Fi off; IP passthrough to the UCG Max (D-N15). 7.8 × 3.9 × 7.5 in; mounted on its side in the 5-in box, temps monitored |
 | Gateway / firewall / controller | UniFi Cloud Gateway Max (no storage) | Closet | Routing, zone firewall, IDS/IPS (2.3 Gbps), DHCP, UniFi Network controller | Local admin; remote access off; analytics off; firmware on a maintenance window; local auto-backups. 5.6 × 5 × 1.2 in, USB-C 5V/5A |
 | Core PoE switch | UniFi Pro Max 16 PoE | Closet | Switching; PoE for cameras, downstairs AP, Pi | 180 W budget; wall-mount kit; 12.8 × 6.3 × 1.7 in |
 | Office switch | UniFi Flex 2.5G PoE (8-port) | Office | Office access; powers U7 Lite | Own AC adapter on office UPS |
@@ -159,7 +159,7 @@ The UniFi default `192.168.1.0/24` is replaced **before** adopting devices (avoi
 | 30 | Work | 10.0.30.0/24 | 10.0.30.1 | Yes | Yes | Employer devices, isolated | Work laptop |
 | 40 | Servers | 10.0.40.0/24 | 10.0.40.1 | Reservations | Yes | Self-hosted infrastructure | Server .10, Pi .11, NAS .20 |
 | 50 | IoT-Local | 10.0.50.0/24 | 10.0.50.1 | Yes | **Blocked** | Local-control devices | Zigbee/Z-Wave/Thread border routers, ESPHome, AirPlay speakers, wall-panel phones |
-| 55 | IoT-Cloud | 10.0.55.0/24 | 10.0.55.1 | Yes | Yes | Quarantine for cloud-dependent devices | Smart TV, streaming boxes (onn), appliances |
+| 55 | IoT-Cloud | 10.0.55.0/24 | 10.0.55.1 | Yes | Yes | Quarantine for cloud-dependent devices | Smart TV, streaming boxes (onn), game consoles, appliances |
 | 60 | Cameras | 10.0.60.0/24 | 10.0.60.1 | Reservations | **Blocked** | IP cameras | 5 Amcrest cameras |
 | 70 | Guest | 10.0.70.0/24 | 10.0.70.1 | Yes | Yes (rate-limited) | Visitors, client isolation | Guest devices |
 | 80 | Lab | 10.0.80.0/24 | 10.0.80.1 | Yes | Optional | Future experiments | Spare office switch ports |
@@ -365,7 +365,7 @@ The UCG Max does not serve NTP to LAN clients, so the two DNS nodes also serve t
 |---|---|
 | Service | AT&T Fiber, 1 Gbps |
 | Hand-off | Fiber jack → BGW320 (built-in ONT) → UCG Max WAN |
-| BGW320 mode | Pending (§21 P1) |
+| BGW320 mode | IP passthrough (DHCPS-fixed to the UCG Max WAN MAC); UCG Max holds the public IPv4 address (D-N15) |
 | Public IP changes | No impact on remote access (Tailscale is outbound) |
 | IPv6 | Prefix delegation from AT&T; enabled on selected VLANs |
 | Backup WAN | None. **Runbook:** during a fiber outage, connect a phone hotspot/tether to UCG Max WAN2 manually |
@@ -510,7 +510,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | 0 | Inventory devices; confirm wall framing for the media box |
 | 1 | Install recessed box, outlet, patch panel; mount gear per §13.2; attempt Cat6 pull via coax |
 | 2 | UCG Max local-only setup (browser → Advanced Setup → local admin); change default subnet; enable backups |
-| 3 | BGW320: Wi-Fi off; WAN mode per §21 P1 |
+| 3 | BGW320: Wi-Fi off; IP passthrough (D-N15) |
 | 4 | Adopt switches/APs; create VLANs and separate SSIDs per §8 |
 | 5 | Server + Pi DNS (companion doc); DHCP DNS → 10.0.40.10/.11 |
 | 6 | Zone policies; one week of logging; fix breakage |
@@ -537,6 +537,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | D-N10 | Cameras | 5× Amcrest 5MP | 2026-10-18 |
 | D-N11 | Wi-Fi VLAN assignment | Separate Work and IoT-Cloud SSIDs, no PPSK; retain WPA3/6 GHz on the Trusted SSID | 2026-10-19 |
 | D-N14 | SSID names | Mostly-Harmless (Trusted), The-Forge (Work), Alfheim (IoT-Local), Niflheim (IoT-Cloud), Mead-Hall (Guest) | 2026-11-04 |
+| D-N15 | BGW320 WAN mode | IP passthrough (closes former P1): one NAT layer, public IP on the UCG Max, best Tailscale direct connections | 2026-11-06 |
 | D-N12 | Domain and DNS host | `foxhound.nexus`, Cloudflare Registrar + DNS (closes former P2) | 2026-11-01 |
 | D-N13 | Time service | chrony on the server and Pi hosts serves NTP to all VLANs (UCG Max has no LAN NTP server) | 2026-11-01 |
 | — | Raspberry Pi | Pi 3B+ (owned) | 2026-10-18 |
@@ -545,17 +546,6 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 ---
 
 ## 21. Pending decisions (not in baseline)
-
-### P1 — BGW320 WAN mode
-
-| Option | Pros | Cons |
-|---|---|---|
-| A. IP passthrough | UCG Max holds the public IP; one NAT layer; best Tailscale direct connections; UCG Max sees real WAN events | One-time BGW320 configuration; brief outage during change |
-| B. Leave as-is (double NAT) | No ISP changes | Two NAT layers; more Tailscale relayed connections; UCG Max sees a private WAN IP |
-
-- **Trade-off:** small one-time setup vs. a cleaner, more predictable WAN.
-- **Dependencies:** Tailscale connection quality; UCG Max WAN monitoring; the ISP subnet blocks (Z16/Z17) apply either way.
-- **Recommendation:** A.
 
 ### P3 — Camera mount locations
 
@@ -569,6 +559,17 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | B. Single trunk only | $0 | Office depends on one cable |
 
 - **Dependencies:** whether the coax moves freely.
+
+### P5 — Open NAT for game consoles
+
+Consoles on IoT-Cloud get Moderate / Type 2 / B NAT with UPnP off and no port forwards (P4). That is fine for nearly all games. Only if a game really needs Open NAT:
+
+| Option | Pros | Cons |
+|---|---|---|
+| A. Accept Moderate NAT | No exception to P4 | Occasionally can't host or join a specific player |
+| B. Gaming VLAN 65 with UPnP scoped to that VLAN only | Open NAT; every other network keeps UPnP off | New VLAN and zone (copy IoT-Cloud's policies); a deliberate exception to "zero inbound" |
+
+- **Recommendation:** A until a real game fails, then B.
 
 ---
 
