@@ -1,0 +1,429 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ./stack.sh use linux
+  ./stack.sh init-vpn
+  ./stack.sh install-service [systemd installer options]
+  ./stack.sh up|down|ps|pull|config
+  ./stack.sh setup-data
+  ./stack.sh audit-anime
+  source ./scripts/set-env.sh
+  ./stack.sh bootstrap
+  ./stack.sh import-indexers [path] [--dry-run]
+  ./stack.sh sync-profiles [--preview]
+  ./stack.sh doctor
+  ./stack.sh logs <service>
+  ./stack.sh restart <service>
+  ./stack.sh verify
+  ./stack.sh backup
+EOF
+}
+
+need_arg() {
+  local value="${1:-}"
+  local name="${2:-argument}"
+  if [[ -z "$value" ]]; then
+    echo "Missing $name"
+    exit 1
+  fi
+}
+
+check_vpn_secrets() {
+  local compose_file
+  local path
+  compose_file="$(get_active_compose_file)"
+
+  if [[ "$compose_file" != *compose/secrets.yml* ]]; then
+    echo "compose/secrets.yml is missing from COMPOSE_FILE. Run ./stack.sh use linux or add the overlay to .env." >&2
+    return 1
+  fi
+
+  for path in secrets/openvpn_user secrets/openvpn_password; do
+    if [[ ! -s "$path" ]]; then
+      echo "Missing or empty VPN secret: $path. Run ./stack.sh init-vpn." >&2
+      return 1
+    fi
+    if ! LC_ALL=C tr -d '\r\n' < "$path" | cmp -s - "$path"; then
+      echo "VPN secret contains a newline: $path. Recreate it with ./stack.sh init-vpn; do not use echo." >&2
+      return 1
+    fi
+  done
+}
+
+init_vpn_secrets() {
+  local vpn_user
+  local vpn_password
+
+  read -r -s -p "NordVPN OpenVPN/manual username: " vpn_user
+  echo
+  read -r -s -p "NordVPN OpenVPN/manual password: " vpn_password
+  echo
+
+  if [[ -z "$vpn_user" || -z "$vpn_password" ]]; then
+    echo "VPN username and password are required." >&2
+    return 1
+  fi
+
+  mkdir -p secrets
+  chmod 700 secrets
+  printf '%s' "$vpn_user" > secrets/openvpn_user
+  printf '%s' "$vpn_password" > secrets/openvpn_password
+  chmod 600 secrets/openvpn_user secrets/openvpn_password
+  unset vpn_user vpn_password NORD_USER NORD_PASS VPN_USER VPN_PASS
+  echo "VPN secret files created with no trailing newline."
+}
+
+check_docker_engine() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker CLI was not found. Install Docker Engine or Docker Desktop and reopen this terminal."
+    exit 1
+  fi
+
+  local docker_error
+  if docker_error="$(docker info 2>&1)"; then
+    return 0
+  fi
+
+  if [[ "$docker_error" == *"permission denied"* ]]; then
+    echo "Docker is running, but the current user cannot access its socket."
+    if [[ -S /var/run/docker.sock ]]; then
+      echo "Socket permissions: $(ls -l /var/run/docker.sock)"
+    fi
+    echo "Add the current user to the socket's group, then sign out and back in."
+    echo "For a socket owned by the docker group: sudo usermod -aG docker \"\$USER\""
+    exit 1
+  fi
+
+  if [[ -z "${MEDIA_STACK_NO_DOCKER_AUTOSTART:-}" ]] && command -v systemctl >/dev/null 2>&1; then
+    echo "Docker engine is not reachable; trying to start the docker service..."
+    systemctl start docker >/dev/null 2>&1 || sudo systemctl start docker >/dev/null 2>&1 || true
+  fi
+
+  echo "Waiting for the Docker engine to become ready..."
+  for _ in $(seq 1 60); do
+    if docker info >/dev/null 2>&1; then
+      echo "Docker engine is ready."
+      return 0
+    fi
+    sleep 3
+  done
+
+  echo "Docker engine is not reachable. Start Docker, wait until it is running, then run this command again."
+  echo "On Docker Desktop/WSL, try: wsl --shutdown; then reopen Docker Desktop."
+  exit 1
+}
+
+get_env_file_value() {
+  local name="$1"
+  [[ -f .env ]] || return 0
+  awk -F= -v name="$name" '$1 == name {print $2; exit}' .env
+}
+
+get_active_compose_file() {
+  if [[ -n "${COMPOSE_FILE:-}" ]]; then
+    printf '%s' "$COMPOSE_FILE"
+  else
+    get_env_file_value COMPOSE_FILE
+  fi
+}
+
+write_check() {
+  local name="$1"
+  local status="$2"
+  local detail="${3:-}"
+  if [[ "$status" == "0" ]]; then
+    if [[ -n "$detail" ]]; then
+      echo "OK    $name - $detail"
+    else
+      echo "OK    $name"
+    fi
+  else
+    if [[ -n "$detail" ]]; then
+      echo "FAIL  $name - $detail"
+    else
+      echo "FAIL  $name"
+    fi
+  fi
+}
+
+get_arr_api_key() {
+  local path="$1"
+  local app_name="$2"
+
+  if [[ ! -f "$path" ]]; then
+    echo "Missing $app_name config: $path. Start the stack once with ./stack.sh up before syncing profiles." >&2
+    exit 1
+  fi
+
+  local api_key
+  api_key="$(sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' "$path" | head -n 1)"
+  if [[ -z "$api_key" ]]; then
+    echo "No ApiKey found in $path." >&2
+    exit 1
+  fi
+
+  printf '%s' "$api_key"
+}
+
+run_recyclarr() {
+  local preview="${1:-}"
+
+  check_docker_engine
+
+  mkdir -p config/recyclarr
+  if [[ ! -f config/recyclarr/recyclarr.yml ]]; then
+    if [[ ! -f recyclarr.example.yml ]]; then
+      echo "Missing recyclarr.example.yml and config/recyclarr/recyclarr.yml. Restore one of them, then run sync-profiles again."
+      exit 1
+    fi
+    cp recyclarr.example.yml config/recyclarr/recyclarr.yml
+    echo "Created config/recyclarr/recyclarr.yml from recyclarr.example.yml. Edit it to change which TRaSH templates are applied."
+  fi
+
+  SONARR_API_KEY="$(get_arr_api_key config/sonarr/config.xml Sonarr)"
+  RADARR_API_KEY="$(get_arr_api_key config/radarr/config.xml Radarr)"
+  export SONARR_API_KEY RADARR_API_KEY
+
+  if [[ "$preview" == "--preview" ]]; then
+    docker compose run --rm recyclarr sync --preview
+  else
+    docker compose run --rm recyclarr sync
+  fi
+}
+
+public_ip() {
+  curl -fsSL --max-time 10 https://ipinfo.io/ip 2>/dev/null || curl -fsSL --max-time 10 https://api.ipify.org
+}
+
+doctor() {
+  check_docker_engine
+
+  compose_file="$(get_active_compose_file)"
+  if [[ -f .env ]]; then write_check ".env exists" 0; else write_check ".env exists" 1; fi
+  if [[ -n "$compose_file" ]]; then write_check "active compose target" 0 "$compose_file"; else write_check "active compose target" 1; fi
+
+  if [[ "$compose_file" == *compose/secrets.yml* ]]; then write_check "VPN secrets overlay" 0; else write_check "VPN secrets overlay" 1 "add compose/secrets.yml to COMPOSE_FILE"; fi
+  for vpn_secret in secrets/openvpn_user secrets/openvpn_password; do
+    if [[ -s "$vpn_secret" ]] && LC_ALL=C tr -d '\r\n' < "$vpn_secret" | cmp -s - "$vpn_secret"; then
+      write_check "$vpn_secret" 0
+    else
+      write_check "$vpn_secret" 1 "run ./stack.sh init-vpn"
+    fi
+  done
+
+  for secret_name in QBIT_PASS SABNZBD_USER SABNZBD_PASS SONARR_USER SONARR_PASS RADARR_USER RADARR_PASS PROWLARR_USER PROWLARR_PASS BAZARR_USER BAZARR_PASS JELLYFIN_USER JELLYFIN_PASS SEERR_EMAIL; do
+    if [[ -n "${!secret_name:-}" ]]; then write_check "$secret_name set" 0; else write_check "$secret_name set" 1; fi
+  done
+
+  data_root="$(get_env_file_value DATA_ROOT)"
+  if [[ -n "$data_root" ]]; then write_check "DATA_ROOT configured" 0 "$data_root"; else write_check "DATA_ROOT configured" 1; fi
+
+  if [[ -f config/recyclarr/recyclarr.yml ]]; then write_check "recyclarr config" 0; else write_check "recyclarr config" 1 "run sync-profiles to create it"; fi
+
+  if docker compose config >/dev/null 2>&1; then write_check "compose renders" 0; else write_check "compose renders" 1; fi
+
+  for service in gluetun sabnzbd sonarr radarr prowlarr ersatztv; do
+    container_id="$(docker compose ps -q "$service")"
+    if [[ -n "$container_id" ]]; then write_check "$service container" 0; else write_check "$service container" 1; fi
+  done
+
+  if [[ -n "$(docker compose ps -q sonarr)" ]]; then
+    if docker compose exec -T sonarr sh -lc "test -d /data/usenet/incomplete -a -d /data/usenet/complete/tv -a -d /data/usenet/complete/movies -a -d /data/torrents -a -d /data/media/tv -a -d /data/media/movies -a -d /data/media/anime -a -d /data/media/anime-movies" >/dev/null 2>&1; then write_check "data folders exist" 0; else write_check "data folders exist" 1; fi
+    if docker compose exec -T sonarr sh -lc "rm -f /data/usenet/complete/tv/doctor-hardlink.txt /data/media/tv/doctor-hardlink.txt; echo test > /data/usenet/complete/tv/doctor-hardlink.txt; ln /data/usenet/complete/tv/doctor-hardlink.txt /data/media/tv/doctor-hardlink.txt; count=\$(stat -c '%h' /data/usenet/complete/tv/doctor-hardlink.txt); rm -f /data/usenet/complete/tv/doctor-hardlink.txt /data/media/tv/doctor-hardlink.txt; test \"\$count\" = 2" >/dev/null 2>&1; then write_check "hardlinks work" 0; else write_check "hardlinks work" 1; fi
+  fi
+
+  gluetun_container_id="$(docker compose ps -q gluetun)"
+  if [[ -n "$gluetun_container_id" ]]; then
+    gluetun_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$gluetun_container_id")"
+    if [[ "$gluetun_health" == "healthy" ]]; then write_check "gluetun health" 0 "$gluetun_health"; else write_check "gluetun health" 1 "$gluetun_health"; fi
+  fi
+
+  for endpoint in http://localhost:8081 http://localhost:9696 http://localhost:8989 http://localhost:7878 http://localhost:8409; do
+    if curl -fsSL --max-time 5 "$endpoint" >/dev/null 2>&1; then write_check "reachable $endpoint" 0; else write_check "reachable $endpoint" 1; fi
+  done
+}
+
+cmd="${1:-}"
+arg="${2:-}"
+option="${3:-}"
+
+case "$cmd" in
+  use)
+    need_arg "$arg" "target (linux)"
+    src="env/${arg}.env.example"
+    if [[ ! -f "$src" ]]; then
+      echo "Template not found: $src"
+      exit 1
+    fi
+    cp "$src" .env
+    echo "Switched target to $arg (.env replaced from $src)"
+    ;;
+  init-vpn)
+    init_vpn_secrets
+    ;;
+  install-service)
+    shift
+    bash ./scripts/install-systemd.sh "$@"
+    ;;
+  up)
+    check_docker_engine
+    check_vpn_secrets
+    docker compose up -d
+    ;;
+  down)
+    check_docker_engine
+    docker compose down
+    ;;
+  ps)
+    check_docker_engine
+    docker compose ps
+    ;;
+  setup-data)
+    check_docker_engine
+    docker compose exec -T sonarr sh -lc '
+      set -eu
+      : "${PUID:?PUID is not set in the Sonarr container}"
+      : "${PGID:?PGID is not set in the Sonarr container}"
+
+      for path in \
+        /data/usenet \
+        /data/usenet/incomplete \
+        /data/usenet/complete \
+        /data/usenet/complete/tv \
+        /data/usenet/complete/movies \
+        /data/torrents \
+        /data/torrents/incomplete \
+        /data/media \
+        /data/media/tv \
+        /data/media/movies \
+        /data/media/anime \
+        /data/media/anime-movies
+      do
+        if [ -d "$path" ]; then
+          echo "Keeping existing directory: $path"
+        else
+          mkdir "$path"
+          chown "$PUID:$PGID" "$path"
+          echo "Created directory: $path ($PUID:$PGID)"
+        fi
+      done
+
+      ls -la /data
+      ls -la /data/usenet
+      ls -la /data/media
+    '
+    ;;
+  audit-anime)
+    check_docker_engine
+    bash ./scripts/audit-anime.sh
+    ;;
+  bootstrap)
+    check_docker_engine
+    bash ./scripts/bootstrap.sh
+    ;;
+  import-indexers)
+    check_docker_engine
+    config_path="$arg"
+    dry_run=0
+    if [[ "$arg" == "--dry-run" ]]; then
+      config_path=""
+      dry_run=1
+    elif [[ "$option" == "--dry-run" ]]; then
+      dry_run=1
+    elif [[ -n "$option" ]]; then
+      echo "Unknown import-indexers option: $option"
+      exit 1
+    fi
+    if ((dry_run)); then
+      bash ./scripts/bootstrap.sh import-indexers "${config_path:-indexers.json}" --dry-run
+    else
+      bash ./scripts/bootstrap.sh import-indexers "${config_path:-indexers.json}"
+    fi
+    ;;
+  sync-profiles)
+    if [[ -n "$arg" && "$arg" != "--preview" ]]; then
+      echo "Unknown sync-profiles option: $arg"
+      exit 1
+    fi
+    run_recyclarr "$arg"
+    ;;
+  doctor)
+    doctor
+    ;;
+  config)
+    check_docker_engine
+    check_vpn_secrets
+    docker compose config | sed -E 's/(OPENVPN_PASSWORD:[[:space:]]*).+/\1<redacted>/; s/(OPENVPN_USER:[[:space:]]*).+/\1<redacted>/; s/(TS_AUTHKEY:[[:space:]]*).+/\1<redacted>/'
+    ;;
+  logs)
+    need_arg "$arg" "service"
+    check_docker_engine
+    docker compose logs -f "$arg"
+    ;;
+  restart)
+    need_arg "$arg" "service"
+    check_docker_engine
+    docker compose restart "$arg"
+    ;;
+  pull)
+    check_docker_engine
+    check_vpn_secrets
+    docker compose pull
+    docker compose up -d
+    docker image prune -f
+    ;;
+  verify)
+    check_docker_engine
+    check_vpn_secrets
+    gluetun_container_id="$(docker compose ps -q gluetun)"
+    if [[ -z "$gluetun_container_id" ]]; then
+      echo "Gluetun is not running. Start the stack first with ./stack.sh up."
+      exit 1
+    fi
+
+    gluetun_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$gluetun_container_id")"
+    if [[ "$gluetun_health" != "healthy" ]]; then
+      docker compose logs --tail=40 gluetun
+      echo "Gluetun is $gluetun_health. Fix the tunnel first, then run verify again."
+      exit 1
+    fi
+
+    exposed_vpn_env="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$gluetun_container_id" | grep -E '^(OPENVPN_(USER|PASSWORD)|VPN_(USER|PASS))=.+' || true)"
+    if [[ -n "$exposed_vpn_env" ]]; then
+      echo "FAIL: Gluetun has non-empty VPN credentials in its environment. Recreate it with compose/secrets.yml enabled."
+      exit 1
+    fi
+    echo "PASS: Gluetun inspect data contains no VPN credential values."
+
+    host_ip="$(public_ip | tr -d '[:space:]')"
+    vpn_ip="$(docker compose exec -T gluetun sh -lc 'wget -T 10 -qO- https://ipinfo.io/ip 2>/dev/null || wget -T 10 -qO- https://api.ipify.org 2>/dev/null || wget -T 10 -qO- http://ipinfo.io/ip 2>/dev/null || true' | tr -d '[:space:]')"
+    if [[ -z "$vpn_ip" ]]; then
+      echo "Could not read public IP from inside Gluetun. Check Gluetun logs and network connectivity."
+      exit 1
+    fi
+
+    echo "Host IP:    $host_ip"
+    echo "Gluetun IP: $vpn_ip"
+    if [[ "$host_ip" == "$vpn_ip" ]]; then
+      echo "FAIL: host and Gluetun IP match. qBittorrent may not be tunneled."
+      exit 1
+    fi
+    echo "PASS: Gluetun egress differs from host."
+    ;;
+  backup)
+    ts="$(date +%Y%m%d-%H%M%S)"
+    mkdir -p backups
+    docker compose stop
+    tar -czf "backups/media-stack-$ts.tgz" config .env docker-compose.yml compose env recyclarr.example.yml
+    docker compose up -d
+    echo "Backup written to backups/media-stack-$ts.tgz"
+    echo "Treat this archive as sensitive: config/ can contain API keys and session tokens."
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
