@@ -24,7 +24,7 @@ are superseded by that document.
 | A1 | Gateway local setup, WAN, final LAN subnet | UCG §1–2 | — | Gateway reachable by IP from the wired admin laptop |
 | A2 | Create networks; reserve server `10.0.40.10`, Pi `10.0.40.11`, NAS `10.0.40.20` and admin devices (`ADMIN_CLIENTS`) by MAC | UCG §3 | A1, host MACs | Reservations recorded in the operations inventory |
 | A3 | Adopt switches/APs; set port profiles: Pi on core port 6, server and NAS on office ports 2/3 (Servers access) | UCG §4 | A2 | Hosts' ports carry VLAN 40 untagged |
-| A4 | Zone firewall Z1–Z22 and Z25–Z32, with **Z13 created disabled** | UCG §5 | A2 (the address objects use those IPs) | Matrix matches architecture §9 |
+| A4 | Zone firewall Z1–Z22 and Z25–Z33, with **Z13 created disabled** | UCG §5 | A2 (the address objects use those IPs) | Matrix matches architecture §9 |
 
 Z13 blocks gateway DNS for non-admin Trusted devices. Until D3, DHCP still
 advertises the gateway as DNS, so enabling Z13 earlier would cut their name

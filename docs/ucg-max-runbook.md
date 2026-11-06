@@ -151,7 +151,7 @@ Create reusable address/port objects using the UI's supported groups:
 | `DNS_BYPASS_PORTS` | TCP/UDP 53 and 853 (includes DoQ) |
 | `GW_ADMIN_PORTS` | TCP/UDP 22, 53, 80, 443, 853 (Z13) |
 | `CAMERA_PORTS` | TCP 554, 80, 443 (Z12; confirm the ONVIF port) |
-| `IOT_GW_PORTS` | UDP 67, 5353 (Z20, used with Match Opposite) |
+| `IOT_GW_PORTS` | UDP 67, 5353 (Z20 and Z29, used with Match Opposite) |
 | `CAM_GW_PORTS` | UDP 67 (Z21, used with Match Opposite) |
 
 ## 4. Adopt devices and apply port profiles
@@ -213,7 +213,7 @@ from that table; don't keep a second copy here.
    custom zone should show Block All to the other internal zones and Allow All
    to External and Gateway. If any cell differs, **stop** and update §9.4
    before continuing.
-4. Create the address/port objects from section 3, then Z1–Z22 and Z25–Z32 in ID order.
+4. Create the address/port objects from section 3, then Z1–Z22 and Z25–Z33 in ID order.
    Create Z13, Z23 and Z24 **disabled**; Z13 is enabled one lease time after
    the DNS cutover (section 6, step 5). Enable logging on Z14, Z15, Z18 and Z19.
 5. Before enabling Z13, confirm the admin laptop's address is in `ADMIN_CLIENTS`
@@ -299,11 +299,12 @@ compatibility decision first. Add 5 GHz to Alfheim only for a device that needs 
   one AP; use supported switch/network isolation for any wired Guest ports.
   Keep such ports disabled until that test passes.
 - Print the Mead-Hall (Guest) QR code only after confirming its VLAN mapping.
-- Disable broad automatic mDNS reflection. Select **Trusted and IoT-Local
-  only** in the gateway mDNS proxy. Exclude Mgmt, Work, Servers, IoT-Cloud,
-  Cameras and Guest. Verify both permitted and forbidden discovery.
+- Disable broad automatic mDNS reflection. Select **Trusted, IoT-Local and
+  IoT-Cloud only** in the gateway mDNS proxy (IoT-Cloud for casting to the
+  TV and streaming boxes). Exclude Mgmt, Work, Servers, Cameras and Guest.
+  Verify both permitted and forbidden discovery.
 - If the installed mDNS implementation needs firewall exceptions, scope them
-  to that service and these two networks, not a general inter-VLAN allow.
+  to that service and these networks, not a general inter-VLAN allow.
 - Keep radio/channel settings conservative initially; check country, coverage
   and interference on site before tuning. Do not enable IoT client isolation
   indiscriminately where it would break border routers/local control.
@@ -357,7 +358,8 @@ a working wired Trusted admin connection. Export a backup at each stable stage.
 | IoT-Local / Cameras | External IPv4 and applicable IPv6 denied and logged; NTP from `.10`/`.11` works (DNS too on IoT-Local); gateway UI/SSH denied; no client-initiated pivot |
 | Server | Camera streams/ONVIF and IoT control work; arbitrary Trusted/Work access denied |
 | Guest clients | Cannot reach each other, including across APs; rate limit measured |
-| Trusted + IoT-Local | Intended mDNS discovery/control works; other VLANs see no reflected services |
+| Trusted + IoT-Local / IoT-Cloud | Intended mDNS discovery/control works, including casting to the streaming boxes; other VLANs see no reflected services |
+| IoT-Cloud streaming box | Jellyfin app works at `https://jellyfin.home.foxhound.nexus`; direct NAS ports (e.g. `10.0.40.20:8096`) are refused |
 | WAN / external mobile data | No unsolicited gateway/server exposure; Tailscale ACL admin/family behavior verified |
 | Server outage | Pi DNS continues; on-site gateway login works by IP; remote access loss is expected |
 | Trunk/PoE checks | Upstairs VLANs work; second-link RSTP failover works; correct PoE state; no loop |

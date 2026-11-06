@@ -115,6 +115,8 @@ flowchart LR
   SRV --- S
   T -->|"443 proxy, 53, SMB, 22 admin"| S
   T -->|"casting / control via mDNS proxy"| IL
+  T -->|"casting via mDNS proxy"| IC
+  IC -->|"443 Jellyfin via Caddy"| S
   S -->|"control"| IL
   S -->|"control"| IC
   S -->|"RTSP 554, ONVIF"| C
@@ -157,7 +159,7 @@ The UniFi default `192.168.1.0/24` is replaced **before** adopting devices (avoi
 | 30 | Work | 10.0.30.0/24 | 10.0.30.1 | Yes | Yes | Employer devices, isolated | Work laptop |
 | 40 | Servers | 10.0.40.0/24 | 10.0.40.1 | Reservations | Yes | Self-hosted infrastructure | Server .10, Pi .11, NAS .20 |
 | 50 | IoT-Local | 10.0.50.0/24 | 10.0.50.1 | Yes | **Blocked** | Local-control devices | Zigbee/Z-Wave/Thread border routers, ESPHome, AirPlay speakers, wall-panel phones |
-| 55 | IoT-Cloud | 10.0.55.0/24 | 10.0.55.1 | Yes | Yes | Quarantine for cloud-dependent devices | Smart TV, appliances |
+| 55 | IoT-Cloud | 10.0.55.0/24 | 10.0.55.1 | Yes | Yes | Quarantine for cloud-dependent devices | Smart TV, streaming boxes (onn), appliances |
 | 60 | Cameras | 10.0.60.0/24 | 10.0.60.1 | Reservations | **Blocked** | IP cameras | 5 Amcrest cameras |
 | 70 | Guest | 10.0.70.0/24 | 10.0.70.1 | Yes | Yes (rate-limited) | Visitors, client isolation | Guest devices |
 | 80 | Lab | 10.0.80.0/24 | 10.0.80.1 | Yes | Optional | Future experiments | Spare office switch ports |
@@ -233,14 +235,14 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | **IoT-Local** | ✗ | ✗ | DNS, NTP | — | ✗ | ✗ | ✗ | ✗ | DHCP, mDNS only | **✗ (logged)** |
 | **Cameras** | ✗ | ✗ | NTP | ✗ | — | ✗ | ✗ | ✗ | DHCP only | **✗ (logged)** |
 | **Work** | ✗ | ✗ | DNS, NTP | ✗ | ✗ | — | ✗ | ✗ | No UI/SSH/DNS | ✓ except ISP LAN |
-| **IoT-Cloud** | ✗ | ✗ | DNS, NTP | ✗ | ✗ | ✗ | — | ✗ | DHCP only | ✓ except DNS bypass and ISP LAN |
+| **IoT-Cloud** | ✗ | ✗ | DNS, NTP; 443 server (Caddy) | ✗ | ✗ | ✗ | — | ✗ | DHCP, mDNS only | ✓ except DNS bypass and ISP LAN |
 | **Guest** (Hotspot) | Return only | ✗ | DNS, NTP | ✗ | ✗ | ✗ | ✗ | — | Built-in DHCP/DNS | ✓ after the portal click; no DNS bypass; no ISP LAN |
 
 ✗ means blocked by a default; only the cells that differ from a default have a policy in §9.4.
 
 ### 9.4 Final policy set
 
-30 baseline policies (Z1–Z22 and Z25–Z32). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
+31 baseline policies (Z1–Z22 and Z25–Z33). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
 
 | ID | Source zone (match) | Destination zone (match) | Protocol / ports | Action | Replaces | Reasoning |
 |---|---|---|---|---|---|---|
@@ -270,10 +272,11 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | Z26 | Work | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | DNS and time; nothing else on Servers. |
 | Z27 | IoT-Cloud | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Same, for cloud devices. |
 | Z28 | Work | Gateway | TCP/UDP 22, 53, 80, 443, 853 | Block | New lockdown | Custom→Gateway is allow-all; this closes the UI, SSH and gateway DNS like Z13, leaving DHCP. |
-| Z29 | IoT-Cloud | Gateway | TCP/UDP, ports NOT 67 | Block | New lockdown | Allowlist for untrusted devices, like Z21: DHCP only. |
+| Z29 | IoT-Cloud | Gateway | TCP/UDP, ports NOT 67, 5353 | Block | New lockdown | Allowlist for untrusted devices, like Z20: DHCP and the mDNS proxy (casting) only. |
 | Z30 | IoT-Cloud | External | TCP/UDP 53, 853 | Block + log | F2 | Forces AdGuard filtering. A device that hard-codes DNS shows up here; add a per-device allow above this policy if it must. |
 | Z31 | Work | External: `ISP_LAN` | Any | Block | F10 | No reason to reach the ISP box. |
 | Z32 | IoT-Cloud | External: `ISP_LAN` | Any | Block | F10 | Same. |
+| Z33 | IoT-Cloud | Servers: `SERVER` | TCP 443 | Allow | New | Streaming boxes reach Jellyfin (and other services) only through Caddy, with each app's login; nothing on the NAS is opened directly. |
 
 **Conditional (create disabled; enable when needed):**
 
@@ -305,7 +308,7 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | Guest isolation | Covered + setting | Hotspot defaults keep guests out of every other zone; Mead-Hall (Guest SSID) client isolation covers clients within the Guest network. |
 
 **No inbound port forwards exist.**
-**mDNS proxy:** Trusted ↔ IoT-Local only (a gateway setting, not a policy).
+**mDNS proxy:** Trusted ↔ IoT-Local and Trusted ↔ IoT-Cloud only, for casting (a gateway setting, not a policy).
 **DoH:** blocked by AdGuard Home policy (DoH-provider lists, Firefox canary domain).
 
 ---
