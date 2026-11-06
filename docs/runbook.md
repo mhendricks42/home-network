@@ -620,6 +620,8 @@ route uses its app's login.
 **Media stack routes** (`qbittorrent.`, `sabnzbd.`, `prowlarr.`, `sonarr.`,
 `radarr.`, `bazarr.`, `jellyfin.`, `seerr.`, `ersatztv.`) go to `MEDIA_IP`
 (default the NAS, `10.0.40.20`), which must be the media stack's `BIND_ADDR`.
+The stack itself is deployed from [`media-stack/`](../media-stack/readme.md) on
+the NAS, with `BIND_ADDR=10.0.40.20` and `LAN_SUBNET=10.0.0.0/16` in its `.env`.
 Set these in the apps so they work behind the proxy:
 
 | App | Setting |

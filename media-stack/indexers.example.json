@@ -1,0 +1,46 @@
+{
+  "indexers": [
+    {
+      "schemaName": "animetosho-xyz",
+      "enable": true,
+      "priority": 10,
+      "appProfileId": 1
+    },
+    {
+      "schemaName": "nyaasi",
+      "enable": true,
+      "appProfileId": 1,
+      "fields": {
+        "baseUrl": "https://nyaa.si/",
+        "torrentBaseSettings.preferMagnetUrl": true
+      }
+    },
+    {
+      "schemaName": "NZBgeek",
+      "enable": false,
+      "priority": 10,
+      "appProfileId": 1,
+      "fields": {
+        "apiKey": "env:NZBGEEK_API_KEY"
+      }
+    },
+    { 
+      "schemaName": "NzbPlanet",
+      "enable": false,
+      "priority": 10,
+      "appProfileId": 1,
+      "fields": {
+        "apiKey": "env:NZBPLANET_API_KEY"
+      }
+    },
+    {
+      "schemaName": "thepiratebay",
+      "enable": true,
+      "appProfileId": 1,
+      "fields": {
+        "baseUrl": "https://thepiratebay.org/",
+        "torrentBaseSettings.preferMagnetUrl": true
+      }
+    }
+  ]
+}

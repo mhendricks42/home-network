@@ -1,0 +1,22 @@
+# Local runtime state
+/config/
+/config-backup-*
+
+# Active environment file
+.env
+.env.backup.*
+
+# Local declarative indexer config; may contain private tracker secrets
+indexers.json
+
+# Archives
+/backups/
+
+# Professional deployment CLI runtime state and local binaries
+.media-stack/
+/media-stack
+/media-stack.exe
+dist/
+
+# VPN credential files (file-based secrets pattern)
+/secrets/

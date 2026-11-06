@@ -1,0 +1,215 @@
+########################################################################
+# Home media stack base
+#
+# This file is platform-neutral. Pair it with one overlay:
+#   Linux:   compose/linux.yml
+#
+# Use env templates in env/ to set COMPOSE_FILE and platform defaults.
+########################################################################
+
+networks:
+  medianet:
+    driver: bridge
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun@sha256:2733bb22b27e3efa7a9f2cef9057ec12791b8b225793fcd3dbfd0508404dfc25
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    networks:
+      - medianet
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:8080:8080
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:6881:6881
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:6881:6881/udp
+    volumes:
+      - ./config/gluetun:/gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER=nordvpn
+      - VPN_TYPE=openvpn
+      - SERVER_COUNTRIES=${VPN_COUNTRY:?Set VPN_COUNTRY in .env}
+      - SERVER_HOSTNAMES=${VPN_HOSTNAME:-}
+      - TZ=${TZ:?Set TZ in .env}
+      - FIREWALL_OUTBOUND_SUBNETS=${LAN_SUBNET:?Set LAN_SUBNET in .env},100.64.0.0/10
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9999/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.2.4_v2.0.15-ls479
+    network_mode: service:gluetun
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID:?Set PUID in .env}
+      - PGID=${PGID:?Set PGID in .env}
+      - TZ=${TZ:?Set TZ in .env}
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - ./config/qbittorrent:/config
+      - ${DATA_ROOT:?Set DATA_ROOT in .env}:/data
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:5.1.3-ls275
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID:?Set PUID in .env}
+      - PGID=${PGID:?Set PGID in .env}
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/sabnzbd:/config
+      - ${DATA_ROOT:?Set DATA_ROOT in .env}:/data
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:8081:8080
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:2.6.5.5623-ls162
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID:?Set PUID in .env}
+      - PGID=${PGID:?Set PGID in .env}
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/prowlarr:/config
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:9696:9696
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:4.0.20.3014-ls326
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID:?Set PUID in .env}
+      - PGID=${PGID:?Set PGID in .env}
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/sonarr:/config
+      - ${DATA_ROOT:?Set DATA_ROOT in .env}:/data
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:8989:8989
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:6.4.4.10685-ls319
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID:?Set PUID in .env}
+      - PGID=${PGID:?Set PGID in .env}
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/radarr:/config
+      - ${DATA_ROOT:?Set DATA_ROOT in .env}:/data
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:7878:7878
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:v1.6.2-ls366
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID:?Set PUID in .env}
+      - PGID=${PGID:?Set PGID in .env}
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/bazarr:/config
+      - ${DATA_ROOT:?Set DATA_ROOT in .env}/media:/data/media
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:6767:6767
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin@sha256:b0b6d034aa52ed6e1a76daaa3d7ed29039d2b802a50fa8ffd1d9fc8d3fd836c7
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID:?Set PUID in .env}
+      - PGID=${PGID:?Set PGID in .env}
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/jellyfin:/config
+      - ${DATA_ROOT:?Set DATA_ROOT in .env}/media:/data/media:ro
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:8096:8096
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  ersatztv:
+    image: jasongdove/ersatztv@sha256:7c402e5f348184359e0951b44d55fb6db3df671fa77fc91dcbd609034d28778b
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/ersatztv:/root/.local/share/ersatztv
+      - ${DATA_ROOT:?Set DATA_ROOT in .env}/media:/data/media:ro
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:8409:8409
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
+
+  # One-shot TRaSH Guides sync. Not started by `up`; it is run on demand by
+  # `stack.sh sync-profiles`, which injects the
+  # Sonarr and Radarr API keys read from config/.
+  #
+  # Recyclarr publishes no `latest` tag on purpose, because a major version
+  # bump can require config changes. Pin the major version deliberately.
+  recyclarr:
+    image: recyclarr/recyclarr@sha256:9c6c74d52cfc6f740a5a3624aa83867e171bb70b90453ddb7a4048b8c80445f9
+    profiles:
+      - recyclarr
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    user: ${PUID:?Set PUID in .env}:${PGID:?Set PGID in .env}
+    environment:
+      - TZ=${TZ:?Set TZ in .env}
+      - SONARR_API_KEY=${SONARR_API_KEY:-}
+      - RADARR_API_KEY=${RADARR_API_KEY:-}
+    volumes:
+      - ./config/recyclarr:/config
+    restart: "no"
+
+  seerr:
+    image: seerr/seerr@sha256:27602401178d54f1964442287b9f23f67a3fa2252645ee8065839ea1c3f69e45
+    init: true
+    networks:
+      - medianet
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - TZ=${TZ:?Set TZ in .env}
+    volumes:
+      - ./config/seerr:/app/config
+    ports:
+      - ${BIND_ADDR:?Set BIND_ADDR in .env}:5055:5055
+    restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}

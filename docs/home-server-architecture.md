@@ -166,7 +166,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | Web admin / apps | Published via Caddy (`nas.home.<domain>`); proxy accepts NAS's self-signed backend cert |
 | File shares | SMB direct to `nas.home.arpa` from Trusted; remote via Tailscale route to 10.0.40.20 (admins) |
 | Hardening | Ugreen cloud remote-access feature and UPnP **off**; NAS firewall allows web only from proxy + admin devices |
-| Roles | restic backup target; UniFi backup copies; Forgejo mirror |
+| Roles | restic backup target; UniFi backup copies; Forgejo mirror; media stack ([`media-stack/`](../media-stack/readme.md), Docker on the NAS, published on 10.0.40.20 and proxied by Caddy) |
 | Power | Office UPS; NUT client |
 
 ---
