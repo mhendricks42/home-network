@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sonarr_url="${SONARR_URL:-http://localhost:8989}"
-jellyfin_url="${JELLYFIN_URL:-http://localhost:8096}"
+sonarr_url="${SONARR_URL:-http://${MEDIA_HOST:-localhost}:8989}"
+jellyfin_url="${JELLYFIN_URL:-http://${MEDIA_HOST:-localhost}:8096}"
 config_path='config/sonarr/config.xml'
 seerr_settings='config/seerr/settings.json'
 

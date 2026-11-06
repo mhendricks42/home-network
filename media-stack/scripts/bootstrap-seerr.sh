@@ -14,8 +14,8 @@
 
 set -euo pipefail
 
-SONARR_EXTERNAL_URL="${1:-http://localhost:8989}"
-RADARR_EXTERNAL_URL="${2:-http://localhost:7878}"
+SONARR_EXTERNAL_URL="${1:-http://${MEDIA_HOST:-localhost}:8989}"
+RADARR_EXTERNAL_URL="${2:-http://${MEDIA_HOST:-localhost}:7878}"
 
 wait_seerr_healthy() {
     local timeout=120
@@ -23,7 +23,7 @@ wait_seerr_healthy() {
     deadline=$(($(date +%s) + timeout))
 
     while [ "$(date +%s)" -lt "$deadline" ]; do
-        if curl -sf http://localhost:5055/api/v1/status &>/dev/null; then
+        if curl -sf "http://${MEDIA_HOST:-localhost}:5055/api/v1/status" &>/dev/null; then
             echo "Seerr is healthy."
             return 0
         fi

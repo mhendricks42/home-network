@@ -241,10 +241,15 @@ doctor() {
     if [[ "$gluetun_health" == "healthy" ]]; then write_check "gluetun health" 0 "$gluetun_health"; else write_check "gluetun health" 1 "$gluetun_health"; fi
   fi
 
-  for endpoint in http://localhost:8081 http://localhost:9696 http://localhost:8989 http://localhost:7878 http://localhost:8409; do
+  for endpoint in "http://$MEDIA_HOST:8081" "http://$MEDIA_HOST:9696" "http://$MEDIA_HOST:8989" "http://$MEDIA_HOST:7878" "http://$MEDIA_HOST:8409"; do
     if curl -fsSL --max-time 5 "$endpoint" >/dev/null 2>&1; then write_check "reachable $endpoint" 0; else write_check "reachable $endpoint" 1; fi
   done
 }
+
+# Ports are published on BIND_ADDR; host-side checks and bootstrap must use it.
+bind_addr="$(get_env_file_value BIND_ADDR)"
+case "$bind_addr" in ""|0.0.0.0|"::") MEDIA_HOST=localhost ;; *) MEDIA_HOST="$bind_addr" ;; esac
+export MEDIA_HOST
 
 cmd="${1:-}"
 arg="${2:-}"

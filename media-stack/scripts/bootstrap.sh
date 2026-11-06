@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly SONARR_URL='http://localhost:8989'
-readonly RADARR_URL='http://localhost:7878'
-readonly PROWLARR_URL='http://localhost:9696'
-readonly QBIT_URL='http://localhost:8080'
-readonly SAB_URL='http://localhost:8081'
-readonly JELLYFIN_URL='http://localhost:8096'
-readonly SEERR_URL='http://localhost:5055'
+readonly SONARR_URL="http://${MEDIA_HOST:-localhost}:8989"
+readonly RADARR_URL="http://${MEDIA_HOST:-localhost}:7878"
+readonly PROWLARR_URL="http://${MEDIA_HOST:-localhost}:9696"
+readonly QBIT_URL="http://${MEDIA_HOST:-localhost}:8080"
+readonly SAB_URL="http://${MEDIA_HOST:-localhost}:8081"
+readonly JELLYFIN_URL="http://${MEDIA_HOST:-localhost}:8096"
+readonly SEERR_URL="http://${MEDIA_HOST:-localhost}:5055"
 readonly JELLYFIN_CLIENT='MediaBrowser Client="media-stack", Device="bootstrap", DeviceId="media-stack-bootstrap", Version="1.0"'
 
 fail() {
