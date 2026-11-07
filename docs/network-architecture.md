@@ -115,6 +115,8 @@ flowchart LR
   SRV --- S
   T -->|"443 proxy, 53, SMB, 22 admin"| S
   T -->|"casting / control via mDNS proxy"| IL
+  T -->|"casting via mDNS proxy"| IC
+  IC -->|"443 Jellyfin via Caddy"| S
   S -->|"control"| IL
   S -->|"control"| IC
   S -->|"RTSP 554, ONVIF"| C
@@ -129,7 +131,7 @@ flowchart LR
 | Device | Model | Location | Role / purpose | Key configuration |
 |---|---|---|---|---|
 | Fiber jack | AT&T passive fiber jack | Closet (in box, top) | Fiber termination | None |
-| ISP gateway / ONT | AT&T BGW320 (fiber straight in) | Closet (in box, top) | Built-in ONT, AT&T authentication | Wi-Fi off; WAN mode pending (§21 P1). 7.8 × 3.9 × 7.5 in; mounted on its side in the 5-in box, temps monitored |
+| ISP gateway / ONT | AT&T BGW320 (fiber straight in) | Closet (in box, top) | Built-in ONT, AT&T authentication | Wi-Fi off; IP passthrough to the UCG Max (D-N15). 7.8 × 3.9 × 7.5 in; mounted on its side in the 5-in box, temps monitored |
 | Gateway / firewall / controller | UniFi Cloud Gateway Max (no storage) | Closet | Routing, zone firewall, IDS/IPS (2.3 Gbps), DHCP, UniFi Network controller | Local admin; remote access off; analytics off; firmware on a maintenance window; local auto-backups. 5.6 × 5 × 1.2 in, USB-C 5V/5A |
 | Core PoE switch | UniFi Pro Max 16 PoE | Closet | Switching; PoE for cameras, downstairs AP, Pi | 180 W budget; wall-mount kit; 12.8 × 6.3 × 1.7 in |
 | Office switch | UniFi Flex 2.5G PoE (8-port) | Office | Office access; powers U7 Lite | Own AC adapter on office UPS |
@@ -137,8 +139,8 @@ flowchart LR
 | AP upstairs | UniFi U7 Lite | Upstairs hallway ceiling | 2nd-floor Wi-Fi (2.4/5 GHz) | Powered by office switch |
 | Patch panel | 12-port wall-mount keystone | Closet (in box, below ISP gear) | Terminate in-wall runs | ~10 × 2.6 × 2.75 in |
 | Secondary infra node | Raspberry Pi 3B+ + PoE HAT | Closet (in box) | Secondary DNS, NTP server, NUT server, Uptime Kuma | VLAN 40, 10.0.40.11; 3B+ Ethernet tops out around 300 Mbps (ample for DNS) |
-| UPS (closet) | APC BE600M1 (600 VA / 330 W) | Closet (in box, bottom) | Battery for BGW320, gateway, switch, and via PoE the cameras, U7 Pro and Pi | Wall-mount; USB → Pi (NUT). ~23 min at 100 W, so expect roughly 15–20 min at ~110–125 W |
-| UPS (office) | ~650–950 VA (e.g., APC BE650G1) | Office | Server, NAS, office switch (and U7 Lite) | Reports to NUT on the Pi |
+| UPS (closet) | APC BE600M1 (600 VA / 330 W) | Closet (in box, bottom) | Battery for BGW320, gateway, switch, and via PoE the cameras, U7 Pro and Pi | Wall-mount; USB → vidar (NUT); vidar shuts itself down, the rest runs until the battery ends. ~23 min at 100 W, so expect roughly 15–20 min at ~110–125 W |
+| UPS (office) | ~650–950 VA (e.g., APC BE650G1) | Office | Server, NAS, office switch (and U7 Lite) | USB → odin (NUT server); NAS is odin's NUT client |
 | Cameras | 5× Amcrest 5MP PoE (bullets + domes) | Exterior | Recorded and analyzed by Frigate | Configured offline: firmware updated, P2P/UPnP/cloud off, unique creds, substream ≤720p/5 fps, NTP → 10.0.40.10 (set manually) |
 | Home server | HP ProDesk 400 G4 DM (i5-8500T, 16 GB) | Office | All services (companion doc) | VLAN 40, 10.0.40.10, Ubuntu 26.04 LTS + Docker |
 | NAS | Ugreen | Office | File shares, backup target | VLAN 40, 10.0.40.20; Ugreen cloud remote access and UPnP off |
@@ -157,7 +159,7 @@ The UniFi default `192.168.1.0/24` is replaced **before** adopting devices (avoi
 | 30 | Work | 10.0.30.0/24 | 10.0.30.1 | Yes | Yes | Employer devices, isolated | Work laptop |
 | 40 | Servers | 10.0.40.0/24 | 10.0.40.1 | Reservations | Yes | Self-hosted infrastructure | Server .10, Pi .11, NAS .20 |
 | 50 | IoT-Local | 10.0.50.0/24 | 10.0.50.1 | Yes | **Blocked** | Local-control devices | Zigbee/Z-Wave/Thread border routers, ESPHome, AirPlay speakers, wall-panel phones |
-| 55 | IoT-Cloud | 10.0.55.0/24 | 10.0.55.1 | Yes | Yes | Quarantine for cloud-dependent devices | Smart TV, appliances |
+| 55 | IoT-Cloud | 10.0.55.0/24 | 10.0.55.1 | Yes | Yes | Quarantine for cloud-dependent devices | Smart TV, streaming boxes (onn), game consoles, appliances |
 | 60 | Cameras | 10.0.60.0/24 | 10.0.60.1 | Reservations | **Blocked** | IP cameras | 5 Amcrest cameras |
 | 70 | Guest | 10.0.70.0/24 | 10.0.70.1 | Yes | Yes (rate-limited) | Visitors, client isolation | Guest devices |
 | 80 | Lab | 10.0.80.0/24 | 10.0.80.1 | Yes | Optional | Future experiments | Spare office switch ports |
@@ -233,14 +235,14 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | **IoT-Local** | ✗ | ✗ | DNS, NTP | — | ✗ | ✗ | ✗ | ✗ | DHCP, mDNS only | **✗ (logged)** |
 | **Cameras** | ✗ | ✗ | NTP | ✗ | — | ✗ | ✗ | ✗ | DHCP only | **✗ (logged)** |
 | **Work** | ✗ | ✗ | DNS, NTP | ✗ | ✗ | — | ✗ | ✗ | No UI/SSH/DNS | ✓ except ISP LAN |
-| **IoT-Cloud** | ✗ | ✗ | DNS, NTP | ✗ | ✗ | ✗ | — | ✗ | DHCP only | ✓ except DNS bypass and ISP LAN |
+| **IoT-Cloud** | ✗ | ✗ | DNS, NTP; 443 server (Caddy) | ✗ | ✗ | ✗ | — | ✗ | DHCP, mDNS only | ✓ except DNS bypass and ISP LAN |
 | **Guest** (Hotspot) | Return only | ✗ | DNS, NTP | ✗ | ✗ | ✗ | ✗ | — | Built-in DHCP/DNS | ✓ after the portal click; no DNS bypass; no ISP LAN |
 
 ✗ means blocked by a default; only the cells that differ from a default have a policy in §9.4.
 
 ### 9.4 Final policy set
 
-30 baseline policies (Z1–Z22 and Z25–Z32). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
+31 baseline policies (Z1–Z22 and Z25–Z33). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
 
 | ID | Source zone (match) | Destination zone (match) | Protocol / ports | Action | Replaces | Reasoning |
 |---|---|---|---|---|---|---|
@@ -270,10 +272,11 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | Z26 | Work | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | DNS and time; nothing else on Servers. |
 | Z27 | IoT-Cloud | Servers: `DNS_NODES` | TCP/UDP 53, UDP 123 | Allow | F1 | Same, for cloud devices. |
 | Z28 | Work | Gateway | TCP/UDP 22, 53, 80, 443, 853 | Block | New lockdown | Custom→Gateway is allow-all; this closes the UI, SSH and gateway DNS like Z13, leaving DHCP. |
-| Z29 | IoT-Cloud | Gateway | TCP/UDP, ports NOT 67 | Block | New lockdown | Allowlist for untrusted devices, like Z21: DHCP only. |
+| Z29 | IoT-Cloud | Gateway | TCP/UDP, ports NOT 67, 5353 | Block | New lockdown | Allowlist for untrusted devices, like Z20: DHCP and the mDNS proxy (casting) only. |
 | Z30 | IoT-Cloud | External | TCP/UDP 53, 853 | Block + log | F2 | Forces AdGuard filtering. A device that hard-codes DNS shows up here; add a per-device allow above this policy if it must. |
 | Z31 | Work | External: `ISP_LAN` | Any | Block | F10 | No reason to reach the ISP box. |
 | Z32 | IoT-Cloud | External: `ISP_LAN` | Any | Block | F10 | Same. |
+| Z33 | IoT-Cloud | Servers: `SERVER` | TCP 443 | Allow | New | Streaming boxes reach Jellyfin (and other services) only through Caddy, with each app's login; nothing on the NAS is opened directly. |
 
 **Conditional (create disabled; enable when needed):**
 
@@ -305,7 +308,7 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | Guest isolation | Covered + setting | Hotspot defaults keep guests out of every other zone; Mead-Hall (Guest SSID) client isolation covers clients within the Guest network. |
 
 **No inbound port forwards exist.**
-**mDNS proxy:** Trusted ↔ IoT-Local only (a gateway setting, not a policy).
+**mDNS proxy:** Trusted ↔ IoT-Local and Trusted ↔ IoT-Cloud only, for casting (a gateway setting, not a policy).
 **DoH:** blocked by AdGuard Home policy (DoH-provider lists, Firefox canary domain).
 
 ---
@@ -362,7 +365,7 @@ The UCG Max does not serve NTP to LAN clients, so the two DNS nodes also serve t
 |---|---|
 | Service | AT&T Fiber, 1 Gbps |
 | Hand-off | Fiber jack → BGW320 (built-in ONT) → UCG Max WAN |
-| BGW320 mode | Pending (§21 P1) |
+| BGW320 mode | IP passthrough (DHCPS-fixed to the UCG Max WAN MAC); UCG Max holds the public IPv4 address (D-N15) |
 | Public IP changes | No impact on remote access (Tailscale is outbound) |
 | IPv6 | Prefix delegation from AT&T; enabled on selected VLANs |
 | Backup WAN | None. **Runbook:** during a fiber outage, connect a phone hotspot/tether to UCG Max WAN2 manually |
@@ -452,7 +455,7 @@ The UCG Max does not serve NTP to LAN clients, so the two DNS nodes also serve t
 | Service up/down, incl. server | Uptime Kuma (Pi) | Notification |
 | IDS/IPS events, blocked egress | UniFi logs | Weekly review |
 | Closet temperature | UniFi temps → HA | > 45 °C |
-| Power | NUT (Pi) | On battery / low battery → orderly shutdown |
+| Power | NUT: vidar (closet UPS), odin (office UPS) → HA | On battery / low battery → orderly shutdown |
 
 ---
 
@@ -507,7 +510,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | 0 | Inventory devices; confirm wall framing for the media box |
 | 1 | Install recessed box, outlet, patch panel; mount gear per §13.2; attempt Cat6 pull via coax |
 | 2 | UCG Max local-only setup (browser → Advanced Setup → local admin); change default subnet; enable backups |
-| 3 | BGW320: Wi-Fi off; WAN mode per §21 P1 |
+| 3 | BGW320: Wi-Fi off; IP passthrough (D-N15) |
 | 4 | Adopt switches/APs; create VLANs and separate SSIDs per §8 |
 | 5 | Server + Pi DNS (companion doc); DHCP DNS → 10.0.40.10/.11 |
 | 6 | Zone policies; one week of logging; fix breakage |
@@ -534,6 +537,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | D-N10 | Cameras | 5× Amcrest 5MP | 2026-10-18 |
 | D-N11 | Wi-Fi VLAN assignment | Separate Work and IoT-Cloud SSIDs, no PPSK; retain WPA3/6 GHz on the Trusted SSID | 2026-10-19 |
 | D-N14 | SSID names | Mostly-Harmless (Trusted), The-Forge (Work), Alfheim (IoT-Local), Niflheim (IoT-Cloud), Mead-Hall (Guest) | 2026-11-04 |
+| D-N15 | BGW320 WAN mode | IP passthrough (closes former P1): one NAT layer, public IP on the UCG Max, best Tailscale direct connections | 2026-11-06 |
 | D-N12 | Domain and DNS host | `foxhound.nexus`, Cloudflare Registrar + DNS (closes former P2) | 2026-11-01 |
 | D-N13 | Time service | chrony on the server and Pi hosts serves NTP to all VLANs (UCG Max has no LAN NTP server) | 2026-11-01 |
 | — | Raspberry Pi | Pi 3B+ (owned) | 2026-10-18 |
@@ -542,17 +546,6 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 ---
 
 ## 21. Pending decisions (not in baseline)
-
-### P1 — BGW320 WAN mode
-
-| Option | Pros | Cons |
-|---|---|---|
-| A. IP passthrough | UCG Max holds the public IP; one NAT layer; best Tailscale direct connections; UCG Max sees real WAN events | One-time BGW320 configuration; brief outage during change |
-| B. Leave as-is (double NAT) | No ISP changes | Two NAT layers; more Tailscale relayed connections; UCG Max sees a private WAN IP |
-
-- **Trade-off:** small one-time setup vs. a cleaner, more predictable WAN.
-- **Dependencies:** Tailscale connection quality; UCG Max WAN monitoring; the ISP subnet blocks (Z16/Z17) apply either way.
-- **Recommendation:** A.
 
 ### P3 — Camera mount locations
 
@@ -566,6 +559,17 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | B. Single trunk only | $0 | Office depends on one cable |
 
 - **Dependencies:** whether the coax moves freely.
+
+### P5 — Open NAT for game consoles
+
+Consoles on IoT-Cloud get Moderate / Type 2 / B NAT with UPnP off and no port forwards (P4). That is fine for nearly all games. Only if a game really needs Open NAT:
+
+| Option | Pros | Cons |
+|---|---|---|
+| A. Accept Moderate NAT | No exception to P4 | Occasionally can't host or join a specific player |
+| B. Gaming VLAN 65 with UPnP scoped to that VLAN only | Open NAT; every other network keeps UPnP off | New VLAN and zone (copy IoT-Cloud's policies); a deliberate exception to "zero inbound" |
+
+- **Recommendation:** A until a real game fails, then B.
 
 ---
 

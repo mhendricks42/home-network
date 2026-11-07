@@ -152,7 +152,7 @@ func (s State) Validate() error {
 	switch s.Spec.Networking.RemoteAccess {
 	case "none":
 	default:
-		// Remote access is home-network's Tailscale subnet router on oden.
+		// Remote access is home-network's Tailscale subnet router on odin.
 		problems = append(problems, "spec.networking.remoteAccess must be none")
 	}
 	if s.Spec.Features.Torrents {

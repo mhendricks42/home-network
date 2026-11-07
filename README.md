@@ -1,6 +1,6 @@
 # home-network
 
-Service configurations for the home server (`oden`, Ubuntu), the Raspberry Pi
+Service configurations for the home server (`odin`, Ubuntu), the Raspberry Pi
 (`vidar`) and the NAS (`mimir`) described in
 [the architecture](docs/home-server-architecture.md). Develop on Windows; deploy
 on the **Linux targets**, not Docker Desktop.
@@ -29,5 +29,6 @@ Local configuration checks (no Docker daemon required):
 These checks are not container integration tests. An actual Linux deployment
 must pass the runbook's acceptance checks before changing household DHCP/DNS.
 
-Host provisioning, Tailscale, NUT, restic, SOPS integration, UniFi changes and
-Ansible drift checks are **not implemented** by this Docker-only layer.
+Tailscale, UPS shutdown (NUT) and backups (restic) are manual host steps in
+[go-live](docs/go-live.md). Ansible provisioning, SOPS and UniFi automation are
+not implemented.

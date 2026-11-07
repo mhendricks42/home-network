@@ -13,8 +13,7 @@ resulting policy and rule order rather than relying on a particular menu label.
 
 Do not cut over household devices until these gates pass:
 
-- Choose and record the BGW320 WAN mode (architecture pending decision P1).
-  Section 2 covers either option; passthrough is not assumed approved.
+- BGW320 WAN mode is **IP passthrough** (architecture D-N15); section 2.
 - Both DNS nodes answer independently before advertising them through DHCP.
 - Identify admin device MACs/IPs, camera MACs/IPs, the actual BGW320 subnet,
   and the physical WAN/LAN port assignments. Do not guess them.
@@ -64,23 +63,39 @@ Keep the BGW320's own LAN separate from every UCG LAN. Record its real address,
 subnet and configuration backup/screenshots before changes. Disable its Wi-Fi
 and UPnP; no household clients remain on it.
 
-### If P1 selects IP passthrough
+### IP passthrough (D-N15)
 
-1. In the BGW320 local UI, open **Firewall > IP Passthrough**, select allocation
-   mode **Passthrough**, mode **DHCPS-fixed**, and the UCG's actual WAN MAC.
-   Do not select a camera, switch, or laptop.
-2. Save; renew/restart the WAN connection as required by the BGW320. Keep UCG
-   IPv4 WAN on DHCP. Do not configure PPPoE, clone an unrelated MAC, or remove
-   the BGW320/ONT from the fiber path.
-3. Confirm the UCG receives the expected public IPv4 address, has a default
-   route and can reach the internet. Passthrough is not a transparent bridge:
-   the BGW320 management subnet still needs blocking from clients.
+Do this in a short maintenance window from a **wired** admin device; the
+internet drops for a few minutes. Have the BGW320's **Device Access Code**
+(sticker on the BGW320) ready.
 
-### If P1 selects double NAT
-
-Leave BGW320 routing enabled; UCG WAN uses DHCP and receives a BGW320 LAN
-address. Accept that Tailscale may relay more often. Do not "fix" this by
-adding inbound forwards or placing a server in the BGW320 DMZ.
+1. **Before:** record the BGW320's LAN address and subnet (normally
+   `192.168.1.254`, `192.168.1.0/24`) and screenshot its *Firewall* and
+   *Home Network* pages. In UniFi, note the UCG's current WAN address (a
+   `192.168.1.x` address means double NAT) and its **WAN port MAC**
+   (UniFi device page → Ports → the WAN port).
+2. **BGW320 → Home Network → Wi-Fi:** turn both radios off, if not already.
+3. **BGW320 → Firewall → IP Passthrough:**
+   - Allocation Mode: **Passthrough**
+   - Passthrough Mode: **DHCPS-fixed**
+   - Passthrough Fixed MAC Address: the UCG WAN MAC from step 1 (or pick it
+     from the device list). Never a camera, switch or laptop.
+   - Save, entering the Device Access Code when asked.
+4. **BGW320 → Firewall → Packet Filter / Firewall Advanced:** leave packet
+   filtering **off** and turn off its extra filters (ALGs, flood and scan
+   protection) so it doesn't second-guess the UCG. Keep its IPv6 on: the UCG
+   gets its IPv6 prefix from it.
+5. **Renew the UCG's WAN:** unplug the WAN cable for 10 seconds, or restart
+   the UCG. Keep UCG IPv4 WAN on DHCP; no PPPoE, no MAC cloning.
+6. **Verify:**
+   - UniFi shows a **public** WAN IPv4 address (not `192.168.1.x`), and any
+     "double NAT" warning is gone.
+   - From a Trusted device, `ping 1.1.1.1` and browsing work; the public IP
+     shown by an IP-check site matches the UCG's WAN address.
+   - `Z16`/`Z17`: `192.168.1.254` still answers for admins only. The BGW320
+     keeps its management address in passthrough, so `ISP_LAN` stays as is.
+7. **Rollback:** BGW320 → Firewall → IP Passthrough → Allocation Mode **Off**,
+   save, renew the UCG WAN again.
 
 For either mode:
 
@@ -151,7 +166,7 @@ Create reusable address/port objects using the UI's supported groups:
 | `DNS_BYPASS_PORTS` | TCP/UDP 53 and 853 (includes DoQ) |
 | `GW_ADMIN_PORTS` | TCP/UDP 22, 53, 80, 443, 853 (Z13) |
 | `CAMERA_PORTS` | TCP 554, 80, 443 (Z12; confirm the ONVIF port) |
-| `IOT_GW_PORTS` | UDP 67, 5353 (Z20, used with Match Opposite) |
+| `IOT_GW_PORTS` | UDP 67, 5353 (Z20 and Z29, used with Match Opposite) |
 | `CAM_GW_PORTS` | UDP 67 (Z21, used with Match Opposite) |
 
 ## 4. Adopt devices and apply port profiles
@@ -213,7 +228,7 @@ from that table; don't keep a second copy here.
    custom zone should show Block All to the other internal zones and Allow All
    to External and Gateway. If any cell differs, **stop** and update §9.4
    before continuing.
-4. Create the address/port objects from section 3, then Z1–Z22 and Z25–Z32 in ID order.
+4. Create the address/port objects from section 3, then Z1–Z22 and Z25–Z33 in ID order.
    Create Z13, Z23 and Z24 **disabled**; Z13 is enabled one lease time after
    the DNS cutover (section 6, step 5). Enable logging on Z14, Z15, Z18 and Z19.
 5. Before enabling Z13, confirm the admin laptop's address is in `ADMIN_CLIENTS`
@@ -299,11 +314,12 @@ compatibility decision first. Add 5 GHz to Alfheim only for a device that needs 
   one AP; use supported switch/network isolation for any wired Guest ports.
   Keep such ports disabled until that test passes.
 - Print the Mead-Hall (Guest) QR code only after confirming its VLAN mapping.
-- Disable broad automatic mDNS reflection. Select **Trusted and IoT-Local
-  only** in the gateway mDNS proxy. Exclude Mgmt, Work, Servers, IoT-Cloud,
-  Cameras and Guest. Verify both permitted and forbidden discovery.
+- Disable broad automatic mDNS reflection. Select **Trusted, IoT-Local and
+  IoT-Cloud only** in the gateway mDNS proxy (IoT-Cloud for casting to the
+  TV and streaming boxes). Exclude Mgmt, Work, Servers, Cameras and Guest.
+  Verify both permitted and forbidden discovery.
 - If the installed mDNS implementation needs firewall exceptions, scope them
-  to that service and these two networks, not a general inter-VLAN allow.
+  to that service and these networks, not a general inter-VLAN allow.
 - Keep radio/channel settings conservative initially; check country, coverage
   and interference on site before tuning. Do not enable IoT client isolation
   indiscriminately where it would break border routers/local control.
@@ -337,11 +353,42 @@ after IPv4 rules work; an IPv4-only test is not completion of this design.
 
 ## 9. Cutover and acceptance checklist
 
-Enable IDS/IPS in **detect** mode first. After a week reviewing events and
-allowlist needs, change to prevention and repeat throughput/application tests.
-Enable local alerts/logging for IDS and Z18/Z19; review volume and retention so
-blocked IoT chatter does not exhaust storage. Remote push/email/HA alerts are
-not proven by an entry in the UniFi event log; test the selected delivery path.
+### IDS/IPS
+
+Settings → **CyberSecure** (or **Security**) → **Intrusion Prevention**. Menu
+names vary by Network version; the options are the same.
+
+1. **Detect first.** Mode **Notify** (IDS), all networks selected (Mgmt,
+   Trusted, Work, Servers, IoT-Local, IoT-Cloud, Cameras, Guest), the free
+   signature set only (no subscription, architecture P2).
+2. **Categories.** On: malware, botnet/C&C, exploits, attack response, scans,
+   DoS, phishing, compromised/known-bad hosts, hacking tools. Off (too noisy
+   at home): P2P (torrents, consoles), games, chat, policy/informational,
+   inappropriate content.
+3. **Honeypots.** Add one unused address each on IoT-Local and Cameras (e.g.
+   `10.0.50.2`, `10.0.60.2`), outside the DHCP pool and recorded with the
+   reservations. Any alert from one means a device is scanning.
+4. **Keep DNS-touching features off** on every network: Ad Blocking, Content
+   Filtering, DNS Shield / Encrypted DNS. They intercept DNS and bypass
+   AdGuard. Region blocking is optional; outbound country blocks tend to break
+   apps and CDNs.
+5. **Test.** From a Trusted device: `curl -s http://testmynids.org/uid/index.html`.
+   An alert appears under the threat/security detections within a minute or
+   two. No alert: that network or category isn't inspected.
+6. **Run a week in detect mode.** Review alerts every few days. Suppress false
+   positives per signature (and device) from the alert, never by disabling a
+   threat category. Investigate hits from IoT-Local or Cameras.
+7. **Prevent.** Change mode to **Notify and Block**. Repeat a speed test
+   (the UCG Max inspects about 2.3 Gbps, above the 1 Gbps line) and everyday
+   use (streaming, a game, a work VPN). Re-run the step 5 test: the page is now
+   blocked.
+8. **Alerts and upkeep.** Settings → Notifications: threat alerts to your
+   phone, and test that one arrives (an event-log entry doesn't prove
+   delivery). Keep local logging on for IDS and Z18/Z19, and check retention
+   so blocked IoT chatter doesn't fill storage. Review detections weekly
+   (architecture §15) and recheck these settings after UniFi updates.
+
+### Cutover
 
 Move one test endpoint, then devices VLAN by VLAN (IoT, Cameras, Work), retaining
 a working wired Trusted admin connection. Export a backup at each stable stage.
@@ -357,7 +404,8 @@ a working wired Trusted admin connection. Export a backup at each stable stage.
 | IoT-Local / Cameras | External IPv4 and applicable IPv6 denied and logged; NTP from `.10`/`.11` works (DNS too on IoT-Local); gateway UI/SSH denied; no client-initiated pivot |
 | Server | Camera streams/ONVIF and IoT control work; arbitrary Trusted/Work access denied |
 | Guest clients | Cannot reach each other, including across APs; rate limit measured |
-| Trusted + IoT-Local | Intended mDNS discovery/control works; other VLANs see no reflected services |
+| Trusted + IoT-Local / IoT-Cloud | Intended mDNS discovery/control works, including casting to the streaming boxes; other VLANs see no reflected services |
+| IoT-Cloud streaming box | Jellyfin app works at `https://jellyfin.home.foxhound.nexus`; direct NAS ports (e.g. `10.0.40.20:8096`) are refused |
 | WAN / external mobile data | No unsolicited gateway/server exposure; Tailscale ACL admin/family behavior verified |
 | Server outage | Pi DNS continues; on-site gateway login works by IP; remote access loss is expected |
 | Trunk/PoE checks | Upstairs VLANs work; second-link RSTP failover works; correct PoE state; no loop |

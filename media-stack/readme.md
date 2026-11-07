@@ -2,8 +2,8 @@
 
 The media automation stack for the NAS (`mimir`, `10.0.40.20`) in
 [home-network](../README.md). It runs on Linux with Docker. Remote access comes
-from home-network's Tailscale subnet router on `oden`, and HTTPS names
-(`jellyfin.home.foxhound.nexus` and friends) from oden's Caddy, so this stack
+from home-network's Tailscale subnet router on `odin`, and HTTPS names
+(`jellyfin.home.foxhound.nexus` and friends) from odin's Caddy, so this stack
 runs neither.
 
 One base Compose file holds the services. Thin overlays add secrets, GPU and
@@ -221,7 +221,7 @@ The Bash helper must be sourced, not executed, because only a sourced script can
 
 ## Setup: Linux (production)
 
-Set these in `.env` for home-network: `BIND_ADDR=10.0.40.20` (the NAS; oden's Caddy proxies to it) and `LAN_SUBNET=10.0.0.0/16` (all home VLANs, so Gluetun lets Caddy and clients get replies from qBittorrent).
+Set these in `.env` for home-network: `BIND_ADDR=10.0.40.20` (the NAS; odin's Caddy proxies to it) and `LAN_SUBNET=10.0.0.0/16` (all home VLANs, so Gluetun lets Caddy and clients get replies from qBittorrent).
 
 **1. Create the data tree.** One filesystem, three subfolders:
 
@@ -443,11 +443,11 @@ Three paths cross the network edge. Two are outbound-initiated; one is refused.
 
 ```
 qBittorrent ──► Gluetun ──► VPN exit ──► swarm        (sees the VPN's IP)
-your phone  ──► Tailscale ──► oden (subnet router) ──► NAS   (home-network)
+your phone  ──► Tailscale ──► odin (subnet router) ──► NAS   (home-network)
 internet    ──► router ──╫──  server                   (0 ports forwarded)
 ```
 
-**This repository does not configure router port forwarding.** Service ports bind to `BIND_ADDR` (the NAS's LAN address); home-network's zone firewall decides who reaches them, and oden's Caddy is the normal way in. Bootstrap enables application authentication rather than relying on network placement alone.
+**This repository does not configure router port forwarding.** Service ports bind to `BIND_ADDR` (the NAS's LAN address); home-network's zone firewall decides who reaches them, and odin's Caddy is the normal way in. Bootstrap enables application authentication rather than relying on network placement alone.
 
 Worth being precise about scope: Gluetun controls where qBittorrent's traffic *exits*. It does not isolate it laterally. Gluetun sits on `medianet`, so a compromised qBittorrent can reach Sonarr and Jellyfin on the bridge. The tunnel is a privacy control, not a containment boundary.
 
