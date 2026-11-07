@@ -353,11 +353,42 @@ after IPv4 rules work; an IPv4-only test is not completion of this design.
 
 ## 9. Cutover and acceptance checklist
 
-Enable IDS/IPS in **detect** mode first. After a week reviewing events and
-allowlist needs, change to prevention and repeat throughput/application tests.
-Enable local alerts/logging for IDS and Z18/Z19; review volume and retention so
-blocked IoT chatter does not exhaust storage. Remote push/email/HA alerts are
-not proven by an entry in the UniFi event log; test the selected delivery path.
+### IDS/IPS
+
+Settings → **CyberSecure** (or **Security**) → **Intrusion Prevention**. Menu
+names vary by Network version; the options are the same.
+
+1. **Detect first.** Mode **Notify** (IDS), all networks selected (Mgmt,
+   Trusted, Work, Servers, IoT-Local, IoT-Cloud, Cameras, Guest), the free
+   signature set only (no subscription, architecture P2).
+2. **Categories.** On: malware, botnet/C&C, exploits, attack response, scans,
+   DoS, phishing, compromised/known-bad hosts, hacking tools. Off (too noisy
+   at home): P2P (torrents, consoles), games, chat, policy/informational,
+   inappropriate content.
+3. **Honeypots.** Add one unused address each on IoT-Local and Cameras (e.g.
+   `10.0.50.2`, `10.0.60.2`), outside the DHCP pool and recorded with the
+   reservations. Any alert from one means a device is scanning.
+4. **Keep DNS-touching features off** on every network: Ad Blocking, Content
+   Filtering, DNS Shield / Encrypted DNS. They intercept DNS and bypass
+   AdGuard. Region blocking is optional; outbound country blocks tend to break
+   apps and CDNs.
+5. **Test.** From a Trusted device: `curl -s http://testmynids.org/uid/index.html`.
+   An alert appears under the threat/security detections within a minute or
+   two. No alert: that network or category isn't inspected.
+6. **Run a week in detect mode.** Review alerts every few days. Suppress false
+   positives per signature (and device) from the alert, never by disabling a
+   threat category. Investigate hits from IoT-Local or Cameras.
+7. **Prevent.** Change mode to **Notify and Block**. Repeat a speed test
+   (the UCG Max inspects about 2.3 Gbps, above the 1 Gbps line) and everyday
+   use (streaming, a game, a work VPN). Re-run the step 5 test: the page is now
+   blocked.
+8. **Alerts and upkeep.** Settings → Notifications: threat alerts to your
+   phone, and test that one arrives (an event-log entry doesn't prove
+   delivery). Keep local logging on for IDS and Z18/Z19, and check retention
+   so blocked IoT chatter doesn't fill storage. Review detections weekly
+   (architecture §15) and recheck these settings after UniFi updates.
+
+### Cutover
 
 Move one test endpoint, then devices VLAN by VLAN (IoT, Cameras, Work), retaining
 a working wired Trusted admin connection. Export a backup at each stable stage.
