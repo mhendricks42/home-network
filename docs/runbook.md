@@ -72,9 +72,9 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 
 | # | Step | Where | Needs | Done when |
 |---|---|---|---|---|
-| E1 | Tailscale on the server host: advertise `10.0.40.1/32`, `10.0.40.10/32`, `10.0.40.20/32`; approve routes; Tailnet Lock; ACLs; split DNS → `10.0.40.10`; add the `tailscale0` ufw line | Architecture §11 | D1 (AdGuard answering), B6 | From mobile data, `https://ha.home.foxhound.nexus` loads |
-| E2 | NUT: Pi as NUT server on the closet UPS; server and NAS as clients | Host | B6 (Pi TCP 3493 rule) | `upsc` works from the server; a pulled-plug test shuts hosts down cleanly |
-| E3 | Backups: restic to the NAS, UniFi config export, off-device copy | §6, UCG §10 | B1, D1 | One restore completes on a clean target |
+| E1 | Tailscale on the server host: advertise `10.0.40.1/32`, `10.0.40.10/32`, `10.0.40.20/32`; approve routes; Tailnet Lock; ACLs; split DNS → `10.0.40.10`; add the `tailscale0` ufw line | [go-live](go-live.md#e1-tailscale-remote-access) | D1 (AdGuard answering), B6 | From mobile data, `https://ha.home.foxhound.nexus` loads |
+| E2 | NUT: vidar serves the closet UPS (itself); oden serves the office UPS with the NAS as its client | [go-live](go-live.md#e2-ups-shutdown-nut) | B6 | `upsc` works on both; `upsmon -c fsd` shuts the NAS then oden down cleanly |
+| E3 | Backups: restic to the NAS REST server (append-only), UniFi config export, monthly USB copy | [go-live](go-live.md#e3-backups-restic-to-the-nas) | B1, D1 | One restore completes on a clean target |
 | E4 | Final checks: reboot, missing recording disk, power-loss shutdown, backup restore | §4 check 7 | E2, E3 | All pass; record the date |
 
 ### Notes
@@ -320,7 +320,7 @@ the gateway policy and Docker forwarding rules, not just `ufw allow/deny`:
 | Host | Allowed inbound |
 |---|---|
 | Server | TCP/UDP 53 and UDP 123 from intended client networks; TCP 443 from Trusted and approved tailnet clients; SSH from admin devices |
-| Pi | TCP/UDP 53 and UDP 123 from intended client networks; TCP 3001 **only from `10.0.40.10`**; SSH from admin devices; TCP 3493 (NUT) from the server and NAS |
+| Pi | TCP/UDP 53 and UDP 123 from intended client networks; TCP 3001 **only from `10.0.40.10`**; SSH from admin devices; TCP 3493 (NUT) from the server (Home Assistant) |
 
 All app port mappings on the server bind to loopback. Caddy and NetAlertX use
 host networking: Caddy is the only public HTTP entry point; NetAlertX explicitly
@@ -372,8 +372,7 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow from ADMIN_IP to any port 22 proto tcp
 sudo ufw allow from 10.0.0.0/16 to any port 123 proto udp   # chrony NTP for all VLANs
-sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # NUT client: server
-sudo ufw allow from 10.0.40.20 to any port 3493 proto tcp   # NUT client: NAS
+sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # NUT: Home Assistant reads the closet UPS
 ```
 
 Default deny already covers Caddy admin 2019 and NetAlertX 20211/20212; no
