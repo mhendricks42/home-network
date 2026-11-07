@@ -140,7 +140,7 @@ flowchart LR
 | Patch panel | 12-port wall-mount keystone | Closet (in box, below ISP gear) | Terminate in-wall runs | ~10 × 2.6 × 2.75 in |
 | Secondary infra node | Raspberry Pi 3B+ + PoE HAT | Closet (in box) | Secondary DNS, NTP server, NUT server, Uptime Kuma | VLAN 40, 10.0.40.11; 3B+ Ethernet tops out around 300 Mbps (ample for DNS) |
 | UPS (closet) | APC BE600M1 (600 VA / 330 W) | Closet (in box, bottom) | Battery for BGW320, gateway, switch, and via PoE the cameras, U7 Pro and Pi | Wall-mount; USB → vidar (NUT); vidar shuts itself down, the rest runs until the battery ends. ~23 min at 100 W, so expect roughly 15–20 min at ~110–125 W |
-| UPS (office) | ~650–950 VA (e.g., APC BE650G1) | Office | Server, NAS, office switch (and U7 Lite) | USB → oden (NUT server); NAS is oden's NUT client |
+| UPS (office) | ~650–950 VA (e.g., APC BE650G1) | Office | Server, NAS, office switch (and U7 Lite) | USB → odin (NUT server); NAS is odin's NUT client |
 | Cameras | 5× Amcrest 5MP PoE (bullets + domes) | Exterior | Recorded and analyzed by Frigate | Configured offline: firmware updated, P2P/UPnP/cloud off, unique creds, substream ≤720p/5 fps, NTP → 10.0.40.10 (set manually) |
 | Home server | HP ProDesk 400 G4 DM (i5-8500T, 16 GB) | Office | All services (companion doc) | VLAN 40, 10.0.40.10, Ubuntu 26.04 LTS + Docker |
 | NAS | Ugreen | Office | File shares, backup target | VLAN 40, 10.0.40.20; Ugreen cloud remote access and UPnP off |
@@ -455,7 +455,7 @@ The UCG Max does not serve NTP to LAN clients, so the two DNS nodes also serve t
 | Service up/down, incl. server | Uptime Kuma (Pi) | Notification |
 | IDS/IPS events, blocked egress | UniFi logs | Weekly review |
 | Closet temperature | UniFi temps → HA | > 45 °C |
-| Power | NUT: vidar (closet UPS), oden (office UPS) → HA | On battery / low battery → orderly shutdown |
+| Power | NUT: vidar (closet UPS), odin (office UPS) → HA | On battery / low battery → orderly shutdown |
 
 ---
 

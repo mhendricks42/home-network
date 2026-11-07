@@ -46,7 +46,7 @@ names. Things you type, or that describe a function, stay plain.
 
 | Device | Name | Theme | Why |
 |---|---|---|---|
-| Home server (HP ProDesk) | `oden` | Norse | The all-father; runs everything |
+| Home server (HP ProDesk) | `odin` | Norse | The all-father; runs everything |
 | Raspberry Pi 3B+ | `vidar` | Norse | Survives Ragnarök: the node that keeps going when the server is down |
 | Ugreen NAS | `mimir` | Norse | Mímir's well of knowledge; it stores everything |
 | UCG Max gateway | `anubis` | Egyptian | Guardian of the gateway who weighs what may pass |

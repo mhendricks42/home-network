@@ -1,6 +1,6 @@
 # home-network
 
-Service configurations for the home server (`oden`, Ubuntu), the Raspberry Pi
+Service configurations for the home server (`odin`, Ubuntu), the Raspberry Pi
 (`vidar`) and the NAS (`mimir`) described in
 [the architecture](docs/home-server-architecture.md). Develop on Windows; deploy
 on the **Linux targets**, not Docker Desktop.

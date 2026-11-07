@@ -60,8 +60,8 @@ BIOS settings on the server: admin password set, virtualization on, **power-on a
 | OpenSSH | Server, Pi | Key-only admin access; works when Docker is broken |
 | Docker Engine + Compose | Server, Pi | Runs all app containers |
 | Tailscale | Server host | Subnet router + server's own tailnet address; Tailnet Lock |
-| NUT server | oden (office UPS), vidar (closet UPS) | USB link to the UPS that powers that host |
-| NUT client | NAS | Clean shutdown on oden's power-loss signal |
+| NUT server | odin (office UPS), vidar (closet UPS) | USB link to the UPS that powers that host |
+| NUT client | NAS | Clean shutdown on odin's power-loss signal |
 | unattended-upgrades | Server, Pi | Automatic OS security patches |
 | chrony | Server, Pi | NTP server for all VLANs (the UCG Max serves none); NTS upstream, orphan mode, each other as fallback |
 | restic (systemd timer) | Server | Nightly encrypted backups to NAS |
@@ -155,7 +155,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | Service | Function / purpose | Port | Exposure |
 |---|---|---|---|
 | AdGuard Home + Unbound | Secondary filtering DNS, identical config | 53 | LAN |
-| NUT server | Closet UPS (APC BE600M1) via USB; shuts vidar down; readable by HA | 3493 | oden only |
+| NUT server | Closet UPS (APC BE600M1) via USB; shuts vidar down; readable by HA | 3493 | odin only |
 | Uptime Kuma | Monitors server, services, gateway, internet; alerts if server is down | 3001 | Proxy |
 
 ### 6.3 Ugreen NAS
@@ -167,7 +167,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | File shares | SMB direct to `nas.home.arpa` from Trusted; remote via Tailscale route to 10.0.40.20 (admins) |
 | Hardening | Ugreen cloud remote-access feature and UPnP **off**; NAS firewall allows web only from proxy + admin devices |
 | Roles | restic backup target; UniFi backup copies; Forgejo mirror; media stack ([`media-stack/`](../media-stack/readme.md), Docker on the NAS, published on 10.0.40.20 and proxied by Caddy) |
-| Power | Office UPS; NUT client of oden |
+| Power | Office UPS; NUT client of odin |
 
 ---
 
@@ -257,7 +257,7 @@ Not deployed: DDNS updater (not needed with Tailscale); DNS sync tool (replaced 
 | Service access (away) | Phone → Tailscale → server → Caddy 443 (ACL-limited) |
 | Camera event | Camera RTSP → Frigate → MQTT → Home Assistant → phone notification |
 | Zigbee/Z-Wave | Radio → USB stick → Zigbee2MQTT (MQTT) / Z-Wave JS (ws) → HA |
-| Power failure | Office: UPS → USB → oden NUT → NAS (client) shuts down, then oden. Closet: BE600M1 → USB → vidar NUT → vidar shuts down |
+| Power failure | Office: UPS → USB → odin NUT → NAS (client) shuts down, then odin. Closet: BE600M1 → USB → vidar NUT → vidar shuts down |
 | Backup | restic nightly → NAS → monthly rotated USB copy |
 | Config change | Laptop commit → Forgejo → `ansible --check` → apply |
 

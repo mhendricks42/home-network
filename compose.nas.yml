@@ -1,7 +1,7 @@
 name: homelab-nas
 
 services:
-  # Append-only restic backup target for oden and vidar (docs/go-live.md, E3).
+  # Append-only restic backup target for odin and vidar (docs/go-live.md, E3).
   rest-server:
     image: restic/rest-server:0.13.0
     restart: unless-stopped

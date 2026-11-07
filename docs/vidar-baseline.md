@@ -2,7 +2,7 @@
 
 Greenfield, native install on **Raspberry Pi OS Lite 64-bit** with no Docker.
 vidar is DNS 2, NTP 2 and the Uptime Kuma watcher, so it must keep working when
-`oden` is down. Starting point: Imager-installed with user `matt` and SSH key
+`odin` is down. Starting point: Imager-installed with user `matt` and SSH key
 login, on its reserved address `10.0.40.11`.
 
 Run everything as `matt` with `sudo`. Keep one SSH session open while you
@@ -10,11 +10,11 @@ change SSH or the firewall.
 
 | Service | Install | Listens on |
 |---|---|---|
-| SSH | OS | `:22`, admin devices and `oden` only |
+| SSH | OS | `:22`, admin devices and `odin` only |
 | chrony (NTP) | apt | UDP 123, home VLANs |
 | Unbound (recursive DNS) | apt | `127.0.0.1:5335` only |
 | AdGuard Home (filtering DNS) | pinned release binary | `10.0.40.11:53`; UI `127.0.0.1:8081` |
-| Uptime Kuma | pinned git tag, Node.js | `10.0.40.11:3001`, `oden` only |
+| Uptime Kuma | pinned git tag, Node.js | `10.0.40.11:3001`, `odin` only |
 
 ## 1. OS basics
 
@@ -89,7 +89,7 @@ sudo apt install -y ufw
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow from ADMIN_IP to any port 22 proto tcp
-sudo ufw allow from 10.0.40.10 to any port 22 proto tcp      # ssh -J oden vidar (remote)
+sudo ufw allow from 10.0.40.10 to any port 22 proto tcp      # ssh -J odin vidar (remote)
 sudo ufw allow from 10.0.0.0/16 to any port 53               # DNS, TCP and UDP
 sudo ufw allow from 10.0.0.0/16 to any port 123 proto udp    # NTP
 sudo ufw allow from 10.0.40.10 to any port 3001 proto tcp    # Caddy → Uptime Kuma
@@ -132,7 +132,7 @@ Debian's package already manages the DNSSEC root trust anchor. The
 
 ## 6. AdGuard Home
 
-Install the same pinned release as `oden`, checking its checksum:
+Install the same pinned release as `odin`, checking its checksum:
 
 ```bash
 V=v0.107.79
@@ -152,7 +152,7 @@ sudo install -m 600 -o root -g root /tmp/AdGuardHome.yaml /opt/AdGuardHome/AdGua
 sudo nano /opt/AdGuardHome/AdGuardHome.yaml
 ```
 
-Make it match `oden`'s live file (bcrypt hash, client profiles, rules, lists),
+Make it match `odin`'s live file (bcrypt hash, client profiles, rules, lists),
 except these vidar-only lines:
 
 ```yaml
@@ -161,7 +161,7 @@ http:
 dns:
   bind_hosts: [10.0.40.11]
   upstream_dns:
-    - 127.0.0.1:5335               # local Unbound (oden uses 172.29.0.2:5335)
+    - 127.0.0.1:5335               # local Unbound (odin uses 172.29.0.2:5335)
     - "[/home.arpa/]10.0.40.1"
 querylog:
   file_enabled: false              # keep the log in RAM (SD wear)
@@ -221,10 +221,10 @@ WantedBy=multi-user.target
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now uptime-kuma
-curl -sI http://10.0.40.11:3001 | head -1        # from oden: HTTP 302/200
+curl -sI http://10.0.40.11:3001 | head -1        # from odin: HTTP 302/200
 ```
 
-Then open `https://status.home.foxhound.nexus` (Caddy on `oden` proxies to
+Then open `https://status.home.foxhound.nexus` (Caddy on `odin` proxies to
 it), create the admin account and add monitors (Docker runbook §4, check 6).
 
 ## 8. Check and back up
@@ -245,7 +245,7 @@ vidar can be restored in minutes.
 
 - OS: unattended-upgrades.
 - AdGuard: repeat section 6's download with the new `V`, stop the service,
-  extract over `/opt`, start it. Keep the same version as `oden`.
+  extract over `/opt`, start it. Keep the same version as `odin`.
 - Uptime Kuma: `sudo -u kuma git -C /opt/uptime-kuma fetch --depth 1 origin tag NEW`,
   `git checkout NEW`, `npm ci --omit=dev`, `npm run download-dist`, restart.
   Read its release notes first.

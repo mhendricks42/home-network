@@ -5,16 +5,16 @@ them after the DNS cutover. E4 (final checks) is in the runbook, §4 check 7.
 
 | Host | Role here |
 |---|---|
-| `oden` (10.0.40.10) | Tailscale subnet router; NUT server for the **office** UPS; restic client |
+| `odin` (10.0.40.10) | Tailscale subnet router; NUT server for the **office** UPS; restic client |
 | `vidar` (10.0.40.11) | NUT server for the **closet** UPS; restic client |
-| `mimir` (10.0.40.20, NAS) | NUT client of oden; restic REST server |
+| `mimir` (10.0.40.20, NAS) | NUT client of odin; restic REST server |
 
 ## E1. Tailscale (remote access)
 
-Design: architecture §11. One subnet router (`oden`), Tailnet Lock on, no exit
+Design: architecture §11. One subnet router (`odin`), Tailnet Lock on, no exit
 node, family limited to DNS and HTTPS.
 
-### 1. Install on oden
+### 1. Install on odin
 
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh     # adds Tailscale's apt repository
@@ -27,13 +27,13 @@ sudo tailscale up \
 ```
 
 Open the login link it prints and sign in with the account that will own the
-tailnet (free Personal plan). `--accept-dns=false` keeps oden resolving through
+tailnet (free Personal plan). `--accept-dns=false` keeps odin resolving through
 the gateway, as step B3 requires.
 
 ### 2. Admin console (login.tailscale.com)
 
-1. **Machines → oden → Edit route settings:** approve the three routes.
-2. **Machines → oden → Disable key expiry.** Every other device keeps expiry.
+1. **Machines → odin → Edit route settings:** approve the three routes.
+2. **Machines → odin → Disable key expiry.** Every other device keeps expiry.
 3. **DNS:**
    - **Nameservers → Add → Custom:** `10.0.40.10`, *Restrict to domain* →
      `home.arpa`. Add it again for `home.foxhound.nexus`.
@@ -57,10 +57,10 @@ the gateway, as step B3 requires.
    }
    ```
 
-   Admins reach the gateway UI, oden (SSH, DNS, Caddy) and the NAS (SMB, web UI);
+   Admins reach the gateway UI, odin (SSH, DNS, Caddy) and the NAS (SMB, web UI);
    family reach only DNS and Caddy. Anything not listed is denied.
 
-### 3. Firewall on oden
+### 3. Firewall on odin
 
 The B6 rules already allow DNS and HTTPS from `100.64.0.0/10`. Add SSH for the
 tailnet (the ACL above limits it to admins):
@@ -77,17 +77,17 @@ automatically, which also works at home.
 
 ### 5. Tailnet Lock
 
-Do this once at least two devices you trust are signed in (oden and your admin
+Do this once at least two devices you trust are signed in (odin and your admin
 laptop).
 
 ```bash
 tailscale lock status          # on each trusted device: note its "tlpub:..." key
 ```
 
-On oden:
+On odin:
 
 ```bash
-sudo tailscale lock init --gen-disablements 3 --confirm tlpub:ODEN_KEY tlpub:LAPTOP_KEY
+sudo tailscale lock init --gen-disablements 3 --confirm tlpub:ODIN_KEY tlpub:LAPTOP_KEY
 ```
 
 Save the three printed **disablement secrets** in Dashlane (one item,
@@ -109,10 +109,10 @@ From your phone **on mobile data** (Wi-Fi off), with Tailscale on:
 | `https://ha.home.foxhound.nexus` | Loads (done-when for E1) |
 | An ad-heavy site | Ads blocked, so AdGuard is answering |
 | `https://unifi.home.foxhound.nexus` (admin) | Loads |
-| SSH from the laptop on another network: `ssh oden` | Works |
+| SSH from the laptop on another network: `ssh odin` | Works |
 | A family account | Reaches HA through Caddy; SSH and the NAS are refused |
 
-`tailscale ping oden` from a client should show a direct path after a few
+`tailscale ping odin` from a client should show a direct path after a few
 pings; `via DERP` means relayed. Passthrough (D-N15) normally allows direct.
 
 ## E2. UPS shutdown (NUT)
@@ -122,11 +122,11 @@ Each host listens to the UPS that actually powers it:
 | UPS | USB to | NUT role | Protects |
 |---|---|---|---|
 | Closet (APC BE600M1) | vidar | server (`closet`) | vidar shuts down cleanly. The gateway, switch, APs and cameras just run until the battery ends; they have no disks to corrupt |
-| Office (e.g. APC BE650G1) | oden | server (`office`) | The NAS (client) shuts down first, then oden |
+| Office (e.g. APC BE650G1) | odin | server (`office`) | The NAS (client) shuts down first, then odin |
 
 Make everything come back after a power cut:
 
-- **oden:** BIOS → Power Management → *After Power Loss* (or *AC Power
+- **odin:** BIOS → Power Management → *After Power Loss* (or *AC Power
   Recovery*): **Power On**.
 - **NAS:** UGOS → power settings → *Restore power after outage*: on.
 - **vidar:** boots by itself when the switch's PoE returns.
@@ -154,7 +154,7 @@ MODE=netserver
   desc = "APC BE600M1 (closet)"
 ```
 
-`/etc/nut/upsd.conf` (local, plus oden so Home Assistant can read it):
+`/etc/nut/upsd.conf` (local, plus odin so Home Assistant can read it):
 
 ```text
 LISTEN 127.0.0.1 3493
@@ -180,10 +180,10 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 sudo chmod 640 /etc/nut/upsd.users /etc/nut/upsmon.conf
 sudo systemctl restart nut-server nut-monitor
 upsc closet@localhost ups.status      # OL = on line power
-sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # Home Assistant on oden
+sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # Home Assistant on odin
 ```
 
-### 2. oden: office UPS, NAS as client
+### 2. odin: office UPS, NAS as client
 
 ```bash
 sudo apt install -y nut
@@ -207,11 +207,11 @@ LISTEN 127.0.0.1 3493
 LISTEN 10.0.40.10 3493
 ```
 
-`/etc/nut/upsd.users` (one account for oden itself, one for the NAS):
+`/etc/nut/upsd.users` (one account for odin itself, one for the NAS):
 
 ```text
 [upsmon]
-  password = ODEN_UPSMON_PASSWORD
+  password = ODIN_UPSMON_PASSWORD
   upsmon primary
 
 [nas]
@@ -222,7 +222,7 @@ LISTEN 10.0.40.10 3493
 `/etc/nut/upsmon.conf`:
 
 ```text
-MONITOR office@localhost 1 upsmon ODEN_UPSMON_PASSWORD primary
+MONITOR office@localhost 1 upsmon ODIN_UPSMON_PASSWORD primary
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 ```
 
@@ -234,7 +234,7 @@ sudo ufw allow from 10.0.40.20 to any port 3493 proto tcp       # NAS
 sudo ufw allow from 172.28.0.0/24 to any port 3493 proto tcp    # Home Assistant container
 ```
 
-As primary, oden waits for the NAS (secondary) to log off before it shuts
+As primary, odin waits for the NAS (secondary) to log off before it shuts
 itself down.
 
 **NAS:** UGOS → UPS settings → *Network UPS* (client) → server `10.0.40.10`,
@@ -255,13 +255,13 @@ notifies you when either UPS reports *On battery*.
 |---|---|
 | `upsc office@10.0.40.10` from the NAS's view (UGOS UPS page) | Shows the UPS |
 | `sudo upsmon -c fsd` on vidar (simulated low battery) | vidar shuts down cleanly; switch PoE stays on, so plug-cycle the Pi's port or wait to see it boot |
-| `sudo upsmon -c fsd` on oden | The NAS shuts down, then oden. Turn both back on |
+| `sudo upsmon -c fsd` on odin | The NAS shuts down, then odin. Turn both back on |
 | Real test (E4): pull the office UPS plug | Both shut down before the battery runs out and boot when power returns |
 
 ## E3. Backups (restic to the NAS)
 
 restic encrypts on the client; the NAS only stores encrypted data. The NAS runs
-restic's REST server in **append-only** mode: a compromised oden or vidar can add
+restic's REST server in **append-only** mode: a compromised odin or vidar can add
 backups but can't delete or overwrite old ones. Pruning happens on the NAS.
 
 ### 1. REST server on the NAS
@@ -271,23 +271,23 @@ From the repo clone on the NAS (`/volume1/appdata/home-network`):
 ```bash
 sudo mkdir -p /volume1/backups/restic
 docker run --rm --entrypoint create_user -v /volume1/backups/restic:/data \
-  restic/rest-server:0.13.0 oden          # prompts for a password: store it in Dashlane
+  restic/rest-server:0.13.0 odin          # prompts for a password: store it in Dashlane
 docker run --rm --entrypoint create_user -v /volume1/backups/restic:/data \
   restic/rest-server:0.13.0 vidar
 docker compose -f compose.nas.yml up -d
 ```
 
 `--private-repos` (in `compose.nas.yml`) keeps each user in its own repository
-(`/oden`, `/vidar`). If the NAS firewall is on, allow TCP 8000 from
+(`/odin`, `/vidar`). If the NAS firewall is on, allow TCP 8000 from
 `10.0.40.10` and `10.0.40.11` only.
 
 The REST server speaks plain HTTP inside VLAN 40. The backup data is already
 encrypted by restic; only the REST login crosses the wire in clear, and only on
 the Servers VLAN.
 
-### 2. Clients (oden and vidar)
+### 2. Clients (odin and vidar)
 
-On each host (replace `HOST` with `oden` or `vidar`):
+On each host (replace `HOST` with `odin` or `vidar`):
 
 ```bash
 sudo apt install -y restic
@@ -309,12 +309,12 @@ without the repository password the backups can't be restored.
 
 | Host | Paths | Consistency |
 |---|---|---|
-| oden | `/srv`, `/etc`, `/home/matt/home-network/.env` (adjust to your clone) | Containers are stopped during the backup (SQLite databases). vidar answers DNS meanwhile |
+| odin | `/srv`, `/etc`, `/home/matt/home-network/.env` (adjust to your clone) | Containers are stopped during the backup (SQLite databases). vidar answers DNS meanwhile |
 | vidar | `/opt/AdGuardHome/AdGuardHome.yaml`, `/opt/uptime-kuma/data`, `/etc` | Uptime Kuma is stopped during the backup |
 
 `/mnt/recordings` (camera video) is never backed up.
 
-`/etc/systemd/system/restic-backup.service` on **oden**:
+`/etc/systemd/system/restic-backup.service` on **odin**:
 
 ```ini
 [Unit]
@@ -370,7 +370,7 @@ sudo bash -c 'set -a; . /root/.config/restic/env; restic snapshots'
 Clients can't delete, so prune from the NAS with each repository's password:
 
 ```bash
-for repo in oden vidar; do
+for repo in odin vidar; do
   docker run --rm -it -v /volume1/backups/restic:/data restic/restic:0.17.3 \
     -r /data/$repo forget --prune --keep-daily 7 --keep-weekly 4 --keep-monthly 6
 done

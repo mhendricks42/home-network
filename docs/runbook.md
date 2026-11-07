@@ -73,7 +73,7 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 | # | Step | Where | Needs | Done when |
 |---|---|---|---|---|
 | E1 | Tailscale on the server host: advertise `10.0.40.1/32`, `10.0.40.10/32`, `10.0.40.20/32`; approve routes; Tailnet Lock; ACLs; split DNS → `10.0.40.10`; add the `tailscale0` ufw line | [go-live](go-live.md#e1-tailscale-remote-access) | D1 (AdGuard answering), B6 | From mobile data, `https://ha.home.foxhound.nexus` loads |
-| E2 | NUT: vidar serves the closet UPS (itself); oden serves the office UPS with the NAS as its client | [go-live](go-live.md#e2-ups-shutdown-nut) | B6 | `upsc` works on both; `upsmon -c fsd` shuts the NAS then oden down cleanly |
+| E2 | NUT: vidar serves the closet UPS (itself); odin serves the office UPS with the NAS as its client | [go-live](go-live.md#e2-ups-shutdown-nut) | B6 | `upsc` works on both; `upsmon -c fsd` shuts the NAS then odin down cleanly |
 | E3 | Backups: restic to the NAS REST server (append-only), UniFi config export, monthly USB copy | [go-live](go-live.md#e3-backups-restic-to-the-nas) | B1, D1 | One restore completes on a clean target |
 | E4 | Final checks: reboot, missing recording disk, power-loss shutdown, backup restore | §4 check 7 | E2, E3 | All pass; record the date |
 
@@ -102,7 +102,7 @@ Store these in Dashlane:
 |---|---|---|
 | `homeserver-ssh` | Secure note | The private key (`id_ed25519`, OpenSSH format, passphrase-protected) |
 | `SSH passphrase – homeserver-ssh` | Password | Its passphrase (Dashlane generator, 24+ characters) |
-| `sudo – oden` / `sudo – vidar` | Password | Your Linux user's password on each host (used for `sudo`, not SSH) |
+| `sudo – odin` / `sudo – vidar` | Password | Your Linux user's password on each host (used for `sudo`, not SSH) |
 | `SSH host keys` | Secure note | Each host's key fingerprint, recorded from the console (step 2) |
 
 #### 0. Install the Dashlane CLI (`dcli`) on the admin device
@@ -234,7 +234,7 @@ Host *
   ServerAliveInterval 60
   ServerAliveCountMax 3
 
-Host oden
+Host odin
   HostName 10.0.40.10
   User matt
   IdentityFile ~/.ssh/id_ed25519
@@ -247,7 +247,7 @@ Host vidar
   IdentitiesOnly yes
 
 # Admin UIs that are deliberately loopback-only on the server.
-Host oden-tunnels
+Host odin-tunnels
   HostName 10.0.40.10
   User matt
   IdentityFile ~/.ssh/id_ed25519
@@ -257,10 +257,10 @@ Host oden-tunnels
   LocalForward 8081 127.0.0.1:8081
 ```
 
-Then `ssh oden`, `ssh vidar`, or `ssh oden-tunnels` (and browse to
+Then `ssh odin`, `ssh vidar`, or `ssh odin-tunnels` (and browse to
 `http://localhost:8123`, `:8091` or `:8081`). The same entries work away from
 home over Tailscale, because the server advertises `10.0.40.10/32`. The Pi is
-reached from the server: `ssh -J oden vidar`. Host names follow
+reached from the server: `ssh -J odin vidar`. Host names follow
 [naming conventions](naming-conventions.md).
 
 For `sudo`, paste the host's password from Dashlane.
@@ -788,10 +788,10 @@ For Z-Wave authentication setup use a separate 8091 tunnel before proxy access.
 Acceptance checks on the real targets. Each says **where** to run it and what
 counts as a pass. "Laptop" means a Trusted admin device using AdGuard for DNS.
 
-**1. Everything is running** (oden, then vidar)
+**1. Everything is running** (odin, then vidar)
 
 ```bash
-# oden: every container Up (healthy where it has a health check)
+# odin: every container Up (healthy where it has a health check)
 sudo docker compose -f compose.server.yml --profile '*' ps
 sudo docker compose -f compose.server.yml --profile '*' logs --since 15m 2>&1 | grep -iE 'error|fatal|denied|refused' | head -40
 # vidar (native, no Docker): every unit "active (running)"
@@ -815,13 +815,13 @@ dig @$S anything.home.foxhound.nexus +short                   # 10.0.40.10
 dig @$S dnssec-failed.org | grep status                       # SERVFAIL
 ```
 
-Failover: with the laptop using both resolvers, stop AdGuard on oden
+Failover: with the laptop using both resolvers, stop AdGuard on odin
 (`sudo docker compose -f compose.server.yml stop adguard`), then
 `ipconfig /flushdns` and `Resolve-DnsName example.com -DnsOnly` in
 PowerShell still answer. Start it again, then repeat with vidar
 (`sudo systemctl stop AdGuardHome` / `start`). Never stop both.
 
-**3. Caddy** (oden, then laptop)
+**3. Caddy** (odin, then laptop)
 
 ```bash
 sudo docker compose -f compose.server.yml --profile https exec caddy \
@@ -839,10 +839,10 @@ Pass: no certificate errors; `200`, `302` or `401` (ESPHome's proxy login)
 for configured names; `502` only for a profile you haven't started; `404`
 for `nope`.
 
-**4. Nothing else is reachable** (laptop, then oden)
+**4. Nothing else is reachable** (laptop, then odin)
 
 ```bash
-# laptop → oden: only 53 and 443 open (22 too from an admin device)
+# laptop → odin: only 53 and 443 open (22 too from an admin device)
 for p in 22 53 443 1883 2019 3000 5000 5335 6052 8080 8081 8091 8123 8971 20211; do
   nc -z -w 3 10.0.40.10 $p && echo "$p open" || echo "$p closed"
 done
@@ -851,14 +851,14 @@ for p in 22 53 3001 5335 8081; do nc -z -w 3 10.0.40.11 $p && echo "$p open" || 
 ```
 
 ```bash
-# oden → vidar: Kuma reachable from the server only
+# odin → vidar: Kuma reachable from the server only
 curl -s -o /dev/null -w '%{http_code}\n' http://10.0.40.11:3001/   # 200 or 302
 ```
 
 Then the same-subnet test in **Firewall prerequisites, step 3** (a laptop on a
 temporary Servers-VLAN port), because the gateway can't filter inside VLAN 40.
 
-**5. Each service works** (oden unless noted)
+**5. Each service works** (odin unless noted)
 
 | Check | How | Pass |
 |---|---|---|
@@ -873,7 +873,7 @@ temporary Servers-VLAN port), because the gateway can't filter inside VLAN 40.
 | Playback | Open one recording per camera | Plays without errors |
 | Resources | `df -h / /srv /mnt/recordings; free -h; sudo docker stats --no-stream` with cameras running | Disks under 80 %; memory not swapping heavily |
 
-MQTT ACL test: open two SSH sessions on oden. Passwords are read silently,
+MQTT ACL test: open two SSH sessions on odin. Passwords are read silently,
 so they don't land in shell history.
 
 ```bash
@@ -890,7 +890,7 @@ read -rs P; sudo docker compose -f compose.server.yml exec -T mqtt \
 Pass: session A prints only `frigate/test/set allowed`. Mosquitto drops a
 forbidden publish silently, so absence is the result.
 
-**6. Uptime Kuma alerts independently of oden** (vidar)
+**6. Uptime Kuma alerts independently of odin** (vidar)
 
 1. Open `https://status.home.foxhound.nexus` and **create the admin account
    straight away**: the first visitor becomes admin.
@@ -907,14 +907,14 @@ forbidden publish silently, so absence is the result.
    | Server | Ping | `10.0.40.10` |
    | Gateway | Ping | `10.0.40.1` |
    | Internet | Ping | `1.1.1.1` |
-   | DNS (oden) | DNS | resolver `10.0.40.10`, name `example.com` |
+   | DNS (odin) | DNS | resolver `10.0.40.10`, name `example.com` |
    | DNS (vidar) | DNS | resolver `10.0.40.11`, name `example.com` |
    | Home Assistant | HTTP(s) | `https://ha.home.foxhound.nexus` |
    | Certificate | HTTP(s) | same, with *Certificate Expiry Notification* on |
 
-4. Add a notification that **doesn't depend on oden** (for example Pushover,
+4. Add a notification that **doesn't depend on odin** (for example Pushover,
    ntfy or email), not the HA webhook. Send its test message.
-5. Simulate a server failure: unplug oden's network cable (or, from its
+5. Simulate a server failure: unplug odin's network cable (or, from its
    console, `sudo ip link set enp3s0 down`). Within a few minutes the phone
    gets the *Server* and *Home Assistant* alerts from vidar, and DNS keeps
    working through vidar. Reconnect and confirm the *up* alerts.
@@ -924,7 +924,7 @@ resolvers (step D3). After NUT and backups exist (E2, E3), run E4:
 
 | Check | How | Pass |
 |---|---|---|
-| Reboot | `sudo reboot` oden, then vidar | Checks 1–3 pass again without manual fixes |
+| Reboot | `sudo reboot` odin, then vidar | Checks 1–3 pass again without manual fixes |
 | Missing recording disk | `sudo docker compose -f compose.server.yml --profile cameras stop frigate`, `sudo umount /mnt/recordings`, then `sudo sh scripts/start.sh server cameras` | `start.sh` refuses with *Recording disk is not mounted*; nothing is written to the system disk. Remount and start again |
 | Power loss | Unplug the UPS from the wall (E2's NUT setup) | Hosts shut down cleanly before the battery runs out and come back when power returns |
 | Backup and restore | Restore one folder (e.g. `/srv/adguard/config`) from the backup into a temporary directory and compare with `diff -r` | No differences |

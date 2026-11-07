@@ -1,3 +1,3 @@
 # Linux (NAS) overlay. Remote access comes from home-network's Tailscale subnet
-# router on oden, so this stack runs no Tailscale node of its own.
+# router on odin, so this stack runs no Tailscale node of its own.
 services: {}
