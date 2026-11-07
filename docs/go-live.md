@@ -131,7 +131,7 @@ Each host listens to the UPS that actually powers it:
 | UPS | USB to | NUT role | Protects |
 |---|---|---|---|
 | Closet (APC BE600M1) | vidar | server (`closet`) | vidar shuts down cleanly. The gateway, switch, APs and cameras just run until the battery ends; they have no disks to corrupt |
-| Office (e.g. APC BE650G1) | odin | server (`office`) | The NAS (client) shuts down first, then odin |
+| Office (CyberPower PR1500LCDRT2U) | odin | server (`office`) | The NAS (client) shuts down first, then odin |
 
 Make everything come back after a power cut:
 
@@ -140,7 +140,7 @@ Make everything come back after a power cut:
 - **NAS:** UGOS → power settings → *Restore power after outage*: on.
 - **vidar:** boots by itself when the switch's PoE returns.
 
-Store each NUT password below in Dashlane as its own item.
+Store each NUT password below in Dashlane as its own item. Generate them with **letters and digits only**: NUT treats `#` as the start of a comment and quotes, spaces and `\` need escaping.
 
 ### 1. vidar: closet UPS
 
@@ -206,7 +206,7 @@ Same files as vidar, with these differences:
 [office]
   driver = usbhid-ups
   port = auto
-  desc = "Office UPS"
+  desc = "CyberPower PR1500LCDRT2U (office)"
 ```
 
 `/etc/nut/upsd.conf`:
