@@ -39,8 +39,9 @@ the gateway, as step B3 requires.
      `home.arpa`. Add it again for `home.foxhound.nexus`.
    - **Global nameservers:** `10.0.40.10`, with **Override local DNS** on, so
      devices away from home are filtered by AdGuard too.
-4. **Access controls:** replace the policy with this, putting your login in
-   `group:admins` and family members' logins in `group:family`:
+4. **Access controls:** replace the **whole** default policy (its
+   allow-everything grant and its Tailscale SSH block) with this. Put your
+   login in `group:admins` and family members' logins in `group:family`:
 
    ```json
    {
@@ -48,17 +49,25 @@ the gateway, as step B3 requires.
        "group:admins": ["you@example.com"],
        "group:family": []
      },
-     "acls": [
-       {"action": "accept", "src": ["group:admins"],
-        "dst": ["10.0.40.1:443", "10.0.40.10:22,53,443", "10.0.40.20:445,9443"]},
-       {"action": "accept", "src": ["group:family"],
-        "dst": ["10.0.40.10:53,443"]}
+     "grants": [
+       {"src": ["group:admins"], "dst": ["10.0.40.1/32"],  "ip": ["tcp:443"]},
+       {"src": ["group:admins"], "dst": ["10.0.40.10/32"], "ip": ["tcp:22", "tcp:53", "udp:53", "tcp:443"]},
+       {"src": ["group:admins"], "dst": ["10.0.40.20/32"], "ip": ["tcp:445", "tcp:9443"]},
+       {"src": ["group:family"], "dst": ["10.0.40.10/32"], "ip": ["tcp:53", "udp:53", "tcp:443"]}
+     ],
+     "tests": [
+       {"src": "you@example.com",
+        "accept": ["10.0.40.1:443", "10.0.40.10:22", "10.0.40.10:443", "10.0.40.20:445"],
+        "deny": ["10.0.40.10:8123", "10.0.40.20:8096"]}
      ]
    }
    ```
 
-   Admins reach the gateway UI, odin (SSH, DNS, Caddy) and the NAS (SMB, web UI);
-   family reach only DNS and Caddy. Anything not listed is denied.
+   Admins reach the gateway UI, odin (SSH, DNS, Caddy) and the NAS (SMB, web
+   UI); family reach only DNS and Caddy. Anything not listed is denied. There's
+   no `ssh` section: you use normal OpenSSH over the route, not Tailscale SSH.
+   The `tests` run on every save and refuse a policy that breaks them; change
+   `you@example.com` there too.
 
 ### 3. Firewall on odin
 
