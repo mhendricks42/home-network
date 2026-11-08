@@ -131,7 +131,7 @@ Each host listens to the UPS that actually powers it:
 | UPS | USB to | NUT role | Protects |
 |---|---|---|---|
 | Closet (APC BE600M1) | vidar | server (`closet`) | vidar shuts down cleanly. The gateway, switch, APs and cameras just run until the battery ends; they have no disks to corrupt |
-| Office (CyberPower PR1500LCDRT2U) | odin | server (`office`) | The NAS (client) shuts down first, then odin |
+| Office (CyberPower PR1500LCDRT2U) | odin | server (`ups0`, the name UGOS requires) | The NAS (client) shuts down first, then odin |
 
 Make everything come back after a power cut:
 
@@ -200,10 +200,11 @@ sudo apt install -y nut
 
 Same files as vidar, with these differences:
 
-`/etc/nut/ups.conf`:
+`/etc/nut/ups.conf`. The UPS **must** be called `ups0`: UGOS only ever asks
+for that name and offers no setting to change it.
 
 ```text
-[office]
+[ups0]
   driver = usbhid-ups
   port = auto
   desc = "CyberPower PR1500LCDRT2U (office)"
@@ -216,53 +217,59 @@ LISTEN 127.0.0.1 3493
 LISTEN 10.0.40.10 3493
 ```
 
-`/etc/nut/upsd.users` (one account for odin itself, one for the NAS):
+`/etc/nut/upsd.users` (one account for odin itself, one with the fixed
+credentials UGOS uses):
 
 ```text
 [upsmon]
   password = ODIN_UPSMON_PASSWORD
   upsmon primary
 
-[nas]
-  password = NAS_UPSMON_PASSWORD
+[monuser]
+  password = secret
   upsmon secondary
 ```
+
+`monuser` / `secret` is well known, which is acceptable here: a secondary
+account can only watch, not trigger a shutdown, and only the NAS and Home
+Assistant may reach port 3493.
 
 `/etc/nut/upsmon.conf`:
 
 ```text
-MONITOR office@localhost 1 upsmon ODIN_UPSMON_PASSWORD primary
+MONITOR ups0@localhost 1 upsmon ODIN_UPSMON_PASSWORD primary
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 ```
 
 ```bash
 sudo chmod 640 /etc/nut/upsd.users /etc/nut/upsmon.conf
-sudo systemctl restart nut-server nut-monitor
-upsc office@localhost ups.status
+sudo systemctl restart nut-driver-enumerator nut-driver.target nut-server nut-monitor
+upsc ups0@localhost ups.status
 sudo ufw allow from 10.0.40.20 to any port 3493 proto tcp       # NAS
 sudo ufw allow from 172.28.0.0/24 to any port 3493 proto tcp    # Home Assistant container
 ```
 
-As primary, odin waits for the NAS (secondary) to log off before it shuts
-itself down.
+If the driver fails with a USB permission error on first install, unplug and
+replug the UPS's USB cable, then restart `nut-driver.target`.
 
-**NAS:** UGOS → UPS settings → *Network UPS* (client) → server `10.0.40.10`,
-UPS name `office`, user `nas` and its password. If UGOS insists on fixed
-credentials (some NAS systems use `monuser` / `secret`), rename the `[nas]`
-account in `upsd.users` to what it expects and restart `nut-server`. Its status
-page should show the UPS on line power.
+**NAS:** UGOS → UPS settings → network UPS client → server `10.0.40.10`. There
+are no name or credential fields: UGOS queries `ups0` (it tries `STARTTLS`
+first and carries on unencrypted when odin declines). Its status page should
+show the UPS on line power. If it reports that the IP doesn't support NUT, run
+`upsc ups0@10.0.40.10 ups.status` from the NAS; `Unknown UPS` means the name
+on odin isn't `ups0`.
 
 ### 3. Home Assistant
 
-*Add integration → Network UPS Tools* twice: host `10.0.40.10` (office) and
-`10.0.40.11` (closet), no username needed for reading. Add an automation that
+*Add integration → Network UPS Tools* twice: host `10.0.40.10` (UPS `ups0`,
+office) and `10.0.40.11` (UPS `closet`), no username needed for reading. Add an automation that
 notifies you when either UPS reports *On battery*.
 
 ### 4. Check
 
 | Test | Pass |
 |---|---|
-| `upsc office@10.0.40.10` from the NAS's view (UGOS UPS page) | Shows the UPS |
+| `upsc ups0@10.0.40.10 ups.status` on the NAS, and the UGOS UPS page | `OL`; UGOS shows the UPS on line power |
 | `sudo upsmon -c fsd` on vidar (simulated low battery) | vidar shuts down cleanly; switch PoE stays on, so plug-cycle the Pi's port or wait to see it boot |
 | `sudo upsmon -c fsd` on odin | The NAS shuts down, then odin. Turn both back on |
 | Real test (E4): pull the office UPS plug | Both shut down before the battery runs out and boot when power returns |
