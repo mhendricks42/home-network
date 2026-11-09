@@ -2,11 +2,11 @@
 # Simulate a UPS power event in Home Assistant to test the "UPS on battery /
 # restored" automation. Only HA's copy of the status changes; the UPS and NUT
 # are untouched, and the next NUT poll (within a minute) restores the real value.
-# Run on odin: bash scripts/test-ups-alert.sh [sensor.ups0_status_data]
+# Run on odin: bash scripts/test-ups-alert.sh [sensor.ups_office_status_data]
 set -euo pipefail
 
 ha=http://127.0.0.1:8123
-entity=${1:-sensor.ups0_status_data}
+entity=${1:-sensor.ups_office_status_data}
 read -rsp "Home Assistant long-lived access token: " token; echo
 
 set_state() {

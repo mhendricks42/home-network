@@ -187,6 +187,11 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 
 ```bash
 sudo chmod 640 /etc/nut/upsd.users /etc/nut/upsmon.conf
+# Start upsd only once the LAN address exists, or it listens on 127.0.0.1 only after a reboot.
+sudo mkdir -p /etc/systemd/system/nut-server.service.d
+printf '[Unit]\nWants=network-online.target\nAfter=network-online.target\n' | \
+  sudo tee /etc/systemd/system/nut-server.service.d/network-online.conf
+sudo systemctl daemon-reload
 sudo systemctl restart nut-server nut-monitor
 upsc closet@localhost ups.status      # OL = on line power
 sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # Home Assistant on odin
@@ -243,6 +248,10 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 
 ```bash
 sudo chmod 640 /etc/nut/upsd.users /etc/nut/upsmon.conf
+sudo mkdir -p /etc/systemd/system/nut-server.service.d    # same network-online drop-in as vidar
+printf '[Unit]\nWants=network-online.target\nAfter=network-online.target\n' | \
+  sudo tee /etc/systemd/system/nut-server.service.d/network-online.conf
+sudo systemctl daemon-reload
 sudo systemctl restart nut-driver-enumerator nut-driver.target nut-server nut-monitor
 upsc ups0@localhost ups.status
 sudo ufw allow from 10.0.40.20 to any port 3493 proto tcp       # NAS
@@ -262,13 +271,15 @@ on odin isn't `ups0`.
 ### 3. Home Assistant
 
 *Add integration → Network UPS Tools* twice: host `10.0.40.10` (UPS `ups0`,
-office) and `10.0.40.11` (UPS `closet`), no username needed for reading. Add an automation that
+office) and `10.0.40.11` (UPS `closet`), no username needed for reading. Rename the status-data sensors to `sensor.ups_office_status_data` and
+`sensor.ups_closet_status_data` (entity → ⚙ → Entity ID) so automations and
+the test script use stable names; enable them first, they are off by default. Add an automation that
 notifies you when either UPS reports *On battery*.
 
 Test the alert without touching the UPS: create a long-lived access token
 (HA profile → Security), then on odin run
 `bash scripts/test-ups-alert.sh` (office) or
-`bash scripts/test-ups-alert.sh sensor.closet_status_data`. It sets HA's copy of
+`bash scripts/test-ups-alert.sh sensor.ups_closet_status_data`. It sets HA's copy of
 the status to on battery, low battery, then on line; expect the matching phone
 notifications. The next NUT poll restores the real value.
 
