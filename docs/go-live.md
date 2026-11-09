@@ -267,11 +267,17 @@ notifies you when either UPS reports *On battery*.
 
 ### 4. Check
 
+`upsmon -c fsd` runs the real low-battery sequence: the host shuts down and
+then tells its UPS to switch its outlets off and back on. That power cycle is
+what guarantees a clean restart after a real outage (otherwise a host whose
+power never dropped would stay off), but during a test it reboots everything
+on that UPS. Warn the household first.
+
 | Test | Pass |
 |---|---|
 | `upsc ups0@10.0.40.10 ups.status` on the NAS, and the UGOS UPS page | `OL`; UGOS shows the UPS on line power |
-| `sudo upsmon -c fsd` on vidar (simulated low battery) | vidar shuts down cleanly; switch PoE stays on, so plug-cycle the Pi's port or wait to see it boot |
-| `sudo upsmon -c fsd` on odin | The NAS shuts down, then odin. Turn both back on |
+| `sudo upsmon -c fsd` on vidar (simulated low battery). **Maintenance window only** | vidar shuts down, then the closet UPS cuts its outlets about 20 s later and restores them about 2 minutes after. The BGW320, gateway, core switch, U7 Pro and cameras reboot: internet, downstairs Wi-Fi and DNS are down for about 2–3 minutes. Everything, including vidar, comes back by itself |
+| `sudo upsmon -c fsd` on odin. **Maintenance window only** | The NAS shuts down, then odin, then the office UPS power-cycles (odin, NAS, office switch, U7 Lite). odin and the NAS boot again if their *power on after AC loss* settings are on |
 | Real test (E4): pull the office UPS plug | Both shut down before the battery runs out and boot when power returns |
 
 ## E3. Backups (restic to the NAS)
