@@ -120,6 +120,14 @@ server:
     num-threads: 1
     msg-cache-size: 16m
     rrset-cache-size: 32m
+    # Never accept private addresses in public answers (rebinding; ISP-box DNS hijack during outages).
+    private-address: 10.0.0.0/8
+    private-address: 172.16.0.0/12
+    private-address: 192.168.0.0/16
+    private-address: 169.254.0.0/16
+    private-address: 100.64.0.0/10
+    private-address: fd00::/8
+    private-address: fe80::/10
 EOF
 sudo unbound-checkconf && sudo systemctl restart unbound
 systemctl list-unit-files | grep -q unbound-resolvconf && sudo systemctl disable --now unbound-resolvconf
