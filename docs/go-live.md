@@ -131,7 +131,7 @@ Each host listens to the UPS that actually powers it:
 | UPS | USB to | NUT role | Protects |
 |---|---|---|---|
 | Closet (APC BE600M1) | vidar | server (`closet`) | vidar shuts down cleanly. The gateway, switch, APs and cameras just run until the battery ends; they have no disks to corrupt |
-| Office (CyberPower PR1500LCDRT2U) | odin | server (`ups0`, the name UGOS requires) | The NAS (client) shuts down first, then odin |
+| Office (CyberPower CP850PFCLCD) | odin | server (`ups0`, the name UGOS requires) | The NAS (client) shuts down first, then odin |
 
 Make everything come back after a power cut:
 
@@ -207,7 +207,7 @@ for that name and offers no setting to change it.
 [ups0]
   driver = usbhid-ups
   port = auto
-  desc = "CyberPower PR1500LCDRT2U (office)"
+  desc = "CyberPower CP850PFCLCD (office)"
 ```
 
 `/etc/nut/upsd.conf`:
