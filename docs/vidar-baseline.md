@@ -128,6 +128,10 @@ server:
     private-address: 100.64.0.0/10
     private-address: fd00::/8
     private-address: fe80::/10
+    # Keep answering from the last good cache while upstream is unreachable (RFC 8767).
+    serve-expired: yes
+    serve-expired-ttl: 86400
+    serve-expired-client-timeout: 1800
 EOF
 sudo unbound-checkconf && sudo systemctl restart unbound
 systemctl list-unit-files | grep -q unbound-resolvconf && sudo systemctl disable --now unbound-resolvconf

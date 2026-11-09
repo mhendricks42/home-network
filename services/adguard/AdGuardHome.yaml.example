@@ -36,6 +36,8 @@ filtering:
       enabled: true
 user_rules:
   - "||use-application-dns.net^"
+  # Drop any answer pointing at the BGW320; it hijacks DNS while its link is down.
+  - "192.168.0.254"
 filters:
   - enabled: true
     url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
