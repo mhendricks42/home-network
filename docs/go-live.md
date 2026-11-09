@@ -265,6 +265,13 @@ on odin isn't `ups0`.
 office) and `10.0.40.11` (UPS `closet`), no username needed for reading. Add an automation that
 notifies you when either UPS reports *On battery*.
 
+Test the alert without touching the UPS: create a long-lived access token
+(HA profile → Security), then on odin run
+`bash scripts/test-ups-alert.sh` (office) or
+`bash scripts/test-ups-alert.sh sensor.closet_status_data`. It sets HA's copy of
+the status to on battery, low battery, then on line; expect the matching phone
+notifications. The next NUT poll restores the real value.
+
 ### 4. Check
 
 `upsmon -c fsd` runs the real low-battery sequence: the host shuts down and
