@@ -1,0 +1,73 @@
+# Radarr/Sonarr Connect webhooks → phone. Each app posts through Caddy to
+# https://ha.home.foxhound.nexus/api/webhook/<id>, ids from secrets.yaml:
+#   radarr_webhook_id: radarr-<random>     sonarr_webhook_id: sonarr-<random>
+# App setting: Settings → Connect → + → Webhook, method POST.
+automation:
+  - id: arr_alerts
+    alias: Radarr/Sonarr alerts
+    mode: queued
+    trigger:
+      - trigger: webhook
+        id: radarr
+        webhook_id: !secret radarr_webhook_id
+        allowed_methods: [POST]
+        local_only: true
+      - trigger: webhook
+        id: sonarr
+        webhook_id: !secret sonarr_webhook_id
+        allowed_methods: [POST]
+        local_only: true
+    variables:
+      p: "{{ trigger.json }}"
+      app: "{{ trigger.id }}"
+      kind: "{{ p.get('eventType', 'Unknown') }}"
+      movie: "{{ p.get('movie') or {} }}"
+      series: "{{ p.get('series') or {} }}"
+      eps: "{{ p.get('episodes') or [] }}"
+      what: >-
+        {% if movie %}{{ movie.get('title') }} ({{ movie.get('year') }})
+        {%- elif series %}{{ series.get('title') }}
+        {%- for e in eps[:3] %} S{{ '%02d' % e.get('seasonNumber', 0) }}E{{ '%02d' % e.get('episodeNumber', 0) }}{% endfor %}
+        {%- if eps | count > 3 %} +{{ eps | count - 3 }} more{% endif %}
+        {%- endif %}
+      quality: >-
+        {{ (p.get('movieFile') or p.get('episodeFile') or p.get('release') or p.get('downloadInfo') or {}).get('quality', '') }}
+      label: >-
+        {{ {
+          'Grab': '⬇️ Downloading',
+          'Download': '📥 Imported',
+          'ManualInteractionRequired': '✋ Import needs you',
+          'Health': '🩺 Health issue',
+          'HealthRestored': '💚 Health restored',
+          'ApplicationUpdate': '⬆️ Updated',
+          'Test': '🧪 Test',
+        }.get(kind, kind) ~ ' · ' ~ app | capitalize }}
+      body: >-
+        {% if kind in ['Health', 'HealthRestored'] %}{{ p.get('message') }}
+        {% elif kind == 'ApplicationUpdate' %}{{ p.get('previousVersion') }} → {{ p.get('newVersion') }}
+        {% elif kind == 'ManualInteractionRequired' %}{{ what }}:
+        {%- for s in p.get('downloadStatusMessages') or [] %} {{ s.get('messages') | join('; ') }}{% endfor %}
+        {% else %}{{ what }}{% if quality %} [{{ quality }}]{% endif %}
+        {%- if p.get('isUpgrade') %} (upgrade){% endif %}{% endif %}
+      page: >-
+        {% if app == 'radarr' and movie.get('tmdbId') %}https://radarr.home.foxhound.nexus/movie/{{ movie.get('tmdbId') }}
+        {%- elif app == 'sonarr' and series.get('titleSlug') %}https://sonarr.home.foxhound.nexus/series/{{ series.get('titleSlug') }}
+        {%- elif kind in ['Health', 'HealthRestored'] %}https://{{ app }}.home.foxhound.nexus/system/status
+        {%- else %}https://{{ app }}.home.foxhound.nexus/activity/queue{% endif %}
+      urgent: >-
+        {{ kind == 'ManualInteractionRequired' or (kind == 'Health' and p.get('level') == 'error') }}
+    condition:
+      # "New update is available" also arrives as a health warning; On Application Update covers it.
+      - condition: template
+        value_template: "{{ not (kind == 'Health' and p.get('type') == 'UpdateCheck') }}"
+    action:
+      - action: notify.mobile_app_matt_s_samsung_galaxy
+        data:
+          title: "{{ label }}"
+          message: "{{ body | trim }}"
+          data:
+            tag: "{{ app }}-{{ 'health-' ~ p.get('type') if kind.startswith('Health') else movie.get('id') or series.get('id') or kind }}"
+            group: "{{ app }}"
+            clickAction: "{{ page | trim }}"
+            priority: "{{ 'high' if urgent else 'normal' }}"
+            ttl: "{{ 0 if urgent else 3600 }}"
