@@ -1,10 +1,11 @@
-# Radarr/Sonarr Connect webhooks → phone. Each app posts through Caddy to
+# Radarr/Sonarr/Prowlarr Connect webhooks → phone. Each app posts through Caddy to
 # https://ha.home.foxhound.nexus/api/webhook/<id>, ids from secrets.yaml:
 #   radarr_webhook_id: radarr-<random>     sonarr_webhook_id: sonarr-<random>
+#   prowlarr_webhook_id: prowlarr-<random>
 # App setting: Settings → Connect → + → Webhook, method POST.
 automation:
   - id: arr_alerts
-    alias: Radarr/Sonarr alerts
+    alias: Radarr/Sonarr/Prowlarr alerts
     mode: queued
     trigger:
       - trigger: webhook
@@ -15,6 +16,11 @@ automation:
       - trigger: webhook
         id: sonarr
         webhook_id: !secret sonarr_webhook_id
+        allowed_methods: [POST]
+        local_only: true
+      - trigger: webhook
+        id: prowlarr
+        webhook_id: !secret prowlarr_webhook_id
         allowed_methods: [POST]
         local_only: true
     variables:
@@ -29,6 +35,7 @@ automation:
         {%- elif series %}{{ series.get('title') }}
         {%- for e in eps[:3] %} S{{ '%02d' % e.get('seasonNumber', 0) }}E{{ '%02d' % e.get('episodeNumber', 0) }}{% endfor %}
         {%- if eps | count > 3 %} +{{ eps | count - 3 }} more{% endif %}
+        {%- elif p.get('release') %}{{ p.release.get('releaseTitle') }} via {{ p.release.get('indexer') }}
         {%- endif %}
       quality: >-
         {{ (p.get('movieFile') or p.get('episodeFile') or p.get('release') or p.get('downloadInfo') or {}).get('quality', '') }}
@@ -47,12 +54,14 @@ automation:
         {% elif kind == 'ApplicationUpdate' %}{{ p.get('previousVersion') }} → {{ p.get('newVersion') }}
         {% elif kind == 'ManualInteractionRequired' %}{{ what }}:
         {%- for s in p.get('downloadStatusMessages') or [] %} {{ s.get('messages') | join('; ') }}{% endfor %}
+        {% elif kind == 'Test' and not what %}Webhook works
         {% else %}{{ what }}{% if quality %} [{{ quality }}]{% endif %}
         {%- if p.get('isUpgrade') %} (upgrade){% endif %}{% endif %}
       page: >-
         {% if app == 'radarr' and movie.get('tmdbId') %}https://radarr.home.foxhound.nexus/movie/{{ movie.get('tmdbId') }}
         {%- elif app == 'sonarr' and series.get('titleSlug') %}https://sonarr.home.foxhound.nexus/series/{{ series.get('titleSlug') }}
         {%- elif kind in ['Health', 'HealthRestored'] %}https://{{ app }}.home.foxhound.nexus/system/status
+        {%- elif app == 'prowlarr' %}https://prowlarr.home.foxhound.nexus/history
         {%- else %}https://{{ app }}.home.foxhound.nexus/activity/queue{% endif %}
       urgent: >-
         {{ kind == 'ManualInteractionRequired' or (kind == 'Health' and p.get('level') == 'error') }}
