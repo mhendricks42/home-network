@@ -19,8 +19,8 @@ automation:
       req: "{{ p.request or {} }}"
       issue: "{{ p.issue or {} }}"
       who: >-
-        {{ req.requestedBy_username or issue.reportedBy_username
-           or p.notifyuser_username or 'someone' }}
+        {{ req.get('requestedBy_username') or issue.get('reportedBy_username')
+           or p.get('notifyuser_username') or 'someone' }}
       label: >-
         {{ {
           'MEDIA_PENDING': '🕓 Request waiting for approval',
@@ -40,11 +40,11 @@ automation:
         {% if kind.startswith('MEDIA_') %}{{ p.subject }}, requested by {{ who }}
         {%- if kind == 'MEDIA_FAILED' %}. Sonarr/Radarr rejected it: check that the
         root folder, quality profile and indexers are set up.{% endif %}
-        {% elif kind.startswith('ISSUE_') %}{{ p.subject }} ({{ issue.issue_type | default('') }},
-        by {{ who }}): {{ p.comment.comment_message if p.comment else p.message }}
+        {% elif kind.startswith('ISSUE_') %}{{ p.subject }} ({{ issue.get('issue_type', '') }},
+        by {{ who }}): {{ p.comment.get('comment_message') if p.comment else p.message }}
         {% else %}{{ p.message or p.subject }}{% endif %}
       page: >-
-        {% if media.tmdbId %}https://seerr.home.foxhound.nexus/{{ 'tv' if media.media_type == 'tv' else 'movie' }}/{{ media.tmdbId }}
+        {% if media.get('tmdbId') %}https://seerr.home.foxhound.nexus/{{ 'tv' if media.get('media_type') == 'tv' else 'movie' }}/{{ media.get('tmdbId') }}
         {% else %}https://seerr.home.foxhound.nexus{% endif %}
       urgent: "{{ kind in ['MEDIA_FAILED', 'ISSUE_CREATED', 'ISSUE_REOPENED'] }}"
     action:
@@ -53,7 +53,7 @@ automation:
           title: "{{ label }}"
           message: "{{ body | trim }}"
           data:
-            tag: "seerr-{{ req.request_id or issue.issue_id or kind }}"  # newer status replaces older
+            tag: "seerr-{{ req.get('request_id') or issue.get('issue_id') or kind }}"  # newer status replaces older
             group: seerr
             clickAction: "{{ page | trim }}"
             priority: "{{ 'high' if urgent else 'normal' }}"
