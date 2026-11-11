@@ -1,0 +1,60 @@
+# Seerr request alerts → phone. Seerr (on the NAS) posts its webhook through
+# Caddy: https://ha.home.foxhound.nexus/api/webhook/<seerr_webhook_id>
+# secrets.yaml: seerr_webhook_id: seerr-<long random string>
+# Payload template: see media-stack docs, "Seerr webhook". Objects such as
+# media/request/issue are null when an event doesn't have them.
+automation:
+  - id: seerr_request_alert
+    alias: Seerr request alert
+    mode: queued
+    trigger:
+      - trigger: webhook
+        webhook_id: !secret seerr_webhook_id
+        allowed_methods: [POST]
+        local_only: true
+    variables:
+      p: "{{ trigger.json }}"
+      kind: "{{ p.notification_type | default('UNKNOWN') }}"
+      media: "{{ p.media or {} }}"
+      req: "{{ p.request or {} }}"
+      issue: "{{ p.issue or {} }}"
+      who: >-
+        {{ req.requestedBy_username or issue.reportedBy_username
+           or p.notifyuser_username or 'someone' }}
+      label: >-
+        {{ {
+          'MEDIA_PENDING': '🕓 Request waiting for approval',
+          'MEDIA_APPROVED': '👍 Request approved',
+          'MEDIA_AUTO_APPROVED': '👍 Request auto-approved',
+          'MEDIA_AUTO_REQUESTED': '🤖 Auto-requested',
+          'MEDIA_AVAILABLE': '✅ Ready to watch',
+          'MEDIA_DECLINED': '🚫 Request declined',
+          'MEDIA_FAILED': '❌ Request failed',
+          'ISSUE_CREATED': '⚠️ Issue reported',
+          'ISSUE_COMMENT': '💬 Issue comment',
+          'ISSUE_RESOLVED': '✔️ Issue resolved',
+          'ISSUE_REOPENED': '⚠️ Issue reopened',
+          'TEST_NOTIFICATION': '🧪 Seerr test',
+        }.get(kind, 'Seerr: ' ~ kind) }}
+      body: >-
+        {% if kind.startswith('MEDIA_') %}{{ p.subject }}, requested by {{ who }}
+        {%- if kind == 'MEDIA_FAILED' %}. Sonarr/Radarr rejected it: check that the
+        root folder, quality profile and indexers are set up.{% endif %}
+        {% elif kind.startswith('ISSUE_') %}{{ p.subject }} ({{ issue.issue_type | default('') }},
+        by {{ who }}): {{ p.comment.comment_message if p.comment else p.message }}
+        {% else %}{{ p.message or p.subject }}{% endif %}
+      page: >-
+        {% if media.tmdbId %}https://seerr.home.foxhound.nexus/{{ 'tv' if media.media_type == 'tv' else 'movie' }}/{{ media.tmdbId }}
+        {% else %}https://seerr.home.foxhound.nexus{% endif %}
+      urgent: "{{ kind in ['MEDIA_FAILED', 'ISSUE_CREATED', 'ISSUE_REOPENED'] }}"
+    action:
+      - action: notify.mobile_app_matt_s_samsung_galaxy
+        data:
+          title: "{{ label }}"
+          message: "{{ body | trim }}"
+          data:
+            tag: "seerr-{{ req.request_id or issue.issue_id or kind }}"  # newer status replaces older
+            group: seerr
+            clickAction: "{{ page | trim }}"
+            priority: "{{ 'high' if urgent else 'normal' }}"
+            ttl: "{{ 0 if urgent else 3600 }}"
