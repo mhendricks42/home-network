@@ -310,12 +310,17 @@ From the repo clone on the NAS (`/volume1/appdata/home-network`):
 
 ```bash
 sudo mkdir -p /volume1/backups/restic
-docker run --rm --entrypoint create_user -v /volume1/backups/restic:/data \
-  restic/rest-server:0.13.0 odin          # prompts for a password: store it in Dashlane
-docker run --rm --entrypoint create_user -v /volume1/backups/restic:/data \
+sudo touch /volume1/backups/restic/.htpasswd     # create_user only adds to an existing file
+docker run --rm -it --entrypoint create_user -v /volume1/backups/restic:/data \
+  restic/rest-server:0.13.0 odin          # prompts twice for a password: store it in Dashlane
+docker run --rm -it --entrypoint create_user -v /volume1/backups/restic:/data \
   restic/rest-server:0.13.0 vidar
-docker compose -f compose.nas.yml up -d
+sudo cut -d: -f1 /volume1/backups/restic/.htpasswd   # odin, vidar
+docker compose -f compose.nas.yml up -d --force-recreate
 ```
+
+`-it` matters: without a terminal the password prompt reads nothing and
+`htpasswd` fails (`password too long`).
 
 `--private-repos` (in `compose.nas.yml`) keeps each user in its own repository
 (`/odin`, `/vidar`). If the NAS firewall is on, allow TCP 8000 from
