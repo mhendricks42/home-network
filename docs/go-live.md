@@ -332,19 +332,23 @@ the Servers VLAN.
 
 ### 2. Clients (odin and vidar)
 
-On each host (replace `HOST` with `odin` or `vidar`):
+On each host (the REST user and the repository path are both the hostname):
 
 ```bash
 sudo apt install -y restic
 sudo install -d -m 700 /root/.config/restic
-sudo tee /root/.config/restic/env >/dev/null <<'EOF'
-RESTIC_REPOSITORY=rest:http://HOST:REST_PASSWORD@10.0.40.20:8000/HOST/
-RESTIC_PASSWORD_FILE=/root/.config/restic/password
-EOF
+H=$(hostname); echo "$H"                                   # must print odin or vidar
+read -rsp "REST password for $H: " P; echo
+printf 'RESTIC_REPOSITORY=rest:http://%s:%s@10.0.40.20:8000/%s/\nRESTIC_PASSWORD_FILE=/root/.config/restic/password\n' \
+  "$H" "$P" "$H" | sudo tee /root/.config/restic/env >/dev/null; unset P
 sudo tee /root/.config/restic/password >/dev/null      # paste the repository password, then Ctrl+D
 sudo chmod 600 /root/.config/restic/env /root/.config/restic/password
 sudo bash -c 'set -a; . /root/.config/restic/env; restic init'
 ```
+
+`401 Unauthorized`: the REST user or password doesn't match step 1, or the
+path isn't the user's own (`--private-repos` allows user `odin` only `/odin/`).
+Check with `sudo sed 's/:[^:@]*@/:***@/' /root/.config/restic/env`.
 
 Two different secrets: `REST_PASSWORD` (the REST server login from step 1) and
 the **repository password**, which encrypts the data. Store both in Dashlane;
