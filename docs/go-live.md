@@ -287,11 +287,14 @@ admin user and MAC (`ip neigh show 10.0.40.20` while the NAS is up), and the
 `grep` refuses to continue if a placeholder is left:
 
 ```bash
+cd ~/home-network                     # the repo clone; the paths below are relative to it
 sudo apt install -y wakeonlan
 read -rp "NAS admin user: " U; read -rp "NAS MAC (aa:bb:cc:dd:ee:ff): " M
 sed -e "s/NAS_ADMIN/$U/" -e "s/NAS_MAC/$M/" services/nut/upssched-cmd > /tmp/upssched-cmd
-! grep -n 'NAS_' /tmp/upssched-cmd && \
+# Install only a complete file: user filled in, no placeholder left.
+grep -q "$U@10.0.40.20" /tmp/upssched-cmd && ! grep -n 'NAS_' /tmp/upssched-cmd && \
   sudo install -m 750 -o root -g nut /tmp/upssched-cmd /etc/nut/upssched-cmd
+sudo grep -n '@10.0.40.20\|wakeonlan' /etc/nut/upssched-cmd   # both lines, with your values
 sudo install -m 640 -o root -g nut services/nut/upssched.conf /etc/nut/upssched.conf
 sudo install -m 644 services/nut/wake-nas.service /etc/systemd/system/wake-nas.service
 sudo systemctl daemon-reload && sudo systemctl enable wake-nas.service
@@ -454,10 +457,12 @@ backup by hand after big network changes; the local ones are only monthly.
 **Install on odin**, from the repo clone (`REPO_DIR` becomes the clone's path):
 
 ```bash
-sed "s#REPO_DIR#$PWD#g" services/restic/odin/restic-backup.service | \
-  sudo tee /etc/systemd/system/restic-backup.service >/dev/null
+cd ~/home-network                     # the repo clone
+sed "s#REPO_DIR#$PWD#g" services/restic/odin/restic-backup.service > /tmp/restic-backup.service
+grep -q "$PWD/compose.server.yml" /tmp/restic-backup.service && \
+  sudo install -m 644 /tmp/restic-backup.service /etc/systemd/system/restic-backup.service
 sudo install -m 644 services/restic/odin/restic-backup.timer /etc/systemd/system/
-grep -n 'REPO_DIR' /etc/systemd/system/restic-backup.service || echo "paths filled in"
+grep -n 'ExecStart=' /etc/systemd/system/restic-backup.service   # shows your clone's path
 ```
 
 **Install on vidar** (no clone there): from an admin device's clone run
