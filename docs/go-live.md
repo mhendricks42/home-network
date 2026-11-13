@@ -374,12 +374,27 @@ After=network-online.target
 [Service]
 Type=oneshot
 EnvironmentFile=/root/.config/restic/env
+ExecStartPre=-/bin/sh -c 'mkdir -p /srv/unifi-backup && scp -q -o BatchMode=yes -o LogLevel=ERROR -i /root/.ssh/unifi_backup "root@10.0.40.1:/data/unifi/data/backup/autobackup/*.unf" /srv/unifi-backup/ && find /srv/unifi-backup -name "*.unf" -mtime +90 -delete'
 ExecStartPre=/usr/bin/docker compose --project-directory /home/matt/home-network -f /home/matt/home-network/compose.server.yml --profile '*' stop
 ExecStart=/usr/bin/restic backup --one-file-system --exclude-caches /srv /etc /home/matt/home-network/.env
 ExecStopPost=/usr/bin/docker compose --project-directory /home/matt/home-network -f /home/matt/home-network/compose.server.yml --profile '*' start
 ```
 
-`ExecStopPost` restarts the containers even if the backup fails. On **vidar**,
+`ExecStopPost` restarts the containers even if the backup fails. The first
+`ExecStartPre` copies the gateway's own auto-backups (about monthly, plus after
+firmware updates) into `/srv/unifi-backup`, so restic carries them to the NAS.
+Its `-` lets the backup run even if the copy fails. One-time setup on odin, with
+SSH on in UniFi OS → Settings → Control Plane → Console (password in Dashlane):
+
+```bash
+sudo ssh-keygen -t ed25519 -N '' -C odin-unifi-backup -f /root/.ssh/unifi_backup
+sudo ssh-copy-id -i /root/.ssh/unifi_backup.pub root@10.0.40.1
+```
+
+A gateway firmware update can remove the key; check `ls -lt /srv/unifi-backup`
+after updates and rerun `ssh-copy-id` if it stopped. Also turn on **Cloud
+Backups** (UniFi OS → Settings → Backups) for an off-site copy, and download a
+backup by hand after big network changes; the local ones are only monthly. On **vidar**,
 use the same unit with:
 
 ```ini
@@ -433,8 +448,7 @@ Plug a USB disk into the NAS and copy the whole store (it's already encrypted):
 rsync -a --delete /volume1/backups/restic/ /mnt/@usb/sdX1/restic/   # use the path UGOS shows for the disk
 ```
 
-Keep that disk away from the house. Also copy the latest UniFi backup (UCG §10)
-into `/volume1/backups/unifi/` first, so it travels on the same disk. Back up
+Keep that disk away from the house. UniFi backups travel inside odin's restic repository. Back up
 the NAS's own shares to the same USB disk with UGOS's backup app.
 
 ### 5. Restore test (done-when for E3, and E4)
