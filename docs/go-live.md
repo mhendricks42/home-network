@@ -275,6 +275,29 @@ case "$1" in
 esac
 ```
 
+`upssched` only fires on an on-battery → on-line change it sees while running.
+After a full outage odin boots with the UPS already on line, and the NAS stays
+off (UGOS restores its last state: off). So also wake it at every odin boot
+(harmless if it's already up); `/etc/systemd/system/wake-nas.service`:
+
+```ini
+[Unit]
+Description=Wake the NAS after odin boots
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/etc/nut/upssched-cmd wake-nas
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload && sudo systemctl enable wake-nas.service
+```
+
 ```bash
 sudo chmod 640 /etc/nut/upsd.users /etc/nut/upsmon.conf
 sudo mkdir -p /etc/systemd/system/nut-server.service.d    # same network-online drop-in as vidar
@@ -305,7 +328,7 @@ timer must therefore end well before odin reaches 50%:
 |---|---|
 | Under 5 min | Nothing shuts down |
 | Over 5 min, power back before 50% | NAS shuts down; odin stays up and wakes it 3 min after power returns |
-| Reaches 50% | NAS already off; odin shuts down; the UPS cuts its outlets ~20 s later and restores them when mains are back, so both boot |
+| Reaches 50% | NAS already off; odin shuts down; the UPS cuts its outlets ~20 s later and restores them when mains are back; odin boots and wakes the NAS (`wake-nas.service`) |
 
 Power returning after odin's shutdown has started changes nothing: the
 shutdown finishes and the UPS still power-cycles, so everything restarts.
