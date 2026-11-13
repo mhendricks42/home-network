@@ -1,0 +1,17 @@
+#!/bin/sh
+# odin: /etc/nut/upssched-cmd (docs/go-live.md E2). NAS_ADMIN and NAS_MAC are
+# filled in at install time. shutdown-all is odin's SHUTDOWNCMD: NAS first, then odin.
+nas_off() {
+  ssh -i /etc/nut/nas_shutdown -o BatchMode=yes -o ConnectTimeout=10 \
+    -o UserKnownHostsFile=/etc/nut/nas_known_hosts NAS_ADMIN@10.0.40.20 \
+    && logger -t upssched "told mimir to power off"
+}
+case "$1" in
+  wake-nas) /usr/bin/wakeonlan NAS_MAC >/dev/null; logger -t upssched "sent Wake-on-LAN to mimir" ;;
+  nas-off) nas_off ;;
+  shutdown-all)
+    nas_off
+    for i in $(seq 24); do ping -c1 -W2 10.0.40.20 >/dev/null || break; sleep 5; done
+    sleep 15                                   # let it finish after the network goes down
+    /sbin/shutdown -h +0 ;;
+esac

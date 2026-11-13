@@ -3,10 +3,7 @@ Push-Location (Join-Path $PSScriptRoot '..')
 try {
     $serverJson = & docker compose --env-file .env.example -f compose.server.yml --profile '*' config --format json
     if ($LASTEXITCODE -ne 0) { throw 'Server Compose rendering failed.' }
-    $piJson = & docker compose --env-file .env.example -f compose.pi.yml config --format json
-    if ($LASTEXITCODE -ne 0) { throw 'Pi Compose rendering failed.' }
     $server = ($serverJson -join "`n") | ConvertFrom-Json
-    $pi = ($piJson -join "`n") | ConvertFrom-Json
 
     function Assert($condition, $message) {
         if (-not $condition) { throw $message }
@@ -16,8 +13,7 @@ try {
     foreach ($name in $expectedServer) {
         Assert ($null -ne $server.services.$name) "Missing server service: $name"
     }
-    Assert (@($pi.services.PSObject.Properties).Count -eq 3) 'Expected three Pi services.'
-    foreach ($model in @($server, $pi)) {
+    foreach ($model in @($server)) {
         foreach ($entry in $model.services.PSObject.Properties) {
             $service = $entry.Value
             Assert (-not $service.privileged) "$($entry.Name) must not be privileged."
@@ -26,7 +22,7 @@ try {
             }
             foreach ($port in $service.ports) {
                 Assert ($port.target -notin @(1883, 3000, 5000, 5335) -or $port.host_ip -eq '127.0.0.1') "Internal port exposed by $($entry.Name)."
-                if ($entry.Name -ne 'adguard' -and $entry.Name -ne 'uptime-kuma') {
+                if ($entry.Name -ne 'adguard') {
                     Assert ($port.host_ip -eq '127.0.0.1') "Non-loopback application port on $($entry.Name)."
                 }
             }
@@ -46,7 +42,7 @@ try {
     Assert ($zigbee -match 'permit_join: false') 'Zigbee pairing must default to closed.'
     $frigate = Get-Content -LiteralPath services\frigate\config.yml -Raw
     Assert (([regex]::Matches($frigate, '(?m)^  camera_[1-5]:')).Count -eq 5) 'Expected five cameras.'
-    Write-Output 'PASS: both Compose models, service inventory, exposure, storage, and Zigbee safety invariants.'
+    Write-Output 'PASS: server Compose model, service inventory, exposure, storage, and Zigbee safety invariants.'
 } finally {
     Pop-Location
 }

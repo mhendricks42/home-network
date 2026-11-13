@@ -4,11 +4,10 @@ set -eu
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 cd "$(dirname "$0")/.."
 node=${1:-}
-case "$node" in server|pi) ;; *) fail "Usage: sh scripts/start.sh server|pi [https radios cameras monitoring actions]";; esac
+case "$node" in server) ;; *) fail "Usage: sh scripts/start.sh server [https radios cameras monitoring actions]";; esac
 shift
 profiles=" $* "
 for profile in "$@"; do
-    [ "$node" = server ] || fail "Pi has no optional profiles."
     case "$profile" in https|radios|cameras|monitoring|actions) ;; *) fail "Unknown profile: $profile";; esac
 done
 
@@ -29,15 +28,13 @@ config="$root/adguard/config/AdGuardHome.yaml"
 [ -s "$config" ] || fail "Run prepare.sh first: missing $config."
 if grep -q REPLACE "$config"; then fail "Fill the AdGuard domain and bcrypt hash in $config."; fi
 
-if [ "$node" = server ]; then
-    [ -s "$root/mqtt/config/passwords" ] || fail "Create MQTT credentials first."
-    for user in homeassistant zigbee2mqtt frigate; do
-        grep -q "^$user:" "$root/mqtt/config/passwords" || fail "Missing MQTT account: $user"
-    done
-    config="$root/forgejo/data/gitea/conf/app.ini"
-    [ -s "$config" ] || fail "Missing Forgejo configuration."
-    if grep -q REPLACE "$config"; then fail "Fill the domain in $config."; fi
-fi
+[ -s "$root/mqtt/config/passwords" ] || fail "Create MQTT credentials first."
+for user in homeassistant zigbee2mqtt frigate; do
+    grep -q "^$user:" "$root/mqtt/config/passwords" || fail "Missing MQTT account: $user"
+done
+config="$root/forgejo/data/gitea/conf/app.ini"
+[ -s "$config" ] || fail "Missing Forgejo configuration."
+if grep -q REPLACE "$config"; then fail "Fill the domain in $config."; fi
 case "$profiles" in *" https "*)
     for key in HOME_DOMAIN ACME_EMAIL CADDY_DNS_MODULE DNS_PROVIDER DNS_API_TOKEN; do require "$key"; done
     for file in esphome-users ersatztv-users; do

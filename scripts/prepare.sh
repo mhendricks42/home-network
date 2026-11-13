@@ -5,7 +5,7 @@ fail() { printf '%s\n' "$*" >&2; exit 1; }
 [ "$(id -u)" -eq 0 ] || fail "Run as root on the target Linux host."
 node=${1:-}
 root=${2:-/srv}
-case "$node" in server|pi) ;; *) fail "Usage: sh scripts/prepare.sh server|pi [/srv]";; esac
+case "$node" in server) ;; *) fail "Usage: sh scripts/prepare.sh server [/srv]";; esac
 case "$root" in /*) ;; *) fail "Data root must be an absolute path.";; esac
 cd "$(dirname "$0")/.."
 umask 077
@@ -21,10 +21,6 @@ copy_once() {
 
 mkdir -p "$root/adguard/config" "$root/adguard/data"
 copy_once services/adguard/AdGuardHome.yaml.example "$root/adguard/config/AdGuardHome.yaml"
-[ "$node" = server ] || {
-    mkdir -p "$root/uptime-kuma/data"
-    exit 0
-}
 
 for directory in caddy/data caddy/config mqtt/config mqtt/data homeassistant/config/packages \
     zigbee2mqtt/data zwave/data esphome/config frigate/config frigate/data/clips \

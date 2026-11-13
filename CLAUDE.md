@@ -44,8 +44,8 @@ Firewall policies Z1–Z33 in docs/network-architecture.md §9. An empty destina
 - BGW320 hijacks DNS to 192.168.0.254 when its upstream is down; Unbound has `private-address` + `serve-expired`.
 - Docker `create_user`/password prompts need `-it`. Generated config must not leave placeholders (`HOST`).
 - Secrets go in Dashlane; read them with `read -rs`, never into chat or shell history. Don't put the owner's email in external requests.
-- Pi Docker files (`compose.pi.yml`, `prepare.sh pi`, `start.sh pi`) are superseded by the native vidar baseline.
+- Host files (NUT upssched, systemd units) live in `services/nut/` and `services/restic/`; install them from the repo, docs point there.
 
 ## Checks
-`bash -n scripts/*.sh`, `sh scripts/test-start.sh`, `docker compose -f compose.server.yml --profile '*' config -q`,
+`bash -n scripts/*.sh`, `sh -n services/nut/upssched-cmd`, `sh scripts/test-start.sh`, `docker compose -f compose.server.yml --profile '*' config -q`,
 `cd media-stack && go vet ./... && go test ./...`.

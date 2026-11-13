@@ -11,9 +11,8 @@ each other. Do the steps below **in order**; each one lists what must already
 be done. "UCG §n" is the UCG Max runbook; "§n" is this runbook.
 
 **vidar (the Pi) is installed natively without Docker:** follow
-[vidar baseline](vidar-baseline.md) for it. Pi steps below that use Docker
-(`compose.pi.yml`, `prepare.sh pi`, `start.sh pi`, the Pi `DOCKER-USER` rules)
-are superseded by that document.
+[vidar baseline](vidar-baseline.md) for it (its firewall, DNS, NTP and Uptime
+Kuma). The Docker steps below are for the server only.
 
 ### Prerequisite order
 
@@ -63,7 +62,7 @@ Profiles marked *(…)* are needed only when that profile is enabled.
 
 | # | Step | Where | Needs | Done when |
 |---|---|---|---|---|
-| D1 | Start the Pi, then the server base, then each configured profile | §4 | B6, C2–C6 | `start.sh` succeeds; all containers running |
+| D1 | Start the server base, then each configured profile (vidar runs natively) | §4 | B6, C2–C6 | `start.sh` succeeds; all containers running |
 | D2 | Acceptance checks 1–6, plus the host-firewall tests (Firewall prerequisites, step 3) | §4 | D1, A4 (Trusted test clients need Z1/Z5) | Every check passes |
 | D3 | DNS and NTP cutover: set DHCP DNS and NTP to `.10`/`.11`; set UniFi device NTP; **enable Z13 one lease time later** | UCG §6 | D2 checks 1–2, B3a | Clients show both resolvers; a camera shows correct time; Trusted non-admins can't use gateway DNS |
 | D4 | Move devices VLAN by VLAN; IDS/IPS in detect mode | UCG §7–9 | D3 | UCG acceptance table passes |
@@ -336,7 +335,7 @@ paths:
 - **Host-network services** (SSH, chrony NTP, Caddy 443, NUT, and loopback-only Caddy
   admin 2019 and NetAlertX 20211/20212) go through the INPUT chain, which
   `ufw` controls.
-- **Docker-published ports** (AdGuard 53 on both nodes, Kuma 3001 on the Pi)
+- **Docker-published ports** (AdGuard 53 on the server)
   are DNAT'd (their destination is rewritten to the container) and go through
   the FORWARD chain. `ufw allow/deny` never sees them. Docker sends that traffic
   through the `DOCKER-USER` chain first, which it never edits, so the rules
@@ -364,16 +363,8 @@ sudo ufw allow from 10.0.0.0/16 to 10.0.40.10 port 443 proto tcp
 sudo ufw allow from 100.64.0.0/10 to 10.0.40.10 port 443 proto tcp
 ```
 
-Pi:
-
-```bash
-sudo apt install ufw
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow from ADMIN_IP to any port 22 proto tcp
-sudo ufw allow from 10.0.0.0/16 to any port 123 proto udp   # chrony NTP for all VLANs
-sudo ufw allow from 10.0.40.10 to any port 3493 proto tcp   # NUT: Home Assistant reads the closet UPS
-```
+vidar: see [vidar baseline](vidar-baseline.md) §3 (native services, plain ufw
+rules, no `DOCKER-USER` block).
 
 Default deny already covers Caddy admin 2019 and NetAlertX 20211/20212; no
 extra deny rules are needed. Port 80 stays closed (DNS-01, no redirects). The
@@ -382,7 +373,7 @@ which remote users may SSH. Add it only after Tailscale is installed.
 
 #### 2. Docker forwarding rules (`DOCKER-USER`)
 
-Append the block for that host to the **end** of `/etc/ufw/after.rules`, after
+Append this block to the **end** of the server's `/etc/ufw/after.rules`, after
 the existing `COMMIT`. `ufw` loads it at boot before Docker starts and
 reloads it with `ufw reload`. Declaring `:DOCKER-USER` in the file replaces
 the chain's contents on each load, so rules don't pile up.
@@ -404,32 +395,15 @@ Server:
 COMMIT
 ```
 
-Pi:
-
-```text
-# Docker-published ports (AdGuard DNS, Uptime Kuma) - see docs/runbook.md
-*filter
-:DOCKER-USER - [0:0]
--A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
--A DOCKER-USER -i docker0 -j RETURN
--A DOCKER-USER -i br-+ -j RETURN
--A DOCKER-USER -p udp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 10.0.0.0/16 -j RETURN
--A DOCKER-USER -p tcp -m conntrack --ctorigdstport 53 --ctdir ORIGINAL -s 10.0.0.0/16 -j RETURN
--A DOCKER-USER -p tcp -m conntrack --ctorigdstport 3001 --ctdir ORIGINAL -s 10.0.40.10 -j RETURN
--A DOCKER-USER -j DROP
-COMMIT
-```
-
 What each line does:
 
 | Rule | Reason |
 |---|---|
 | `RELATED,ESTABLISHED` | Replies to connections that are already allowed, including container traffic going out |
 | `-i docker0`, `-i br-+` | Traffic that starts inside containers (Unbound recursion, HA → IoT, Frigate → cameras) isn't filtered here. Compose networks are named `br-<id>` |
-| `--ctorigdstport` | Matches the port the client asked for (53/3001) before Docker rewrote it, so the rule doesn't depend on container IPs |
+| `--ctorigdstport` | Matches the port the client asked for (53) before Docker rewrote it, so the rule doesn't depend on container IPs |
 | `10.0.0.0/16` | All home VLANs. The gateway decides which zones may query DNS (architecture §9.4 Z1–Z4); this layer only stops anything else |
-| `100.64.0.0/10` (server only) | Tailscale clients using split DNS through the `10.0.40.10/32` route. The Pi doesn't run Tailscale |
-| `3001` from `10.0.40.10` (Pi only) | Caddy on the server proxies `status.home.<domain>`; nobody else reaches Kuma directly |
+| `100.64.0.0/10` | Tailscale clients using split DNS through the `10.0.40.10/32` route |
 | `DROP` | Everything else forwarded to a container from outside |
 
 The published ports bind IPv4 addresses only, so there's no IPv6 Docker
@@ -477,10 +451,7 @@ if changed, give the same root to `prepare.sh` and `DATA_ROOT` in `.env`.
 ```bash
 cp .env.example .env
 chmod 600 .env
-# On the server:
 sudo sh scripts/prepare.sh server /srv
-# On the Pi, instead:
-sudo sh scripts/prepare.sh pi /srv
 ```
 
 Preparation preserves every existing file. It never formats/mounts disks,
@@ -767,8 +738,6 @@ flows. Its own password protects the dashboard (see the Caddy section).
 ## 4. Start and verify
 
 ```bash
-# Pi:
-sudo sh scripts/start.sh pi
 # Server base services:
 sudo sh scripts/start.sh server
 # Add only configured profiles; HTTPS is optional until the domain is ready:

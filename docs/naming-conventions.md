@@ -35,7 +35,7 @@ names. Things you type, or that describe a function, stay plain.
 |---|---|---|
 | Docs and scripts | `kebab-case` | `ucg-max-runbook.md`, `test-start.sh` |
 | Compose services, `/srv` folders | lowercase, `-` if needed | `uptime-kuma`, `/srv/uptime-kuma` |
-| Compose files | `compose.<role>.yml` (role, not hostname) | `compose.server.yml`, `compose.pi.yml` |
+| Compose files | `compose.<role>.yml` (role, not hostname) | `compose.server.yml`, `compose.nas.yml` |
 | `.env` variables | `UPPER_SNAKE` | `DNS_API_TOKEN` |
 | UniFi address/port objects | `UPPER_SNAKE` | `DNS_NODES`, `ADMIN_CLIENTS` |
 | Firewall policies, decisions | `Z<n>`, `D-N<n>`, `D-S<n>` | `Z27`, `D-N14` |

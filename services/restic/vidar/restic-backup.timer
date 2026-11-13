@@ -1,0 +1,12 @@
+# vidar: /etc/systemd/system/restic-backup.timer (docs/go-live.md E3)
+# odin 03:30, vidar 04:00: the two DNS nodes are never down together.
+[Unit]
+Description=Nightly restic backup
+
+[Timer]
+OnCalendar=*-*-* 04:00
+RandomizedDelaySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

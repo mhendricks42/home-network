@@ -254,41 +254,12 @@ NOTIFYFLAG ONLINE SYSLOG+WALL+EXEC
 NOTIFYFLAG ONBATT SYSLOG+WALL+EXEC
 ```
 
-`/etc/nut/upssched.conf` (shut the NAS down after 5 minutes on battery; wake
-it 3 minutes after mains return):
-
-```text
-CMDSCRIPT /etc/nut/upssched-cmd
-PIPEFN /run/nut/upssched.pipe
-LOCKFN /run/nut/upssched.lock
-AT ONBATT * START-TIMER nas-off 300
-AT ONLINE * CANCEL-TIMER nas-off
-AT ONLINE * START-TIMER wake-nas 180
-AT ONBATT * CANCEL-TIMER wake-nas
-```
-
-`/etc/nut/upssched-cmd` (MAC from `ip neigh show 10.0.40.20`; needs
-`sudo apt install -y wakeonlan`; then
-`sudo chown root:nut /etc/nut/upssched-cmd && sudo chmod 750 /etc/nut/upssched-cmd`).
-`shutdown-all` is odin's `SHUTDOWNCMD`: NAS first, wait until it's off, then odin.
-
-```sh
-#!/bin/sh
-nas_off() {
-  ssh -i /etc/nut/nas_shutdown -o BatchMode=yes -o ConnectTimeout=10 \
-    -o UserKnownHostsFile=/etc/nut/nas_known_hosts NAS_ADMIN@10.0.40.20 \
-    && logger -t upssched "told mimir to power off"
-}
-case "$1" in
-  wake-nas) /usr/bin/wakeonlan NAS_MAC >/dev/null; logger -t upssched "sent Wake-on-LAN to mimir" ;;
-  nas-off) nas_off ;;
-  shutdown-all)
-    nas_off
-    for i in $(seq 24); do ping -c1 -W2 10.0.40.20 >/dev/null || break; sleep 5; done
-    sleep 15                                   # let it finish after the network goes down
-    /sbin/shutdown -h +0 ;;
-esac
-```
+The NAS shutdown and wake-up files live in the repo, in `services/nut/`:
+`upssched.conf` (NAS off after 5 min on battery, wake it 3 min after mains
+return), `upssched-cmd` (`shutdown-all` is odin's `SHUTDOWNCMD`: NAS first,
+wait until it's off, then odin) and `wake-nas.service` (`upssched` misses an
+outage odin slept through, and UGOS restores the NAS to its last state, off,
+so odin also wakes it at every boot; harmless if it's already up).
 
 **NAS shutdown key** (the key can do nothing but power the NAS off). On odin:
 
@@ -311,27 +282,20 @@ chmod 600 ~/.ssh/authorized_keys
 
 A UGOS update can reset these; after updates, rerun the NAS test below.
 
-`upssched` only fires on an on-battery → on-line change it sees while running.
-After a full outage odin boots with the UPS already on line, and the NAS stays
-off (UGOS restores its last state: off). So also wake it at every odin boot
-(harmless if it's already up); `/etc/systemd/system/wake-nas.service`:
-
-```ini
-[Unit]
-Description=Wake the NAS after odin boots
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/etc/nut/upssched-cmd wake-nas
-
-[Install]
-WantedBy=multi-user.target
-```
+**Install the files on odin** from the repo clone. The `sed` fills in your NAS
+admin user and MAC (`ip neigh show 10.0.40.20` while the NAS is up), and the
+`grep` refuses to continue if a placeholder is left:
 
 ```bash
+sudo apt install -y wakeonlan
+read -rp "NAS admin user: " U; read -rp "NAS MAC (aa:bb:cc:dd:ee:ff): " M
+sed -e "s/NAS_ADMIN/$U/" -e "s/NAS_MAC/$M/" services/nut/upssched-cmd > /tmp/upssched-cmd
+! grep -n 'NAS_' /tmp/upssched-cmd && \
+  sudo install -m 750 -o root -g nut /tmp/upssched-cmd /etc/nut/upssched-cmd
+sudo install -m 640 -o root -g nut services/nut/upssched.conf /etc/nut/upssched.conf
+sudo install -m 644 services/nut/wake-nas.service /etc/systemd/system/wake-nas.service
 sudo systemctl daemon-reload && sudo systemctl enable wake-nas.service
+rm /tmp/upssched-cmd
 ```
 
 ```bash
@@ -461,33 +425,21 @@ without the repository password the backups can't be restored.
 
 | Host | Paths | Consistency |
 |---|---|---|
-| odin | `/srv`, `/etc`, `/home/matt/home-network/.env` (adjust to your clone) | Containers are stopped during the backup (SQLite databases). vidar answers DNS meanwhile |
+| odin | `/srv`, `/etc`, the repo clone's `.env` | Containers are stopped during the backup (SQLite databases). vidar answers DNS meanwhile |
 | vidar | `/opt/AdGuardHome/AdGuardHome.yaml`, `/opt/uptime-kuma/data`, `/etc` | Uptime Kuma is stopped during the backup |
 
 `/mnt/recordings` (camera video) is never backed up.
 
-`/etc/systemd/system/restic-backup.service` on **odin**:
+The units live in the repo: `services/restic/odin/` and `services/restic/vidar/`
+(`restic-backup.service` and `restic-backup.timer`). odin's backup stops all
+containers (SQLite consistency) and restarts them even if the backup fails;
+first it copies the gateway's auto-backups (about monthly, plus after firmware
+updates) into `/srv/unifi-backup`, so restic carries them to the NAS. vidar
+stops only Uptime Kuma. odin runs at 03:30 and vidar at 04:00, so the two DNS
+nodes are never down together.
 
-```ini
-[Unit]
-Description=restic backup to the NAS
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Type=oneshot
-EnvironmentFile=/root/.config/restic/env
-ExecStartPre=-/bin/sh -c 'mkdir -p /srv/unifi-backup && scp -q -o BatchMode=yes -o LogLevel=ERROR -i /root/.ssh/unifi_backup "root@10.0.40.1:/data/unifi/data/backup/autobackup/*.unf" /srv/unifi-backup/ && find /srv/unifi-backup -name "*.unf" -mtime +90 -delete'
-ExecStartPre=/usr/bin/docker compose --project-directory /home/matt/home-network -f /home/matt/home-network/compose.server.yml --profile '*' stop
-ExecStart=/usr/bin/restic backup --one-file-system --exclude-caches /srv /etc /home/matt/home-network/.env
-ExecStopPost=/usr/bin/docker compose --project-directory /home/matt/home-network -f /home/matt/home-network/compose.server.yml --profile '*' start
-```
-
-`ExecStopPost` restarts the containers even if the backup fails. The first
-`ExecStartPre` copies the gateway's own auto-backups (about monthly, plus after
-firmware updates) into `/srv/unifi-backup`, so restic carries them to the NAS.
-Its `-` lets the backup run even if the copy fails. One-time setup on odin, with
-SSH on in UniFi OS → Settings → Control Plane → Console (password in Dashlane):
+**UniFi copy, one-time setup on odin**, with SSH on in UniFi OS → Settings →
+Control Plane → Console (password in Dashlane):
 
 ```bash
 sudo ssh-keygen -t ed25519 -N '' -C odin-unifi-backup -f /root/.ssh/unifi_backup
@@ -497,32 +449,22 @@ sudo ssh-copy-id -i /root/.ssh/unifi_backup.pub root@10.0.40.1
 A gateway firmware update can remove the key; check `ls -lt /srv/unifi-backup`
 after updates and rerun `ssh-copy-id` if it stopped. Also turn on **Cloud
 Backups** (UniFi OS → Settings → Backups) for an off-site copy, and download a
-backup by hand after big network changes; the local ones are only monthly. On **vidar**,
-use the same unit with:
+backup by hand after big network changes; the local ones are only monthly.
 
-```ini
-ExecStartPre=/bin/systemctl stop uptime-kuma
-ExecStart=/usr/bin/restic backup --one-file-system /opt/AdGuardHome/AdGuardHome.yaml /opt/uptime-kuma/data /etc
-ExecStopPost=/bin/systemctl start uptime-kuma
+**Install on odin**, from the repo clone (`REPO_DIR` becomes the clone's path):
+
+```bash
+sed "s#REPO_DIR#$PWD#g" services/restic/odin/restic-backup.service | \
+  sudo tee /etc/systemd/system/restic-backup.service >/dev/null
+sudo install -m 644 services/restic/odin/restic-backup.timer /etc/systemd/system/
+grep -n 'REPO_DIR' /etc/systemd/system/restic-backup.service || echo "paths filled in"
 ```
 
-`/etc/systemd/system/restic-backup.timer` (both hosts; vidar runs 30 minutes
-later so the two DNS nodes are never down together):
+**Install on vidar** (no clone there): from an admin device's clone run
+`scp services/restic/vidar/restic-backup.* vidar:/tmp/`, then on vidar
+`sudo install -m 644 /tmp/restic-backup.service /tmp/restic-backup.timer /etc/systemd/system/`.
 
-```ini
-[Unit]
-Description=Nightly restic backup
-
-[Timer]
-OnCalendar=*-*-* 03:30
-RandomizedDelaySec=5m
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-```
-
-On vidar set `OnCalendar=*-*-* 04:00`. Then on both:
+Then on both:
 
 ```bash
 sudo systemctl daemon-reload

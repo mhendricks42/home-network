@@ -1,0 +1,16 @@
+# odin: /etc/systemd/system/restic-backup.service (docs/go-live.md E3)
+# REPO_DIR is filled in at install time with the repo clone path.
+[Unit]
+Description=restic backup to the NAS
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/root/.config/restic/env
+# Copy the gateway's auto-backups first; "-" lets the backup run if this fails.
+ExecStartPre=-/bin/sh -c 'mkdir -p /srv/unifi-backup && scp -q -o BatchMode=yes -o LogLevel=ERROR -i /root/.ssh/unifi_backup "root@10.0.40.1:/data/unifi/data/backup/autobackup/*.unf" /srv/unifi-backup/ && find /srv/unifi-backup -name "*.unf" -mtime +90 -delete'
+ExecStartPre=/usr/bin/docker compose --project-directory REPO_DIR -f REPO_DIR/compose.server.yml --profile '*' stop
+ExecStart=/usr/bin/restic backup --one-file-system --exclude-caches /srv /etc REPO_DIR/.env
+# Runs even if the backup fails.
+ExecStopPost=/usr/bin/docker compose --project-directory REPO_DIR -f REPO_DIR/compose.server.yml --profile '*' start

@@ -1,0 +1,13 @@
+# odin: /etc/systemd/system/wake-nas.service (docs/go-live.md E2)
+# upssched misses an outage odin slept through, so also wake the NAS at every boot.
+[Unit]
+Description=Wake the NAS after odin boots
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/etc/nut/upssched-cmd wake-nas
+
+[Install]
+WantedBy=multi-user.target
