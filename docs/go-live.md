@@ -266,7 +266,8 @@ so odin also wakes it at every boot; harmless if it's already up).
 `command="…"`: admin users may run anything, other users only rsync/scp/sftp.
 So the key belongs to a dedicated **non-admin** user, `nutshut`, and a
 `Match User` block overrides UGOS's script for that user alone. Its only
-possible action is `sudo -n /sbin/poweroff`. If a UGOS update resets
+possible action is `sudo -n systemctl poweroff`, the orderly shutdown (UGOS's
+`/sbin/poweroff` switches off within a second, without stopping Docker). If a UGOS update resets
 `sshd_config`, `nutshut` falls back to UGOS's rules, which refuse it: the NAS
 shutdown fails safe and the UGOS timer still acts.
 
@@ -282,11 +283,11 @@ sudo cat /etc/nut/nas_shutdown.pub
 On the NAS: SSH on (UGOS → Control Panel → Terminal, port 22, no automatic
 switch-off). Create user **`nutshut`** in UGOS → Control Panel → Users as a
 normal user (not admin, no shared folders, random password in Dashlane). Then,
-over SSH as your admin user (`which poweroff` must print `/sbin/poweroff`):
+over SSH as your admin user (`command -v systemctl` must print `/usr/bin/systemctl`):
 
 ```bash
 sudo grep -iE '^\s*(AllowUsers|AllowGroups)' /etc/ssh/sshd_config   # if any, add nutshut there
-echo 'nutshut ALL=(root) NOPASSWD: /sbin/poweroff' | sudo tee /etc/sudoers.d/nut-poweroff
+echo 'nutshut ALL=(root) NOPASSWD: /usr/bin/systemctl poweroff' | sudo tee /etc/sudoers.d/nut-poweroff
 sudo chmod 440 /etc/sudoers.d/nut-poweroff
 H=$(getent passwd nutshut | cut -d: -f6); G=$(id -gn nutshut)
 sudo install -d -m 700 -o nutshut -g "$G" "$H/.ssh"
@@ -294,7 +295,7 @@ echo 'from="10.0.40.10",restrict PASTE_THE_PUB_KEY_HERE' | sudo tee "$H/.ssh/aut
 sudo chown nutshut:"$G" "$H/.ssh/authorized_keys" && sudo chmod 600 "$H/.ssh/authorized_keys"
 # sshd runs ForceCommand through the login shell; UGOS gives normal users nologin.
 sudo usermod -s /bin/sh nutshut
-printf '\nMatch User nutshut\n    ForceCommand sudo -n /sbin/poweroff\n' | sudo tee -a /etc/ssh/sshd_config
+printf '\nMatch User nutshut\n    ForceCommand sudo -n /usr/bin/systemctl poweroff\n' | sudo tee -a /etc/ssh/sshd_config
 sudo sshd -t && sudo systemctl reload ssh || sudo systemctl reload sshd
 ```
 
