@@ -29,6 +29,8 @@ Firewall policies Z1–Z33 in docs/network-architecture.md §9. An empty destina
 - odin `ups.conf`: `ignorelb`, LB at 50% charge or 900 s runtime.
 - UGOS never logs in to NUT, so it ignores FSD. odin powers the NAS off over SSH
   (`/etc/nut/upssched-cmd`: `nas-off` after 5 min on battery; `shutdown-all` is odin's SHUTDOWNCMD).
+  UGOS forces SSH through `force_command.sh` (ignores key `command=`), so NAS user `nutshut` (non-admin)
+  gets `Match User nutshut` + `ForceCommand sudo -n /sbin/poweroff` in the NAS's sshd_config.
   UGOS timer 10 min = backstop only. Wake-on-LAN: 3 min after ONLINE and `wake-nas.service` at every odin boot.
 - `upsmon -c fsd` power-cycles the UPS outlets (that's what restarts everything). Warn the household.
 - UGOS alert times showed +1 h: likely a fixed-offset time zone in UGOS, not a setting.

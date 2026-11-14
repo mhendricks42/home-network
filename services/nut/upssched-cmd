@@ -1,12 +1,12 @@
 #!/bin/sh
-# odin: /etc/nut/upssched-cmd (docs/go-live.md E2). NAS_ADMIN and NAS_MAC are
-# filled in at install time. shutdown-all is odin's SHUTDOWNCMD: NAS first, then odin.
+# odin: /etc/nut/upssched-cmd (docs/go-live.md E2). NAS_MAC is filled in at
+# install time. NAS user nutshut can only run poweroff (ForceCommand on the NAS). shutdown-all is odin's SHUTDOWNCMD: NAS first, then odin.
 nas_off() {
   logger -t upssched "telling mimir to power off"
   # -T -n: no terminal or input (the key's forced command needs none); timeout: the
   # NAS often drops the session mid-poweroff, so don't let that hold up odin.
   timeout 30 ssh -T -n -i /etc/nut/nas_shutdown -o BatchMode=yes -o ConnectTimeout=10 \
-    -o LogLevel=ERROR -o UserKnownHostsFile=/etc/nut/nas_known_hosts NAS_ADMIN@10.0.40.20
+    -o LogLevel=ERROR -o UserKnownHostsFile=/etc/nut/nas_known_hosts nutshut@10.0.40.20
 }
 case "$1" in
   wake-nas) /usr/bin/wakeonlan NAS_MAC >/dev/null; logger -t upssched "sent Wake-on-LAN to mimir" ;;

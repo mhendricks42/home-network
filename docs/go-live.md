@@ -261,38 +261,55 @@ wait until it's off, then odin) and `wake-nas.service` (`upssched` misses an
 outage odin slept through, and UGOS restores the NAS to its last state, off,
 so odin also wakes it at every boot; harmless if it's already up).
 
-**NAS shutdown key** (the key can do nothing but power the NAS off). On odin:
+**NAS shutdown user and key.** UGOS forces every SSH login through
+`/etc/ssh/force_command.sh` (`ForceCommand`), which ignores a key's
+`command="…"`: admin users may run anything, other users only rsync/scp/sftp.
+So the key belongs to a dedicated **non-admin** user, `nutshut`, and a
+`Match User` block overrides UGOS's script for that user alone. Its only
+possible action is `sudo -n /sbin/poweroff`. If a UGOS update resets
+`sshd_config`, `nutshut` falls back to UGOS's rules, which refuse it: the NAS
+shutdown fails safe and the UGOS timer still acts.
+
+On odin:
 
 ```bash
 sudo ssh-keygen -t ed25519 -N '' -C odin-nut-nas-shutdown -f /etc/nut/nas_shutdown
 sudo chown nut:nut /etc/nut/nas_shutdown
-sudo sh -c 'ssh-keyscan -t ed25519 10.0.40.20 > /etc/nut/nas_known_hosts'
+sudo sh -c 'ssh-keyscan 10.0.40.20 > /etc/nut/nas_known_hosts'
 sudo cat /etc/nut/nas_shutdown.pub
 ```
 
-On the NAS (UGOS → Control Panel → Terminal → SSH on), as `NAS_ADMIN`:
+On the NAS: SSH on (UGOS → Control Panel → Terminal, port 22, no automatic
+switch-off). Create user **`nutshut`** in UGOS → Control Panel → Users as a
+normal user (not admin, no shared folders, random password in Dashlane). Then,
+over SSH as your admin user (`which poweroff` must print `/sbin/poweroff`):
 
 ```bash
-echo 'NAS_ADMIN ALL=(root) NOPASSWD: /sbin/poweroff' | sudo tee /etc/sudoers.d/nut-poweroff
+sudo grep -iE '^\s*(AllowUsers|AllowGroups)' /etc/ssh/sshd_config   # if any, add nutshut there
+echo 'nutshut ALL=(root) NOPASSWD: /sbin/poweroff' | sudo tee /etc/sudoers.d/nut-poweroff
 sudo chmod 440 /etc/sudoers.d/nut-poweroff
-mkdir -p ~/.ssh && chmod 700 ~/.ssh
-echo 'command="sudo /sbin/poweroff",restrict PASTE_THE_PUB_KEY_HERE' >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
+H=$(getent passwd nutshut | cut -d: -f6); G=$(id -gn nutshut)
+sudo install -d -m 700 -o nutshut -g "$G" "$H/.ssh"
+echo 'from="10.0.40.10",restrict PASTE_THE_PUB_KEY_HERE' | sudo tee "$H/.ssh/authorized_keys" >/dev/null
+sudo chown nutshut:"$G" "$H/.ssh/authorized_keys" && sudo chmod 600 "$H/.ssh/authorized_keys"
+printf '\nMatch User nutshut\n    ForceCommand sudo -n /sbin/poweroff\n' | sudo tee -a /etc/ssh/sshd_config
+sudo sshd -t && sudo systemctl reload ssh || sudo systemctl reload sshd
 ```
 
-A UGOS update can reset these; after updates, rerun the NAS test below.
+The `Match` block must stay the **last** thing in `sshd_config`. A UGOS update
+can reset these files; after updates, rerun the NAS test below.
 
-**Install the files on odin** from the repo clone. The `sed` fills in your NAS
-admin user and MAC (`ip neigh show 10.0.40.20` while the NAS is up), and the
+**Install the files on odin** from the repo clone. The `sed` fills in the NAS's
+MAC (`ip neigh show 10.0.40.20` while the NAS is up), and the
 `grep` refuses to continue if a placeholder is left:
 
 ```bash
 cd ~/home-network                     # the repo clone; the paths below are relative to it
 sudo apt install -y wakeonlan
-read -rp "NAS admin user: " U; read -rp "NAS MAC (aa:bb:cc:dd:ee:ff): " M
-sed -e "s/NAS_ADMIN/$U/" -e "s/NAS_MAC/$M/" services/nut/upssched-cmd > /tmp/upssched-cmd
-# Install only a complete file: user filled in, no placeholder left.
-grep -q "$U@10.0.40.20" /tmp/upssched-cmd && ! grep -n 'NAS_' /tmp/upssched-cmd && \
+read -rp "NAS MAC (aa:bb:cc:dd:ee:ff): " M
+sed "s/NAS_MAC/$M/" services/nut/upssched-cmd > /tmp/upssched-cmd
+# Install only a complete file: real content, no placeholder left.
+grep -q 'nas_off()' /tmp/upssched-cmd && ! grep -n 'NAS_' /tmp/upssched-cmd && \
   sudo install -m 750 -o root -g nut /tmp/upssched-cmd /etc/nut/upssched-cmd
 sudo grep -n '@10.0.40.20\|wakeonlan' /etc/nut/upssched-cmd   # both lines, with your values
 sudo install -m 640 -o root -g nut services/nut/upssched.conf /etc/nut/upssched.conf
