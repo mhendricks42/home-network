@@ -292,11 +292,16 @@ H=$(getent passwd nutshut | cut -d: -f6); G=$(id -gn nutshut)
 sudo install -d -m 700 -o nutshut -g "$G" "$H/.ssh"
 echo 'from="10.0.40.10",restrict PASTE_THE_PUB_KEY_HERE' | sudo tee "$H/.ssh/authorized_keys" >/dev/null
 sudo chown nutshut:"$G" "$H/.ssh/authorized_keys" && sudo chmod 600 "$H/.ssh/authorized_keys"
+# sshd runs ForceCommand through the login shell; UGOS gives normal users nologin.
+sudo usermod -s /bin/sh nutshut
 printf '\nMatch User nutshut\n    ForceCommand sudo -n /sbin/poweroff\n' | sudo tee -a /etc/ssh/sshd_config
 sudo sshd -t && sudo systemctl reload ssh || sudo systemctl reload sshd
 ```
 
-The `Match` block must stay the **last** thing in `sshd_config`. A UGOS update
+The `Match` block must stay the **last** thing in `sshd_config`. The shell is
+safe: for `nutshut`, sshd only ever runs the forced command. If the test prints
+*This account is currently not available*, the shell was reset to `nologin` or
+the `Match` block isn't active (`sudo sshd -T -C user=nutshut,host=odin,addr=10.0.40.10 | grep -i forcecommand`). A UGOS update
 can reset these files; after updates, rerun the NAS test below.
 
 **Install the files on odin** from the repo clone. The `sed` fills in the NAS's
