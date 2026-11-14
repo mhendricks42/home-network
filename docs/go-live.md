@@ -131,7 +131,7 @@ Each host listens to the UPS that actually powers it:
 | UPS | USB to | NUT role | Protects |
 |---|---|---|---|
 | Closet (APC BE600M1) | vidar | server (`closet`) | vidar shuts down cleanly. The gateway, switch, APs and cameras just run until the battery ends; they have no disks to corrupt |
-| Office (CyberPower CP850PFCLCD) | odin | server (`ups0`, the name UGOS requires) | odin shuts the NAS down over SSH after 5 min on battery; odin itself at 50% charge, then the UPS power-cycles |
+| Office (CyberPower CP850PFCLCD) | odin | server (`ups0`, the name UGOS requires) | The NAS shuts down on its own 5-min UGOS timer; odin at 50% charge, then the UPS power-cycles; odin wakes the NAS afterwards |
 
 Make everything come back after a power cut:
 
@@ -248,62 +248,17 @@ Assistant may reach port 3493.
 
 ```text
 MONITOR ups0@localhost 1 upsmon ODIN_UPSMON_PASSWORD primary
-SHUTDOWNCMD "/etc/nut/upssched-cmd shutdown-all"
+SHUTDOWNCMD "/sbin/shutdown -h +0"
 NOTIFYCMD /usr/sbin/upssched
 NOTIFYFLAG ONLINE SYSLOG+WALL+EXEC
 NOTIFYFLAG ONBATT SYSLOG+WALL+EXEC
 ```
 
-The NAS shutdown and wake-up files live in the repo, in `services/nut/`:
-`upssched.conf` (NAS off after 5 min on battery, wake it 3 min after mains
-return), `upssched-cmd` (`shutdown-all` is odin's `SHUTDOWNCMD`: NAS first,
-wait until it's off, then odin) and `wake-nas.service` (`upssched` misses an
-outage odin slept through, and UGOS restores the NAS to its last state, off,
-so odin also wakes it at every boot; harmless if it's already up).
-
-**NAS shutdown user and key.** UGOS forces every SSH login through
-`/etc/ssh/force_command.sh` (`ForceCommand`), which ignores a key's
-`command="…"`: admin users may run anything, other users only rsync/scp/sftp.
-So the key belongs to a dedicated **non-admin** user, `nutshut`, and a
-`Match User` block overrides UGOS's script for that user alone. Its only
-possible action is `sudo -n systemctl poweroff`, the orderly shutdown (UGOS's
-`/sbin/poweroff` switches off within a second, without stopping Docker). If a UGOS update resets
-`sshd_config`, `nutshut` falls back to UGOS's rules, which refuse it: the NAS
-shutdown fails safe and the UGOS timer still acts.
-
-On odin:
-
-```bash
-sudo ssh-keygen -t ed25519 -N '' -C odin-nut-nas-shutdown -f /etc/nut/nas_shutdown
-sudo chown nut:nut /etc/nut/nas_shutdown
-sudo sh -c 'ssh-keyscan 10.0.40.20 > /etc/nut/nas_known_hosts'
-sudo cat /etc/nut/nas_shutdown.pub
-```
-
-On the NAS: SSH on (UGOS → Control Panel → Terminal, port 22, no automatic
-switch-off). Create user **`nutshut`** in UGOS → Control Panel → Users as a
-normal user (not admin, no shared folders, random password in Dashlane). Then,
-over SSH as your admin user (`command -v systemctl` must print `/usr/bin/systemctl`):
-
-```bash
-sudo grep -iE '^\s*(AllowUsers|AllowGroups)' /etc/ssh/sshd_config   # if any, add nutshut there
-echo 'nutshut ALL=(root) NOPASSWD: /usr/bin/systemctl poweroff' | sudo tee /etc/sudoers.d/nut-poweroff
-sudo chmod 440 /etc/sudoers.d/nut-poweroff
-H=$(getent passwd nutshut | cut -d: -f6); G=$(id -gn nutshut)
-sudo install -d -m 700 -o nutshut -g "$G" "$H/.ssh"
-echo 'from="10.0.40.10",restrict PASTE_THE_PUB_KEY_HERE' | sudo tee "$H/.ssh/authorized_keys" >/dev/null
-sudo chown nutshut:"$G" "$H/.ssh/authorized_keys" && sudo chmod 600 "$H/.ssh/authorized_keys"
-# sshd runs ForceCommand through the login shell; UGOS gives normal users nologin.
-sudo usermod -s /bin/sh nutshut
-printf '\nMatch User nutshut\n    ForceCommand sudo -n /usr/bin/systemctl poweroff\n' | sudo tee -a /etc/ssh/sshd_config
-sudo sshd -t && sudo systemctl reload ssh || sudo systemctl reload sshd
-```
-
-The `Match` block must stay the **last** thing in `sshd_config`. The shell is
-safe: for `nutshut`, sshd only ever runs the forced command. If the test prints
-*This account is currently not available*, the shell was reset to `nologin` or
-the `Match` block isn't active (`sudo sshd -T -C user=nutshut,host=odin,addr=10.0.40.10 | grep -i forcecommand`). A UGOS update
-can reset these files; after updates, rerun the NAS test below.
+The wake-up files live in the repo, in `services/nut/`: `upssched.conf` (wake
+the NAS 3 min after mains return), `upssched-cmd` and `wake-nas.service`
+(`upssched` misses an outage odin slept through, and UGOS restores the NAS to
+its last state, off, so odin also wakes it at every boot; harmless if it's
+already up). The NAS shuts itself down on its UGOS timer (below).
 
 **Install the files on odin** from the repo clone. The `sed` fills in the NAS's
 MAC (`ip neigh show 10.0.40.20` while the NAS is up), and the
@@ -315,9 +270,9 @@ sudo apt install -y wakeonlan
 read -rp "NAS MAC (aa:bb:cc:dd:ee:ff): " M
 sed "s/NAS_MAC/$M/" services/nut/upssched-cmd > /tmp/upssched-cmd
 # Install only a complete file: real content, no placeholder left.
-grep -q 'nas_off()' /tmp/upssched-cmd && ! grep -n 'NAS_' /tmp/upssched-cmd && \
+grep -q 'wake-nas)' /tmp/upssched-cmd && ! grep -n 'NAS_' /tmp/upssched-cmd && \
   sudo install -m 750 -o root -g nut /tmp/upssched-cmd /etc/nut/upssched-cmd
-sudo grep -n '@10.0.40.20\|wakeonlan' /etc/nut/upssched-cmd   # both lines, with your values
+sudo grep -n 'wakeonlan' /etc/nut/upssched-cmd   # shows your MAC
 sudo install -m 640 -o root -g nut services/nut/upssched.conf /etc/nut/upssched.conf
 sudo install -m 644 services/nut/wake-nas.service /etc/systemd/system/wake-nas.service
 sudo systemctl daemon-reload && sudo systemctl enable wake-nas.service
@@ -340,21 +295,24 @@ If the driver fails with a USB permission error on first install, unplug and
 replug the UPS's USB cable, then restart `nut-driver.target`.
 
 **NAS:** UGOS → UPS settings → network UPS client → server `10.0.40.10`,
-**timed shutdown: 10 minutes** on battery (only a backstop if odin's SSH
-shutdown fails; NUT acts at 5). There are no name or credential fields: UGOS queries `ups0` (it tries `STARTTLS`
+**timed shutdown: 5 minutes** on battery. There are no name or credential fields: UGOS queries `ups0` (it tries `STARTTLS`
 first and carries on unencrypted when odin declines). Its status page should
 show the UPS on line power. If it reports that the IP doesn't support NUT, run
 `upsc ups0@10.0.40.10 ups.status` from the NAS; `Unknown UPS` means the name
 on odin isn't `ups0`.
 
 UGOS only reads the status and logs out; it never logs in as a NUT secondary,
-so it ignores odin's shutdown signal. odin therefore powers it off over SSH:
+so it ignores odin's shutdown signal and odin doesn't wait for it. Its own
+5-minute timer handles it, well before odin reaches 50%. (Having odin power it
+off over SSH was tried and dropped: UGOS forces SSH through its own
+`force_command.sh`, resets `sshd_config` and home-folder permissions at boot,
+and its `/sbin/poweroff` cuts power without stopping Docker.)
 
 | Outage | Result |
 |---|---|
 | Under 5 min | Nothing shuts down |
-| Over 5 min, power back before 50% | odin powers the NAS off; odin stays up and wakes it 3 min after power returns |
-| Reaches 50% | NAS already off (otherwise `shutdown-all` powers it off first); odin shuts down; the UPS cuts its outlets ~20 s later and restores them when mains are back; odin boots and wakes the NAS (`wake-nas.service`) |
+| Over 5 min, power back before 50% | NAS shuts down on its timer; odin stays up and wakes it 3 min after power returns |
+| Reaches 50% | NAS already off; odin shuts down; the UPS cuts its outlets ~20 s later and restores them when mains are back; odin boots and wakes the NAS (`wake-nas.service`) |
 
 Power returning after odin's shutdown has started changes nothing: the
 shutdown finishes and the UPS still power-cycles, so everything restarts.
@@ -386,9 +344,8 @@ on that UPS. Warn the household first.
 |---|---|
 | `upsc ups0@10.0.40.10 ups.status` on the NAS, and the UGOS UPS page | `OL`; UGOS shows the UPS on line power |
 | `sudo upsmon -c fsd` on vidar (simulated low battery). **Maintenance window only** | vidar shuts down, then the closet UPS cuts its outlets about 20 s later and restores them about 2 minutes after. The BGW320, gateway, core switch, U7 Pro and cameras reboot: internet, downstairs Wi-Fi and DNS are down for about 2–3 minutes. Everything, including vidar, comes back by itself |
-| NAS shutdown: `sudo -u nut /etc/nut/upssched-cmd nas-off` on odin | NAS powers off; `journalctl -t upssched` shows *telling mimir to power off* |
 | Wake-on-LAN: with the NAS off, `sudo /etc/nut/upssched-cmd wake-nas` on odin | NAS boots within a minute |
-| `sudo upsmon -c fsd` on odin. **Maintenance window** | The NAS powers off, then odin, then the office UPS power-cycles (odin, NAS, office switch, U7 Lite) about 20 s later; everything boots by itself. If the outlets never cut, the UPS ignores the command while on mains: check `upsc ups0 \| grep ups.delay` |
+| `sudo upsmon -c fsd` on odin. **Maintenance window; shut the NAS down in UGOS first** (it ignores fsd, and the UPS power cycle would cut it) | odin shuts down, then the office UPS power-cycles (odin, NAS, office switch, U7 Lite) about 20 s later; everything boots by itself. If the outlets never cut, the UPS ignores the command while on mains: check `upsc ups0 \| grep ups.delay` |
 | Real test (E4): pull the office UPS plug | NAS shuts down at 5 min; odin at 50% charge (`watch upsc ups0`); the UPS cuts and, once plugged back in, restores power; both boot. Repeat once plugging back in at ~8 min: the NAS wakes 3 min later |
 
 ## E3. Backups (restic to the NAS)

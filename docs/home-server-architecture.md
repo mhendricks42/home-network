@@ -61,7 +61,7 @@ BIOS settings on the server: admin password set, virtualization on, **power-on a
 | Docker Engine + Compose | Server, Pi | Runs all app containers |
 | Tailscale | Server host | Subnet router + server's own tailnet address; Tailnet Lock |
 | NUT server | odin (office UPS), vidar (closet UPS) | USB link to the UPS that powers that host |
-| NUT client | NAS | odin powers it off over SSH after 5 min on battery or before its own shutdown (UGOS ignores NUT's shutdown signal); UGOS's 10-min timer is a backstop; odin wakes it with Wake-on-LAN |
+| NUT client | NAS | Own 5-minute on-battery UGOS timer (UGOS ignores NUT's shutdown signal); odin wakes it with Wake-on-LAN |
 | unattended-upgrades | Server, Pi | Automatic OS security patches |
 | chrony | Server, Pi | NTP server for all VLANs (the UCG Max serves none); NTS upstream, orphan mode, each other as fallback |
 | restic (systemd timer) | Server | Nightly encrypted backups to NAS |
