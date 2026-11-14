@@ -206,6 +206,16 @@ sudo apt install -y nut
 
 Same files as vidar, with these differences:
 
+`/etc/nut/nut.conf`:
+
+```text
+MODE=netserver
+# If the UPS doesn't cut power within 3 min of odin's shutdown (mains came back,
+# or this CyberPower ignores the command on mains), odin reboots itself instead
+# of staying off. Must exceed ups.delay.shutdown (60 s).
+POWEROFF_WAIT=3m
+```
+
 `/etc/nut/ups.conf`. The UPS **must** be called `ups0`: UGOS only ever asks
 for that name and offers no setting to change it.
 

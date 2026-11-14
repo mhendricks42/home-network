@@ -31,7 +31,9 @@ Firewall policies Z1–Z33 in docs/network-architecture.md §9. An empty destina
   Rejected: odin powering the NAS off over SSH (UGOS ForceCommand, resets sshd_config and home perms
   at boot, `/sbin/poweroff` skips the orderly shutdown). Don't propose it again.
   Wake-on-LAN (`/etc/nut/upssched-cmd wake-nas`): 3 min after ONLINE and `wake-nas.service` at every odin boot.
-- `upsmon -c fsd` power-cycles the UPS outlets (that's what restarts everything). Warn the household.
+- `upsmon -c fsd` should power-cycle the UPS outlets, but the office CyberPower did NOT cut power on mains
+  (fsd test, 2026-11-14). odin's `nut.conf` has `POWEROFF_WAIT=3m`, so odin reboots itself if power isn't cut.
+  Warn the household before fsd tests; shut the NAS down in UGOS first.
 - UGOS alert times showed +1 h: likely a fixed-offset time zone in UGOS, not a setting.
 
 ## Backups (docs/go-live.md E3)
