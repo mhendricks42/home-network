@@ -363,7 +363,7 @@ on that UPS. Warn the household first.
 |---|---|
 | `upsc ups0@10.0.40.10 ups.status` on the NAS, and the UGOS UPS page | `OL`; UGOS shows the UPS on line power |
 | `sudo upsmon -c fsd` on vidar (simulated low battery). **Maintenance window only** | vidar shuts down, then the closet UPS cuts its outlets about 20 s later and restores them about 2 minutes after. The BGW320, gateway, core switch, U7 Pro and cameras reboot: internet, downstairs Wi-Fi and DNS are down for about 2–3 minutes. Everything, including vidar, comes back by itself |
-| NAS shutdown: `sudo -u nut /etc/nut/upssched-cmd nas-off` on odin | NAS powers off; `journalctl -t upssched` shows *told mimir to power off* |
+| NAS shutdown: `sudo -u nut /etc/nut/upssched-cmd nas-off` on odin | NAS powers off; `journalctl -t upssched` shows *telling mimir to power off* |
 | Wake-on-LAN: with the NAS off, `sudo /etc/nut/upssched-cmd wake-nas` on odin | NAS boots within a minute |
 | `sudo upsmon -c fsd` on odin. **Maintenance window** | The NAS powers off, then odin, then the office UPS power-cycles (odin, NAS, office switch, U7 Lite) about 20 s later; everything boots by itself. If the outlets never cut, the UPS ignores the command while on mains: check `upsc ups0 \| grep ups.delay` |
 | Real test (E4): pull the office UPS plug | NAS shuts down at 5 min; odin at 50% charge (`watch upsc ups0`); the UPS cuts and, once plugged back in, restores power; both boot. Repeat once plugging back in at ~8 min: the NAS wakes 3 min later |
