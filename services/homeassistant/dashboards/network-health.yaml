@@ -9,7 +9,7 @@ views:
     type: sections
     max_columns: 4
     badges:
-      - entity: sensor.internet_status
+      - entity: sensor.kuma_internet_status
         name: Internet
       - entity: sensor.ups_office_status_data
         name: Office UPS
@@ -33,28 +33,28 @@ views:
               type: entities
               state_color: true
             entities: &kuma
-              - sensor.internet_status
-              - sensor.gateway_status
-              - sensor.server_status
-              - sensor.nas_status
-              - sensor.dns_odin_status
-              - sensor.dns_vidar_status
-              - sensor.home_assistant_status
-              - sensor.certificate_status
-              - sensor.forgejo_status
-              - sensor.jellyfin_status
-              - sensor.seerr_status
-              - sensor.sonarr_status
-              - sensor.radarr_status
-              - sensor.prowlarr_status
-              - sensor.sabnzbd_status
-              - sensor.qbittorrent_status
+              - sensor.kuma_internet_status
+              - sensor.kuma_anubis_status
+              - sensor.kuma_odin_status
+              - sensor.kuma_mimir_status
+              - sensor.kuma_dns_odin_status
+              - sensor.kuma_dns_vidar_status
+              - sensor.kuma_home_assistant_status
+              - sensor.kuma_certificate_status
+              - sensor.kuma_forgejo_status
+              - sensor.kuma_jellyfin_status
+              - sensor.kuma_seerr_status
+              - sensor.kuma_sonarr_status
+              - sensor.kuma_radarr_status
+              - sensor.kuma_prowlarr_status
+              - sensor.kuma_sabnzbd_status
+              - sensor.kuma_qbittorrent_status
           - type: markdown
             content: >-
               {% set ok = namespace(n=0, t=0) %}
-              {% for e in ['internet','gateway','server','nas','dns_odin','dns_vidar','home_assistant',
+              {% for e in ['internet','anubis','odin','mimir','dns_odin','dns_vidar','home_assistant',
                  'certificate','forgejo','jellyfin','seerr','sonarr','radarr','prowlarr','sabnzbd','qbittorrent'] %}
-              {% set ok.t = ok.t + 1 %}{% if is_state('sensor.' ~ e ~ '_status', 'up') %}{% set ok.n = ok.n + 1 %}{% endif %}
+              {% set ok.t = ok.t + 1 %}{% if is_state('sensor.kuma_' ~ e ~ '_status', 'up') %}{% set ok.n = ok.n + 1 %}{% endif %}
               {% endfor %}
               **{{ ok.n }} / {{ ok.t }}** monitored checks up · Uptime Kuma on vidar alerts even when odin is down.
 
@@ -64,33 +64,33 @@ views:
             heading: Hosts
             icon: mdi:server-network
           - type: tile
-            entity: sensor.gateway_status
+            entity: sensor.kuma_anubis_status
             name: anubis (gateway)
             icon: mdi:router-network
           - type: tile
-            entity: sensor.server_status
+            entity: sensor.kuma_odin_status
             name: odin (server)
             icon: mdi:server
           - type: tile
-            entity: sensor.dns_vidar_status
+            entity: sensor.kuma_dns_vidar_status
             name: vidar (DNS 2)
             icon: mdi:raspberry-pi
           - type: tile
-            entity: sensor.nas_status
+            entity: sensor.kuma_mimir_status
             name: mimir (NAS)
             icon: mdi:nas
           - type: gauge
-            entity: sensor.system_monitor_processor_use
+            entity: sensor.odin_processor_use
             name: odin CPU
             needle: true
             severity: {green: 0, yellow: 60, red: 85}
           - type: gauge
-            entity: sensor.system_monitor_memory_usage
+            entity: sensor.odin_memory_usage
             name: odin memory
             needle: true
             severity: {green: 0, yellow: 70, red: 90}
           - type: gauge
-            entity: sensor.system_monitor_disk_usage_config
+            entity: sensor.odin_disk_usage_config
             name: odin disk
             needle: true
             severity: {green: 0, yellow: 75, red: 90}
@@ -106,18 +106,18 @@ views:
             heading: Network & DNS
             icon: mdi:dns
           - type: tile
-            entity: sensor.internet_status
+            entity: sensor.kuma_internet_status
             name: Internet
             icon: mdi:web
           - type: tile
             entity: sensor.anubis_uptime
             name: Gateway up since
           - type: tile
-            entity: sensor.dns_odin_status
+            entity: sensor.kuma_dns_odin_status
             name: DNS 1 (odin)
             icon: mdi:dns-outline
           - type: tile
-            entity: sensor.dns_vidar_status
+            entity: sensor.kuma_dns_vidar_status
             name: DNS 2 (vidar)
             icon: mdi:dns-outline
           - type: tile
@@ -169,43 +169,43 @@ views:
             heading: Services
             icon: mdi:application-cog-outline
           - type: tile
-            entity: sensor.home_assistant_status
+            entity: sensor.kuma_home_assistant_status
             name: Home Assistant
             icon: mdi:home-assistant
           - type: tile
-            entity: sensor.certificate_status
+            entity: sensor.kuma_certificate_status
             name: HTTPS certificate
             icon: mdi:certificate-outline
           - type: tile
-            entity: sensor.forgejo_status
+            entity: sensor.kuma_forgejo_status
             name: Forgejo
             icon: mdi:git
           - type: tile
-            entity: sensor.jellyfin_status
+            entity: sensor.kuma_jellyfin_status
             name: Jellyfin
             icon: mdi:play-box-multiple-outline
           - type: tile
-            entity: sensor.seerr_status
+            entity: sensor.kuma_seerr_status
             name: Seerr
             icon: mdi:movie-search-outline
           - type: tile
-            entity: sensor.sonarr_status
+            entity: sensor.kuma_sonarr_status
             name: Sonarr
             icon: mdi:television-classic
           - type: tile
-            entity: sensor.radarr_status
+            entity: sensor.kuma_radarr_status
             name: Radarr
             icon: mdi:filmstrip
           - type: tile
-            entity: sensor.prowlarr_status
+            entity: sensor.kuma_prowlarr_status
             name: Prowlarr
             icon: mdi:magnify
           - type: tile
-            entity: sensor.sabnzbd_status
+            entity: sensor.kuma_sabnzbd_status
             name: SABnzbd
             icon: mdi:download-network-outline
           - type: tile
-            entity: sensor.qbittorrent_status
+            entity: sensor.kuma_qbittorrent_status
             name: qBittorrent (VPN)
             icon: mdi:shield-lock-outline
 
@@ -243,7 +243,7 @@ views:
           - type: history-graph
             hours_to_show: 24
             entities:
-              - entity: sensor.system_monitor_processor_use
+              - entity: sensor.odin_processor_use
                 name: odin CPU
               - entity: sensor.anubis_cpu_utilization
                 name: Gateway CPU

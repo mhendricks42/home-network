@@ -23,7 +23,8 @@ Firewall policies Z1–Z33 in docs/network-architecture.md §9. An empty destina
   Webhook IDs live in HA `secrets.yaml` (`seerr_webhook_id`, `radarr_/sonarr_/prowlarr_webhook_id`; all must exist).
   Phone notify: `notify.mobile_app_matt_s_samsung_galaxy`.
   Dashboard `services/homeassistant/dashboards/network-health.yaml` (built-in cards, pasted into the raw editor);
-  entity IDs come from device/Kuma-monitor names in docs/ha-dashboard.md; check with `scripts/check-ha-entities.sh`.
+  entity IDs follow docs/naming-conventions.md (set via HA device names: `odin`, `UPS Office`, `AdGuard odin`, `Kuma Sonarr`);
+  update the HA side to the convention rather than the YAML to HA's defaults. Check with `scripts/check-ha-entities.sh`.
 - Docker networks on odin: default 172.28.0.0/24, resolver 172.29.0.0/24 (Unbound 172.29.0.2).
 - Media stack images are pinned by tag in `media-stack/docker-compose.yml`; update by bumping the tag, never in-app.
 

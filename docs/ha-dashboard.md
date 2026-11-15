@@ -21,8 +21,8 @@ HA) is down.
 ## 1. Uptime Kuma monitors
 
 The runbook's acceptance checks created *Server*, *Gateway*, *Internet*,
-*DNS (odin)*, *DNS (vidar)*, *Home Assistant* and *Certificate*. Add these, with
-exactly these names (HA builds the entity IDs from them):
+*DNS (odin)*, *DNS (vidar)*, *Home Assistant* and *Certificate*. Add these (names are
+for Kuma's alerts; HA's entity IDs are set in step 2):
 
 | Monitor | Type | Target |
 |---|---|---|
@@ -40,19 +40,23 @@ Then **Settings → API Keys → Add** in Kuma; store the key in Dashlane.
 
 ## 2. Integrations in Home Assistant
 
-*Settings → Devices & services → Add integration.* After adding each one, open
-the device and **rename it as shown, accepting "rename entity IDs"**, so the
-IDs match the dashboard.
+*Settings → Devices & services → Add integration.* Then name each device per
+the [entity ID convention](naming-conventions.md#home-assistant-entity-ids):
+open the device, **✎ → Name**, and accept **rename entity IDs**.
 
-| Integration | Settings | Rename device to |
+| Integration | Settings | Device name(s) → entity IDs |
 |---|---|---|
-| Uptime Kuma | `http://10.0.40.11:3001`, the API key | (one device per monitor; keep the names) |
-| Network UPS Tools | already added (go-live E2) | `UPS Office`, `UPS Closet` |
-| System Monitor | add CPU, memory, and disk use for `/config` | `System Monitor` (default) |
-| AdGuard Home | host `adguard`, port `80`, SSL off, your AdGuard login. HA reaches odin's AdGuard over their shared Docker network; vidar's AdGuard UI is loopback-only, so its health comes from the *DNS (vidar)* Kuma check | `AdGuard odin` |
-| UniFi Network | host `10.0.40.1`, a local read-only UniFi user | gateway device: `anubis` |
-| SABnzbd | `http://10.0.40.20:8081`, its API key | `SABnzbd` |
-| qBittorrent | `http://10.0.40.20:8080`, its login | `qBittorrent` |
+| Uptime Kuma | `http://10.0.40.11:3001`, the API key | one device per monitor: `Kuma internet`, `Kuma anubis` (Gateway), `Kuma odin` (Server), `Kuma mimir` (NAS), `Kuma DNS odin`, `Kuma DNS vidar`, `Kuma Home Assistant`, `Kuma certificate`, `Kuma Forgejo`, `Kuma Jellyfin`, `Kuma Seerr`, `Kuma Sonarr`, `Kuma Radarr`, `Kuma Prowlarr`, `Kuma SABnzbd`, `Kuma qBittorrent` → `sensor.kuma_*_status` |
+| Network UPS Tools | already added (go-live E2) | `UPS Office`, `UPS Closet` → `sensor.ups_office_*`. Enable *Battery runtime* (off by default) |
+| System Monitor | add disk `/config` | `odin` → `sensor.odin_*`. Enable *Processor use*, *Memory usage*, *Disk usage /config* (off by default) |
+| AdGuard Home | host `adguard`, port `80`, SSL off, your AdGuard login (HA reaches it over the shared Docker network; vidar's UI is loopback-only, so the *DNS vidar* Kuma check covers it) | `AdGuard odin` → `sensor.adguard_odin_*` |
+| UniFi Network | host `10.0.40.1`, a local read-only UniFi user | gateway: `anubis` → `sensor.anubis_*` |
+| SABnzbd | `http://10.0.40.20:8081`, its API key | `SABnzbd` → `sensor.sabnzbd_*` |
+| qBittorrent | `http://10.0.40.20:8080`, its login | `qBittorrent` → `sensor.qbittorrent_*` |
+
+If you have extra Kuma monitors (for example the Sonarr/Radarr/Prowlarr
+*health* checks), name them `Kuma Sonarr health` etc.; the dashboard doesn't
+use them, but the names stay consistent.
 
 ## 3. Add the dashboard
 

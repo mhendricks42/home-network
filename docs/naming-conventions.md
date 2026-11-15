@@ -41,6 +41,24 @@ names. Things you type, or that describe a function, stay plain.
 | Firewall policies, decisions | `Z<n>`, `D-N<n>`, `D-S<n>` | `Z27`, `D-N14` |
 | Service accounts | name of the service | `homeassistant`, `netalertx` |
 | Cameras | location; `snake_case` in Frigate, `cam-<location>` as hostname | `driveway`, `cam-driveway` |
+| Home Assistant entity IDs | `<domain>.<subject>_<measure>`; see below | `sensor.odin_processor_use` |
+
+### Home Assistant entity IDs
+
+The subject says *what* is measured, never the area or the integration's
+default name. HA builds IDs from the **device name**, so set the device name
+and accept *rename entity IDs*; the display names can stay friendly.
+
+| Subject | Device name in HA | Example entity |
+|---|---|---|
+| A host: its themed name | `odin`, `anubis` | `sensor.odin_processor_use`, `sensor.anubis_cpu_utilization` |
+| A UPS: `ups_<location>` | `UPS Office`, `UPS Closet` | `sensor.ups_office_battery_charge` |
+| An app: its plain name, plus the host if there are two | `SABnzbd`, `qBittorrent`, `AdGuard odin` | `sensor.sabnzbd_speed`, `switch.adguard_odin_protection` |
+| An Uptime Kuma check: `kuma_<host or app>` | `Kuma odin`, `Kuma Sonarr`, `Kuma DNS vidar` | `sensor.kuma_sonarr_status` |
+
+The `kuma_` prefix keeps Kuma's up/down checks apart from the apps' own
+integrations (`sensor.sonarr_*` comes from the Sonarr integration). Renaming
+the HA device doesn't rename the Kuma monitor, so alerts keep their names.
 
 ## 4. Inventory
 
