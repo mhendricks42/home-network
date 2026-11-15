@@ -58,6 +58,24 @@ If you have extra Kuma monitors (for example the Sonarr/Radarr/Prowlarr
 *health* checks), name them `Kuma Sonarr health` etc.; the dashboard doesn't
 use them, but the names stay consistent.
 
+**Bulk alternative** to renaming device by device: export the entity list,
+edit `new_entity_id` (and `"enable": true` for disabled ones), apply. On odin:
+
+```bash
+cd ~/home-network
+read -rsp "HA long-lived token: " HA_TOKEN; echo; export HA_TOKEN
+run() { sudo --preserve-env=HA_TOKEN docker compose -f compose.server.yml exec -T -e HA_TOKEN \
+          homeassistant python3 - "$@" < scripts/ha-entities.py; }
+run export                                   # writes /srv/homeassistant/config/ha-entities.json
+# edit that file (or have it edited), then:
+run apply --dry-run                          # shows every change, changes nothing
+run apply
+unset HA_TOKEN
+```
+
+The apply refuses the whole batch if a new ID is invalid, duplicated or already
+taken. Display names stay as they are; the dashboard sets its own labels.
+
 ## 3. Add the dashboard
 
 1. *Settings → Dashboards → Add dashboard → New dashboard from scratch*,
