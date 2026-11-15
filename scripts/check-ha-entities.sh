@@ -7,7 +7,7 @@ read -rsp "Home Assistant long-lived access token: " token; echo
 curl -fsS http://127.0.0.1:8123/api/states -H "Authorization: Bearer $token" | python3 -c '
 import json, re, sys
 have = {e["entity_id"] for e in json.load(sys.stdin)}
-want = sorted(set(re.findall(r"\b(?:sensor|binary_sensor|switch|device_tracker|update).[a-z0-9_]*[a-z0-9]", open(sys.argv[1]).read())))
+want = sorted(set(re.findall(r"\b(?:sensor|binary_sensor|switch|device_tracker|update)\.[a-z0-9_]*[a-z0-9]", open(sys.argv[1]).read())))
 missing = [e for e in want if e not in have]
 for e in missing:
     # Suggest existing entities that share the last word, e.g. *_status or *_battery_charge.
