@@ -735,6 +735,13 @@ back up `/srv/netalertx/data`. ARP cannot scan across routers: use routed
 ICMP/SNMP/controller plugins as applicable and grant only documented firewall
 flows. Its own password protects the dashboard (see the Caddy section).
 
+It also sees the containers on the Docker networks. Each container has a fixed
+MAC in `compose.server.yml`, so a recreated container stays the same device;
+give any new service the next free MAC noted at the top of that file. Set
+*Settings → Notification Processing →* the down-alert delay above the nightly
+backup's container stop (30 min), or turn off *Alert Down* on the container
+devices, so 03:30 doesn't report them missing.
+
 ## 4. Start and verify
 
 ```bash

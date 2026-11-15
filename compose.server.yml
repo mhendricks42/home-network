@@ -1,5 +1,7 @@
 name: homelab-server
 
+# Containers on Docker networks get fixed MACs (02:00:00:<subnet>:00:NN) so NetAlertX
+# tracks a recreated container as the same device. Next free: 02:00:00:28:00:18.
 x-app: &app
   restart: unless-stopped
   logging:
@@ -18,13 +20,18 @@ services:
     networks:
       resolver:
         ipv4_address: 172.29.0.2
+        mac_address: "02:00:00:29:00:02"
 
   # Filters household DNS requests, blocks unwanted domains, and serves local rewrites.
   adguard:
     <<: *app
     image: adguard/adguardhome:v0.107.79
     depends_on: [unbound]
-    networks: [default, resolver]
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:03"
+      resolver:
+        mac_address: "02:00:00:29:00:03"
     ports:
       - "${SERVER_IP:-10.0.40.10}:53:53/tcp"
       - "${SERVER_IP:-10.0.40.10}:53:53/udp"
@@ -59,6 +66,9 @@ services:
   # Mosquitto message broker connecting Home Assistant, Zigbee2MQTT, and Frigate.
   mqtt:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:10"
     image: eclipse-mosquitto:2.0.22
     volumes:
       - ./services/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
@@ -69,6 +79,9 @@ services:
   # Central smart-home hub for device integrations, automations, and dashboards.
   homeassistant:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:11"
     image: ghcr.io/home-assistant/home-assistant:2026.10.2
     ports: ["127.0.0.1:8123:8123"]
     volumes:
@@ -78,6 +91,9 @@ services:
   # Connects Zigbee devices through a USB coordinator and exposes them over MQTT.
   zigbee2mqtt:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:12"
     profiles: [radios]
     image: ghcr.io/koenkk/zigbee2mqtt:2.14.2
     depends_on: [mqtt]
@@ -95,6 +111,9 @@ services:
   # Manages the USB Z-Wave controller and provides Home Assistant's WebSocket API.
   zwave:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:13"
     profiles: [radios]
     image: zwavejs/zwave-js-ui:11.24.3
     ports: ["127.0.0.1:8091:8091"]
@@ -106,6 +125,9 @@ services:
   # Builds and updates local ESP-device firmware through a web dashboard.
   esphome:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:14"
     image: ghcr.io/esphome/esphome:2026.9.1
     ports: ["127.0.0.1:6052:6052"]
     environment:
@@ -117,6 +139,9 @@ services:
   # Records camera streams and detects objects locally using the Intel GPU.
   frigate:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:15"
     profiles: [cameras]
     image: ghcr.io/blakeblackshear/frigate:0.18.2
     depends_on: [mqtt]
@@ -175,6 +200,9 @@ services:
   # Hosts private Git repositories for infrastructure and service configuration.
   forgejo:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:16"
     image: codeberg.org/forgejo/forgejo:17.0.0
     ports: ["127.0.0.1:3000:3000"]
     environment:
@@ -187,6 +215,9 @@ services:
   # Executes trusted Forgejo Actions jobs inside this container, without host Docker access.
   runner:
     <<: *app
+    networks:
+      default:
+        mac_address: "02:00:00:28:00:17"
     profiles: [actions]
     image: code.forgejo.org/forgejo/runner:13.2.0
     working_dir: /data

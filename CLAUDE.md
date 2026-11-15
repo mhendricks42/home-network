@@ -47,6 +47,8 @@ Firewall policies Z1–Z33 in docs/network-architecture.md §9. An empty destina
 - BGW320 hijacks DNS to 192.168.0.254 when its upstream is down; Unbound has `private-address` + `serve-expired`.
 - Docker `create_user`/password prompts need `-it`. Generated config must not leave placeholders (`HOST`).
 - Secrets go in Dashlane; read them with `read -rs`, never into chat or shell history. Don't put the owner's email in external requests.
+- Containers on odin's Docker networks have fixed MACs (`mac_address` in compose.server.yml) so NetAlertX
+  doesn't see recreates as new devices. New services take the next free MAC noted at the top of the file.
 - Host files (NUT upssched, systemd units) live in `services/nut/` and `services/restic/`; install them from the repo, docs point there.
 
 ## Checks
