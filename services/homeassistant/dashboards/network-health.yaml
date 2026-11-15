@@ -36,6 +36,7 @@ views:
               - sensor.kuma_internet_status
               - sensor.kuma_anubis_status
               - sensor.kuma_odin_status
+              - sensor.kuma_vidar_status
               - sensor.kuma_mimir_status
               - sensor.kuma_dns_odin_status
               - sensor.kuma_dns_vidar_status
@@ -52,9 +53,9 @@ views:
           - type: markdown
             content: >-
               {% set ok = namespace(n=0, t=0) %}
-              {% for e in ['internet','anubis','odin','mimir','dns_odin','dns_vidar','home_assistant',
+              {% for e in ['internet','anubis','odin','vidar','mimir','dns_odin','dns_vidar','home_assistant',
                  'certificate','forgejo','jellyfin','seerr','sonarr','radarr','prowlarr','sabnzbd','qbittorrent'] %}
-              {% set ok.t = ok.t + 1 %}{% if is_state('sensor.kuma_' ~ e ~ '_status', 'up') %}{% set ok.n = ok.n + 1 %}{% endif %}
+              {% set ok.t = ok.t + 1 %}{% if is_state('sensor.' ~ 'kuma_' ~ e ~ '_status', 'up') %}{% set ok.n = ok.n + 1 %}{% endif %}
               {% endfor %}
               **{{ ok.n }} / {{ ok.t }}** monitored checks up · Uptime Kuma on vidar alerts even when odin is down.
 
@@ -72,7 +73,7 @@ views:
             name: odin (server)
             icon: mdi:server
           - type: tile
-            entity: sensor.kuma_dns_vidar_status
+            entity: sensor.kuma_vidar_status
             name: vidar (DNS 2)
             icon: mdi:raspberry-pi
           - type: tile

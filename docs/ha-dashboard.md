@@ -73,6 +73,17 @@ run apply
 unset HA_TOKEN
 ```
 
+Your installation's renames are already prepared in
+[`services/homeassistant/entity-renames.json`](../services/homeassistant/entity-renames.json)
+(generated from the 2026-11-15 export; Kuma renames come first so their old
+names are free for the apps' own sensors). Use it instead of editing the export:
+`sudo cp services/homeassistant/entity-renames.json /srv/homeassistant/config/ha-entities.json`,
+then the dry run.
+
+**HA doesn't rewrite automations** that use a renamed entity ID: update their
+triggers (for example the UPS alert to `sensor.ups_office_status_data` /
+`sensor.ups_closet_status_data`); *Settings → Repairs* lists broken ones.
+
 The apply refuses the whole batch if a new ID is invalid, duplicated or already
 taken. Display names stay as they are; the dashboard sets its own labels.
 

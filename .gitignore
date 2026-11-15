@@ -4,3 +4,4 @@
 *.sops.dec.*
 secrets/*
 !secrets/.gitkeep
+__pycache__/

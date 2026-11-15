@@ -1,0 +1,2222 @@
+[
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_certificate_expiry",
+  "new_entity_id": "sensor.kuma_certificate_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_monitor_type",
+  "new_entity_id": "sensor.kuma_certificate_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_monitored_url",
+  "new_entity_id": "sensor.kuma_certificate_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_response_time",
+  "new_entity_id": "sensor.kuma_certificate_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_certificate_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_certificate_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_certificate_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_status",
+  "new_entity_id": "sensor.kuma_certificate_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_tags",
+  "new_entity_id": "sensor.kuma_certificate_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_uptime_1_day",
+  "new_entity_id": "sensor.kuma_certificate_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_uptime_30_days",
+  "new_entity_id": "sensor.kuma_certificate_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.certificate_expire_home_assistant_uptime_365_days",
+  "new_entity_id": "sensor.kuma_certificate_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_monitor_type",
+  "new_entity_id": "sensor.kuma_dns_odin_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_monitored_hostname",
+  "new_entity_id": "sensor.kuma_dns_odin_monitored_hostname",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_response_time",
+  "new_entity_id": "sensor.kuma_dns_odin_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_dns_odin_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_dns_odin_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_dns_odin_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_status",
+  "new_entity_id": "sensor.kuma_dns_odin_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_tags",
+  "new_entity_id": "sensor.kuma_dns_odin_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_uptime_1_day",
+  "new_entity_id": "sensor.kuma_dns_odin_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_uptime_30_days",
+  "new_entity_id": "sensor.kuma_dns_odin_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_oden_server_uptime_365_days",
+  "new_entity_id": "sensor.kuma_dns_odin_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_monitor_type",
+  "new_entity_id": "sensor.kuma_dns_vidar_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_monitored_hostname",
+  "new_entity_id": "sensor.kuma_dns_vidar_monitored_hostname",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_response_time",
+  "new_entity_id": "sensor.kuma_dns_vidar_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_dns_vidar_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_dns_vidar_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_dns_vidar_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_status",
+  "new_entity_id": "sensor.kuma_dns_vidar_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_tags",
+  "new_entity_id": "sensor.kuma_dns_vidar_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_uptime_1_day",
+  "new_entity_id": "sensor.kuma_dns_vidar_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_uptime_30_days",
+  "new_entity_id": "sensor.kuma_dns_vidar_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dns_vidar_server_uptime_365_days",
+  "new_entity_id": "sensor.kuma_dns_vidar_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_certificate_expiry",
+  "new_entity_id": "sensor.kuma_forgejo_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_monitor_type",
+  "new_entity_id": "sensor.kuma_forgejo_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_monitored_url",
+  "new_entity_id": "sensor.kuma_forgejo_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_response_time",
+  "new_entity_id": "sensor.kuma_forgejo_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_forgejo_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_forgejo_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_forgejo_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_status",
+  "new_entity_id": "sensor.kuma_forgejo_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_tags",
+  "new_entity_id": "sensor.kuma_forgejo_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_uptime_1_day",
+  "new_entity_id": "sensor.kuma_forgejo_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_uptime_30_days",
+  "new_entity_id": "sensor.kuma_forgejo_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.forgejo_uptime_365_days",
+  "new_entity_id": "sensor.kuma_forgejo_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_monitor_type",
+  "new_entity_id": "sensor.kuma_anubis_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_monitored_hostname",
+  "new_entity_id": "sensor.kuma_anubis_monitored_hostname",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_response_time",
+  "new_entity_id": "sensor.kuma_anubis_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_anubis_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_anubis_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_anubis_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_status",
+  "new_entity_id": "sensor.kuma_anubis_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_tags",
+  "new_entity_id": "sensor.kuma_anubis_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_uptime_1_day",
+  "new_entity_id": "sensor.kuma_anubis_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_uptime_30_days",
+  "new_entity_id": "sensor.kuma_anubis_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.gateway_uptime_365_days",
+  "new_entity_id": "sensor.kuma_anubis_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_certificate_expiry",
+  "new_entity_id": "sensor.kuma_home_assistant_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_monitor_type",
+  "new_entity_id": "sensor.kuma_home_assistant_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_monitored_url",
+  "new_entity_id": "sensor.kuma_home_assistant_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_response_time",
+  "new_entity_id": "sensor.kuma_home_assistant_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_home_assistant_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_home_assistant_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_home_assistant_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_status",
+  "new_entity_id": "sensor.kuma_home_assistant_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_tags",
+  "new_entity_id": "sensor.kuma_home_assistant_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_uptime_1_day",
+  "new_entity_id": "sensor.kuma_home_assistant_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_uptime_30_days",
+  "new_entity_id": "sensor.kuma_home_assistant_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.https_home_assistant_uptime_365_days",
+  "new_entity_id": "sensor.kuma_home_assistant_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_monitor_type",
+  "new_entity_id": "sensor.kuma_internet_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_monitored_hostname",
+  "new_entity_id": "sensor.kuma_internet_monitored_hostname",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_response_time",
+  "new_entity_id": "sensor.kuma_internet_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_internet_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_internet_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_internet_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_status",
+  "new_entity_id": "sensor.kuma_internet_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_tags",
+  "new_entity_id": "sensor.kuma_internet_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_uptime_1_day",
+  "new_entity_id": "sensor.kuma_internet_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_uptime_30_days",
+  "new_entity_id": "sensor.kuma_internet_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.internet_uptime_365_days",
+  "new_entity_id": "sensor.kuma_internet_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_certificate_expiry",
+  "new_entity_id": "sensor.kuma_jellyfin_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_monitor_type",
+  "new_entity_id": "sensor.kuma_jellyfin_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_monitored_url",
+  "new_entity_id": "sensor.kuma_jellyfin_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_response_time",
+  "new_entity_id": "sensor.kuma_jellyfin_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_jellyfin_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_jellyfin_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_jellyfin_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_status",
+  "new_entity_id": "sensor.kuma_jellyfin_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_tags",
+  "new_entity_id": "sensor.kuma_jellyfin_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_uptime_1_day",
+  "new_entity_id": "sensor.kuma_jellyfin_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_uptime_30_days",
+  "new_entity_id": "sensor.kuma_jellyfin_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.jellyfin_uptime_365_days",
+  "new_entity_id": "sensor.kuma_jellyfin_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_monitor_type",
+  "new_entity_id": "sensor.kuma_odin_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_monitored_hostname",
+  "new_entity_id": "sensor.kuma_odin_monitored_hostname",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_response_time",
+  "new_entity_id": "sensor.kuma_odin_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_odin_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_odin_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_odin_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_status",
+  "new_entity_id": "sensor.kuma_odin_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_tags",
+  "new_entity_id": "sensor.kuma_odin_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_uptime_1_day",
+  "new_entity_id": "sensor.kuma_odin_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_uptime_30_days",
+  "new_entity_id": "sensor.kuma_odin_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ping_oden_server_uptime_365_days",
+  "new_entity_id": "sensor.kuma_odin_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_certificate_expiry",
+  "new_entity_id": "sensor.kuma_prowlarr_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_monitor_type",
+  "new_entity_id": "sensor.kuma_prowlarr_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_monitored_url",
+  "new_entity_id": "sensor.kuma_prowlarr_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_response_time",
+  "new_entity_id": "sensor.kuma_prowlarr_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_prowlarr_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_prowlarr_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_prowlarr_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_status",
+  "new_entity_id": "sensor.kuma_prowlarr_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_tags",
+  "new_entity_id": "sensor.kuma_prowlarr_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_uptime_1_day",
+  "new_entity_id": "sensor.kuma_prowlarr_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_uptime_30_days",
+  "new_entity_id": "sensor.kuma_prowlarr_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_http_uptime_365_days",
+  "new_entity_id": "sensor.kuma_prowlarr_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_certificate_expiry",
+  "new_entity_id": "sensor.kuma_prowlarr_health_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_monitor_type",
+  "new_entity_id": "sensor.kuma_prowlarr_health_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_monitored_url",
+  "new_entity_id": "sensor.kuma_prowlarr_health_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_response_time",
+  "new_entity_id": "sensor.kuma_prowlarr_health_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_prowlarr_health_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_prowlarr_health_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_prowlarr_health_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_status",
+  "new_entity_id": "sensor.kuma_prowlarr_health_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_tags",
+  "new_entity_id": "sensor.kuma_prowlarr_health_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_uptime_1_day",
+  "new_entity_id": "sensor.kuma_prowlarr_health_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_uptime_30_days",
+  "new_entity_id": "sensor.kuma_prowlarr_health_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.prowlarr_health_uptime_365_days",
+  "new_entity_id": "sensor.kuma_prowlarr_health_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_certificate_expiry",
+  "new_entity_id": "sensor.kuma_qbittorrent_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_monitor_type",
+  "new_entity_id": "sensor.kuma_qbittorrent_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_monitored_url",
+  "new_entity_id": "sensor.kuma_qbittorrent_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_response_time",
+  "new_entity_id": "sensor.kuma_qbittorrent_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_qbittorrent_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_qbittorrent_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_qbittorrent_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_status",
+  "new_entity_id": "sensor.kuma_qbittorrent_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_tags",
+  "new_entity_id": "sensor.kuma_qbittorrent_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_uptime_1_day",
+  "new_entity_id": "sensor.kuma_qbittorrent_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_uptime_30_days",
+  "new_entity_id": "sensor.kuma_qbittorrent_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_uptime_365_days",
+  "new_entity_id": "sensor.kuma_qbittorrent_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_certificate_expiry",
+  "new_entity_id": "sensor.kuma_radarr_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_monitor_type",
+  "new_entity_id": "sensor.kuma_radarr_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_monitored_url",
+  "new_entity_id": "sensor.kuma_radarr_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_response_time",
+  "new_entity_id": "sensor.kuma_radarr_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_radarr_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_radarr_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_radarr_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_status",
+  "new_entity_id": "sensor.kuma_radarr_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_tags",
+  "new_entity_id": "sensor.kuma_radarr_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_uptime_1_day",
+  "new_entity_id": "sensor.kuma_radarr_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_uptime_30_days",
+  "new_entity_id": "sensor.kuma_radarr_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radar_http_uptime_365_days",
+  "new_entity_id": "sensor.kuma_radarr_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_certificate_expiry",
+  "new_entity_id": "sensor.kuma_radarr_health_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_monitor_type",
+  "new_entity_id": "sensor.kuma_radarr_health_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_monitored_url",
+  "new_entity_id": "sensor.kuma_radarr_health_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_response_time",
+  "new_entity_id": "sensor.kuma_radarr_health_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_radarr_health_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_radarr_health_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_radarr_health_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_status",
+  "new_entity_id": "sensor.kuma_radarr_health_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_tags",
+  "new_entity_id": "sensor.kuma_radarr_health_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_uptime_1_day",
+  "new_entity_id": "sensor.kuma_radarr_health_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_uptime_30_days",
+  "new_entity_id": "sensor.kuma_radarr_health_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.radarr_health_uptime_365_days",
+  "new_entity_id": "sensor.kuma_radarr_health_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_certificate_expiry",
+  "new_entity_id": "sensor.kuma_sabnzbd_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_monitor_type",
+  "new_entity_id": "sensor.kuma_sabnzbd_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_monitored_url",
+  "new_entity_id": "sensor.kuma_sabnzbd_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_response_time",
+  "new_entity_id": "sensor.kuma_sabnzbd_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_sabnzbd_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_sabnzbd_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_sabnzbd_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_status",
+  "new_entity_id": "sensor.kuma_sabnzbd_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_tags",
+  "new_entity_id": "sensor.kuma_sabnzbd_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_uptime_1_day",
+  "new_entity_id": "sensor.kuma_sabnzbd_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_uptime_30_days",
+  "new_entity_id": "sensor.kuma_sabnzbd_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sabnzbd_uptime_365_days",
+  "new_entity_id": "sensor.kuma_sabnzbd_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_certificate_expiry",
+  "new_entity_id": "sensor.kuma_seerr_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_monitor_type",
+  "new_entity_id": "sensor.kuma_seerr_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_monitored_url",
+  "new_entity_id": "sensor.kuma_seerr_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_response_time",
+  "new_entity_id": "sensor.kuma_seerr_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_seerr_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_seerr_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_seerr_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_status",
+  "new_entity_id": "sensor.kuma_seerr_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_tags",
+  "new_entity_id": "sensor.kuma_seerr_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_uptime_1_day",
+  "new_entity_id": "sensor.kuma_seerr_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_uptime_30_days",
+  "new_entity_id": "sensor.kuma_seerr_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.seerr_http_uptime_365_days",
+  "new_entity_id": "sensor.kuma_seerr_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_certificate_expiry",
+  "new_entity_id": "sensor.kuma_sonarr_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_monitor_type",
+  "new_entity_id": "sensor.kuma_sonarr_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_monitored_url",
+  "new_entity_id": "sensor.kuma_sonarr_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_response_time",
+  "new_entity_id": "sensor.kuma_sonarr_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_sonarr_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_sonarr_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_sonarr_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_status",
+  "new_entity_id": "sensor.kuma_sonarr_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_tags",
+  "new_entity_id": "sensor.kuma_sonarr_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_uptime_1_day",
+  "new_entity_id": "sensor.kuma_sonarr_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_uptime_30_days",
+  "new_entity_id": "sensor.kuma_sonarr_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_http_uptime_365_days",
+  "new_entity_id": "sensor.kuma_sonarr_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_certificate_expiry",
+  "new_entity_id": "sensor.kuma_sonarr_health_certificate_expiry",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_monitor_type",
+  "new_entity_id": "sensor.kuma_sonarr_health_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_monitored_url",
+  "new_entity_id": "sensor.kuma_sonarr_health_monitored_url",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_response_time",
+  "new_entity_id": "sensor.kuma_sonarr_health_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_sonarr_health_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_sonarr_health_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_sonarr_health_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_status",
+  "new_entity_id": "sensor.kuma_sonarr_health_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_tags",
+  "new_entity_id": "sensor.kuma_sonarr_health_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_uptime_1_day",
+  "new_entity_id": "sensor.kuma_sonarr_health_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_uptime_30_days",
+  "new_entity_id": "sensor.kuma_sonarr_health_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.sonarr_health_uptime_365_days",
+  "new_entity_id": "sensor.kuma_sonarr_health_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_monitor_type",
+  "new_entity_id": "sensor.kuma_vidar_monitor_type",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_monitored_hostname",
+  "new_entity_id": "sensor.kuma_vidar_monitored_hostname",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_response_time",
+  "new_entity_id": "sensor.kuma_vidar_response_time",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_response_time_o_1_day",
+  "new_entity_id": "sensor.kuma_vidar_response_time_o_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_response_time_o_30_days",
+  "new_entity_id": "sensor.kuma_vidar_response_time_o_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_response_time_o_365_days",
+  "new_entity_id": "sensor.kuma_vidar_response_time_o_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_status",
+  "new_entity_id": "sensor.kuma_vidar_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_tags",
+  "new_entity_id": "sensor.kuma_vidar_tags",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_uptime_1_day",
+  "new_entity_id": "sensor.kuma_vidar_uptime_1_day",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_uptime_30_days",
+  "new_entity_id": "sensor.kuma_vidar_uptime_30_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.vidar_uptime_365_days",
+  "new_entity_id": "sensor.kuma_vidar_uptime_365_days",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "update.10_0_40_11_uptime_kuma_version",
+  "new_entity_id": "update.kuma_version",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_office_ups_battery_charge",
+  "new_entity_id": "sensor.ups_office_battery_charge",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_office_ups_input_voltage",
+  "new_entity_id": "sensor.ups_office_input_voltage",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_office_ups_load",
+  "new_entity_id": "sensor.ups_office_load",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_office_ups_output_voltage",
+  "new_entity_id": "sensor.ups_office_output_voltage",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_office_ups_status",
+  "new_entity_id": "sensor.ups_office_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_office_ups_status_data",
+  "new_entity_id": "sensor.ups_office_status_data",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.ups0_apparent_power",
+  "new_entity_id": "sensor.ups_office_apparent_power",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_battery_chemistry",
+  "new_entity_id": "sensor.ups_office_battery_chemistry",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_battery_manuf_date",
+  "new_entity_id": "sensor.ups_office_battery_manuf_date",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_battery_runtime",
+  "new_entity_id": "sensor.ups_office_battery_runtime",
+  "enable": true,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_battery_voltage",
+  "new_entity_id": "sensor.ups_office_battery_voltage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_beeper_status",
+  "new_entity_id": "sensor.ups_office_beeper_status",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_high_voltage_transfer",
+  "new_entity_id": "sensor.ups_office_high_voltage_transfer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_input_power_sensitivity",
+  "new_entity_id": "sensor.ups_office_input_power_sensitivity",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_load_restart_delay",
+  "new_entity_id": "sensor.ups_office_load_restart_delay",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_load_shutdown_timer",
+  "new_entity_id": "sensor.ups_office_load_shutdown_timer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_load_start_timer",
+  "new_entity_id": "sensor.ups_office_load_start_timer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_low_battery_runtime",
+  "new_entity_id": "sensor.ups_office_low_battery_runtime",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_low_battery_setpoint",
+  "new_entity_id": "sensor.ups_office_low_battery_setpoint",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_low_voltage_transfer",
+  "new_entity_id": "sensor.ups_office_low_voltage_transfer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_nominal_battery_voltage",
+  "new_entity_id": "sensor.ups_office_nominal_battery_voltage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_nominal_input_voltage",
+  "new_entity_id": "sensor.ups_office_nominal_input_voltage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_nominal_power",
+  "new_entity_id": "sensor.ups_office_nominal_power",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_nominal_real_power",
+  "new_entity_id": "sensor.ups_office_nominal_real_power",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_real_power",
+  "new_entity_id": "sensor.ups_office_real_power",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_self_test_result",
+  "new_entity_id": "sensor.ups_office_self_test_result",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_ups_shutdown_delay",
+  "new_entity_id": "sensor.ups_office_ups_shutdown_delay",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.ups0_warning_battery_setpoint",
+  "new_entity_id": "sensor.ups_office_warning_battery_setpoint",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.media_closet_closet_ups_battery_charge",
+  "new_entity_id": "sensor.ups_closet_battery_charge",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.media_closet_closet_ups_input_voltage",
+  "new_entity_id": "sensor.ups_closet_input_voltage",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.media_closet_closet_ups_load",
+  "new_entity_id": "sensor.ups_closet_load",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.media_closet_closet_ups_status",
+  "new_entity_id": "sensor.ups_closet_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.media_closet_closet_ups_status_data",
+  "new_entity_id": "sensor.ups_closet_status_data",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.closet_battery_chemistry",
+  "new_entity_id": "sensor.ups_closet_battery_chemistry",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_battery_date",
+  "new_entity_id": "sensor.ups_closet_battery_date",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_battery_manuf_date",
+  "new_entity_id": "sensor.ups_closet_battery_manuf_date",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_battery_runtime",
+  "new_entity_id": "sensor.ups_closet_battery_runtime",
+  "enable": true,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_battery_voltage",
+  "new_entity_id": "sensor.ups_closet_battery_voltage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_beeper_status",
+  "new_entity_id": "sensor.ups_closet_beeper_status",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_high_voltage_transfer",
+  "new_entity_id": "sensor.ups_closet_high_voltage_transfer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_input_power_sensitivity",
+  "new_entity_id": "sensor.ups_closet_input_power_sensitivity",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_load_reboot_timer",
+  "new_entity_id": "sensor.ups_closet_load_reboot_timer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_load_shutdown_timer",
+  "new_entity_id": "sensor.ups_closet_load_shutdown_timer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_low_battery_runtime",
+  "new_entity_id": "sensor.ups_closet_low_battery_runtime",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_low_battery_setpoint",
+  "new_entity_id": "sensor.ups_closet_low_battery_setpoint",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_low_voltage_transfer",
+  "new_entity_id": "sensor.ups_closet_low_voltage_transfer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_nominal_battery_voltage",
+  "new_entity_id": "sensor.ups_closet_nominal_battery_voltage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_nominal_input_voltage",
+  "new_entity_id": "sensor.ups_closet_nominal_input_voltage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_nominal_real_power",
+  "new_entity_id": "sensor.ups_closet_nominal_real_power",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_self_test_result",
+  "new_entity_id": "sensor.ups_closet_self_test_result",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_ups_shutdown_delay",
+  "new_entity_id": "sensor.ups_closet_ups_shutdown_delay",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_voltage_transfer_reason",
+  "new_entity_id": "sensor.ups_closet_voltage_transfer_reason",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.closet_warning_battery_setpoint",
+  "new_entity_id": "sensor.ups_closet_warning_battery_setpoint",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.adguard_home_average_processing_speed",
+  "new_entity_id": "sensor.adguard_odin_average_processing_speed",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.adguard_home_dns_queries",
+  "new_entity_id": "sensor.adguard_odin_dns_queries",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.adguard_home_dns_queries_blocked",
+  "new_entity_id": "sensor.adguard_odin_dns_queries_blocked",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.adguard_home_dns_queries_blocked_ratio",
+  "new_entity_id": "sensor.adguard_odin_dns_queries_blocked_ratio",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.adguard_home_parental_control_blocked",
+  "new_entity_id": "sensor.adguard_odin_parental_control_blocked",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.adguard_home_rules_count",
+  "new_entity_id": "sensor.adguard_odin_rules_count",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.adguard_home_safe_browsing_blocked",
+  "new_entity_id": "sensor.adguard_odin_safe_browsing_blocked",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.adguard_home_safe_searches_enforced",
+  "new_entity_id": "sensor.adguard_odin_safe_searches_enforced",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "switch.adguard_home_filtering",
+  "new_entity_id": "switch.adguard_odin_filtering",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "switch.adguard_home_parental_control",
+  "new_entity_id": "switch.adguard_odin_parental_control",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "switch.adguard_home_protection",
+  "new_entity_id": "switch.adguard_odin_protection",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "switch.adguard_home_query_log",
+  "new_entity_id": "switch.adguard_odin_query_log",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "switch.adguard_home_safe_browsing",
+  "new_entity_id": "switch.adguard_odin_safe_browsing",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "switch.adguard_home_safe_search",
+  "new_entity_id": "switch.adguard_odin_safe_search",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.qbittorrent_status_2",
+  "new_entity_id": "sensor.qbittorrent_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "binary_sensor.office_sabnzbd_warnings",
+  "new_entity_id": "binary_sensor.sabnzbd_warnings",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "button.office_sabnzbd_pause",
+  "new_entity_id": "button.sabnzbd_pause",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "button.office_sabnzbd_resume",
+  "new_entity_id": "button.sabnzbd_resume",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "number.office_sabnzbd_speedlimit",
+  "new_entity_id": "number.sabnzbd_speedlimit",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_free_disk_space",
+  "new_entity_id": "sensor.sabnzbd_free_disk_space",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_left_to_download",
+  "new_entity_id": "sensor.sabnzbd_left_to_download",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_overall_total",
+  "new_entity_id": "sensor.sabnzbd_overall_total",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_queue",
+  "new_entity_id": "sensor.sabnzbd_queue",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_queue_count",
+  "new_entity_id": "sensor.sabnzbd_queue_count",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_speed",
+  "new_entity_id": "sensor.sabnzbd_speed",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_status",
+  "new_entity_id": "sensor.sabnzbd_status",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.office_sabnzbd_total_disk_space",
+  "new_entity_id": "sensor.sabnzbd_total_disk_space",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.10_0_40_20_daily_total",
+  "new_entity_id": "sensor.sabnzbd_daily_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.10_0_40_20_monthly_total",
+  "new_entity_id": "sensor.sabnzbd_monthly_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.10_0_40_20_weekly_total",
+  "new_entity_id": "sensor.sabnzbd_weekly_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_battery",
+  "new_entity_id": "sensor.odin_battery",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_battery_empty",
+  "new_entity_id": "sensor.odin_battery_empty",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_cpu_pressure_some_10s_average",
+  "new_entity_id": "sensor.odin_cpu_pressure_some_10s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_cpu_pressure_some_300s_average",
+  "new_entity_id": "sensor.odin_cpu_pressure_some_300s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_cpu_pressure_some_60s_average",
+  "new_entity_id": "sensor.odin_cpu_pressure_some_60s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_cpu_pressure_some_total",
+  "new_entity_id": "sensor.odin_cpu_pressure_some_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_disk_free",
+  "new_entity_id": "sensor.odin_disk_free",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.system_monitor_disk_free_config",
+  "new_entity_id": "sensor.odin_disk_free_config",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_disk_usage",
+  "new_entity_id": "sensor.odin_disk_usage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_disk_usage_config",
+  "new_entity_id": "sensor.odin_disk_usage_config",
+  "enable": true,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_disk_use",
+  "new_entity_id": "sensor.odin_disk_use",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_disk_use_config",
+  "new_entity_id": "sensor.odin_disk_use_config",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_full_10s_average",
+  "new_entity_id": "sensor.odin_io_pressure_full_10s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_full_300s_average",
+  "new_entity_id": "sensor.odin_io_pressure_full_300s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_full_60s_average",
+  "new_entity_id": "sensor.odin_io_pressure_full_60s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_full_total",
+  "new_entity_id": "sensor.odin_io_pressure_full_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_some_10s_average",
+  "new_entity_id": "sensor.odin_io_pressure_some_10s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_some_300s_average",
+  "new_entity_id": "sensor.odin_io_pressure_some_300s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_some_60s_average",
+  "new_entity_id": "sensor.odin_io_pressure_some_60s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_io_pressure_some_total",
+  "new_entity_id": "sensor.odin_io_pressure_some_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_ipv4_address_eth0",
+  "new_entity_id": "sensor.odin_ipv4_address_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_ipv4_address_lo",
+  "new_entity_id": "sensor.odin_ipv4_address_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_ipv6_address_eth0",
+  "new_entity_id": "sensor.odin_ipv6_address_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_ipv6_address_lo",
+  "new_entity_id": "sensor.odin_ipv6_address_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_load_15_min",
+  "new_entity_id": "sensor.odin_load_15_min",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_load_1_min",
+  "new_entity_id": "sensor.odin_load_1_min",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_load_5_min",
+  "new_entity_id": "sensor.odin_load_5_min",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_free",
+  "new_entity_id": "sensor.odin_memory_free",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_full_10s_average",
+  "new_entity_id": "sensor.odin_memory_pressure_full_10s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_full_300s_average",
+  "new_entity_id": "sensor.odin_memory_pressure_full_300s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_full_60s_average",
+  "new_entity_id": "sensor.odin_memory_pressure_full_60s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_full_total",
+  "new_entity_id": "sensor.odin_memory_pressure_full_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_some_10s_average",
+  "new_entity_id": "sensor.odin_memory_pressure_some_10s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_some_300s_average",
+  "new_entity_id": "sensor.odin_memory_pressure_some_300s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_some_60s_average",
+  "new_entity_id": "sensor.odin_memory_pressure_some_60s_average",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_pressure_some_total",
+  "new_entity_id": "sensor.odin_memory_pressure_some_total",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_usage",
+  "new_entity_id": "sensor.odin_memory_usage",
+  "enable": true,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_memory_use",
+  "new_entity_id": "sensor.odin_memory_use",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_in_eth0",
+  "new_entity_id": "sensor.odin_network_in_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_in_lo",
+  "new_entity_id": "sensor.odin_network_in_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_out_eth0",
+  "new_entity_id": "sensor.odin_network_out_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_out_lo",
+  "new_entity_id": "sensor.odin_network_out_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_throughput_in_eth0",
+  "new_entity_id": "sensor.odin_network_throughput_in_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_throughput_in_lo",
+  "new_entity_id": "sensor.odin_network_throughput_in_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_throughput_out_eth0",
+  "new_entity_id": "sensor.odin_network_throughput_out_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_network_throughput_out_lo",
+  "new_entity_id": "sensor.odin_network_throughput_out_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_packets_in_eth0",
+  "new_entity_id": "sensor.odin_packets_in_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_packets_in_lo",
+  "new_entity_id": "sensor.odin_packets_in_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_packets_out_eth0",
+  "new_entity_id": "sensor.odin_packets_out_eth0",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_packets_out_lo",
+  "new_entity_id": "sensor.odin_packets_out_lo",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_processor_temperature",
+  "new_entity_id": "sensor.odin_processor_temperature",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_processor_use",
+  "new_entity_id": "sensor.odin_processor_use",
+  "enable": true,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_swap_free",
+  "new_entity_id": "sensor.odin_swap_free",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_swap_usage",
+  "new_entity_id": "sensor.odin_swap_usage",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_swap_use",
+  "new_entity_id": "sensor.odin_swap_use",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.system_monitor_uptime",
+  "new_entity_id": "sensor.odin_uptime",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "binary_sensor.system_monitor_charging",
+  "new_entity_id": "binary_sensor.odin_charging",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.oden",
+  "new_entity_id": "device_tracker.odin",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.oden_link_speed",
+  "new_entity_id": "sensor.odin_link_speed",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.raspberrypi",
+  "new_entity_id": "device_tracker.vidar",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.raspberrypi_link_speed",
+  "new_entity_id": "sensor.vidar_link_speed",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.media_closet_usw_pro_max_16_poe_port_12_link_speed",
+  "new_entity_id": "sensor.usw_pro_max_16_poe_port_12_link_speed",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.media_closet_usw_pro_max_16_poe_port_13_link_speed",
+  "new_entity_id": "sensor.usw_pro_max_16_poe_port_13_link_speed",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "sensor.office_usw_flex_mini_port_4_link_speed",
+  "new_entity_id": "sensor.usw_flex_mini_port_4_link_speed",
+  "enable": false,
+  "disabled": true
+ }
+]
