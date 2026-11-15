@@ -30,5 +30,6 @@ These checks are not container integration tests. An actual Linux deployment
 must pass the runbook's acceptance checks before changing household DHCP/DNS.
 
 Tailscale, UPS shutdown (NUT) and backups (restic) are manual host steps in
-[go-live](docs/go-live.md). After go-live, [Forgejo](docs/forgejo.md) puts the Git server into use. Ansible provisioning, SOPS and UniFi automation are
+[go-live](docs/go-live.md). After go-live, [Forgejo](docs/forgejo.md) puts the Git server into use, and the
+[network health dashboard](docs/ha-dashboard.md) shows everything in Home Assistant. Ansible provisioning, SOPS and UniFi automation are
 not implemented.

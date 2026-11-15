@@ -1,0 +1,252 @@
+# Network health dashboard (built-in cards only). Setup: docs/ha-dashboard.md.
+# Entity IDs follow the device names in that doc; check them with
+#   bash scripts/check-ha-entities.sh services/homeassistant/dashboards/network-health.yaml
+title: Network health
+views:
+  - title: Health
+    path: health
+    icon: mdi:lan
+    type: sections
+    max_columns: 4
+    badges:
+      - entity: sensor.internet_status
+        name: Internet
+      - entity: sensor.ups_office_status_data
+        name: Office UPS
+      - entity: sensor.ups_closet_status_data
+        name: Closet UPS
+      - entity: switch.adguard_odin_protection
+        name: DNS filter
+    sections:
+      # Only shows something when a monitored service is not up.
+      - type: grid
+        cards:
+          - type: heading
+            heading: Problems
+            icon: mdi:alert-circle-outline
+          - type: entity-filter
+            show_empty: false
+            state_filter:
+              - operator: "!="
+                value: "up"
+            card:
+              type: entities
+              state_color: true
+            entities: &kuma
+              - sensor.internet_status
+              - sensor.gateway_status
+              - sensor.server_status
+              - sensor.nas_status
+              - sensor.dns_odin_status
+              - sensor.dns_vidar_status
+              - sensor.home_assistant_status
+              - sensor.certificate_status
+              - sensor.forgejo_status
+              - sensor.jellyfin_status
+              - sensor.seerr_status
+              - sensor.sonarr_status
+              - sensor.radarr_status
+              - sensor.prowlarr_status
+              - sensor.sabnzbd_status
+              - sensor.qbittorrent_status
+          - type: markdown
+            content: >-
+              {% set ok = namespace(n=0, t=0) %}
+              {% for e in ['internet','gateway','server','nas','dns_odin','dns_vidar','home_assistant',
+                 'certificate','forgejo','jellyfin','seerr','sonarr','radarr','prowlarr','sabnzbd','qbittorrent'] %}
+              {% set ok.t = ok.t + 1 %}{% if is_state('sensor.' ~ e ~ '_status', 'up') %}{% set ok.n = ok.n + 1 %}{% endif %}
+              {% endfor %}
+              **{{ ok.n }} / {{ ok.t }}** monitored checks up · Uptime Kuma on vidar alerts even when odin is down.
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Hosts
+            icon: mdi:server-network
+          - type: tile
+            entity: sensor.gateway_status
+            name: anubis (gateway)
+            icon: mdi:router-network
+          - type: tile
+            entity: sensor.server_status
+            name: odin (server)
+            icon: mdi:server
+          - type: tile
+            entity: sensor.dns_vidar_status
+            name: vidar (DNS 2)
+            icon: mdi:raspberry-pi
+          - type: tile
+            entity: sensor.nas_status
+            name: mimir (NAS)
+            icon: mdi:nas
+          - type: gauge
+            entity: sensor.system_monitor_processor_use
+            name: odin CPU
+            needle: true
+            severity: {green: 0, yellow: 60, red: 85}
+          - type: gauge
+            entity: sensor.system_monitor_memory_usage
+            name: odin memory
+            needle: true
+            severity: {green: 0, yellow: 70, red: 90}
+          - type: gauge
+            entity: sensor.system_monitor_disk_usage_config
+            name: odin disk
+            needle: true
+            severity: {green: 0, yellow: 75, red: 90}
+          - type: gauge
+            entity: sensor.anubis_cpu_utilization
+            name: Gateway CPU
+            needle: true
+            severity: {green: 0, yellow: 60, red: 85}
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Network & DNS
+            icon: mdi:dns
+          - type: tile
+            entity: sensor.internet_status
+            name: Internet
+            icon: mdi:web
+          - type: tile
+            entity: sensor.anubis_uptime
+            name: Gateway up since
+          - type: tile
+            entity: sensor.dns_odin_status
+            name: DNS 1 (odin)
+            icon: mdi:dns-outline
+          - type: tile
+            entity: sensor.dns_vidar_status
+            name: DNS 2 (vidar)
+            icon: mdi:dns-outline
+          - type: tile
+            entity: sensor.adguard_odin_dns_queries
+            name: Queries today
+          - type: tile
+            entity: sensor.adguard_odin_dns_queries_blocked_ratio
+            name: Blocked
+          - type: tile
+            entity: switch.adguard_odin_protection
+            name: Filtering (odin)
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Power
+            icon: mdi:battery-charging-high
+          - type: tile
+            entity: sensor.ups_office_status_data
+            name: Office UPS
+          - type: tile
+            entity: sensor.ups_closet_status_data
+            name: Closet UPS
+          - type: gauge
+            entity: sensor.ups_office_battery_charge
+            name: Office battery
+            severity: {green: 60, yellow: 50, red: 0}
+          - type: gauge
+            entity: sensor.ups_closet_battery_charge
+            name: Closet battery
+            severity: {green: 60, yellow: 40, red: 0}
+          - type: tile
+            entity: sensor.ups_office_battery_runtime
+            name: Office runtime
+          - type: tile
+            entity: sensor.ups_closet_battery_runtime
+            name: Closet runtime
+          - type: tile
+            entity: sensor.ups_office_load
+            name: Office load
+          - type: tile
+            entity: sensor.ups_closet_load
+            name: Closet load
+
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Services
+            icon: mdi:application-cog-outline
+          - type: tile
+            entity: sensor.home_assistant_status
+            name: Home Assistant
+            icon: mdi:home-assistant
+          - type: tile
+            entity: sensor.certificate_status
+            name: HTTPS certificate
+            icon: mdi:certificate-outline
+          - type: tile
+            entity: sensor.forgejo_status
+            name: Forgejo
+            icon: mdi:git
+          - type: tile
+            entity: sensor.jellyfin_status
+            name: Jellyfin
+            icon: mdi:play-box-multiple-outline
+          - type: tile
+            entity: sensor.seerr_status
+            name: Seerr
+            icon: mdi:movie-search-outline
+          - type: tile
+            entity: sensor.sonarr_status
+            name: Sonarr
+            icon: mdi:television-classic
+          - type: tile
+            entity: sensor.radarr_status
+            name: Radarr
+            icon: mdi:filmstrip
+          - type: tile
+            entity: sensor.prowlarr_status
+            name: Prowlarr
+            icon: mdi:magnify
+          - type: tile
+            entity: sensor.sabnzbd_status
+            name: SABnzbd
+            icon: mdi:download-network-outline
+          - type: tile
+            entity: sensor.qbittorrent_status
+            name: qBittorrent (VPN)
+            icon: mdi:shield-lock-outline
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Downloads
+            icon: mdi:download
+          - type: tile
+            entity: sensor.sabnzbd_speed
+            name: Usenet speed
+          - type: tile
+            entity: sensor.sabnzbd_queue
+            name: Usenet queue
+          - type: tile
+            entity: sensor.qbittorrent_download_speed
+            name: Torrent down
+          - type: tile
+            entity: sensor.qbittorrent_upload_speed
+            name: Torrent up
+
+      - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: Last 24 hours
+            icon: mdi:chart-line
+          - type: history-graph
+            hours_to_show: 24
+            entities:
+              - entity: sensor.ups_office_battery_charge
+                name: Office battery
+              - entity: sensor.ups_closet_battery_charge
+                name: Closet battery
+          - type: history-graph
+            hours_to_show: 24
+            entities:
+              - entity: sensor.system_monitor_processor_use
+                name: odin CPU
+              - entity: sensor.anubis_cpu_utilization
+                name: Gateway CPU
+          - type: history-graph
+            hours_to_show: 24
+            entities: *kuma
