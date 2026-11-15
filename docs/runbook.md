@@ -525,7 +525,8 @@ sudo docker compose -f compose.server.yml exec --user 1000:1000 forgejo \
   --must-change-password
 ```
 
-Store the printed password securely and change it at first login.
+Store the printed password securely and change it at first login. Putting
+Forgejo into use (token, GitHub mirror, monitoring, updates): [Forgejo](forgejo.md).
 
 ### Caddy (`https` profile): Cloudflare DNS and Let's Encrypt
 
