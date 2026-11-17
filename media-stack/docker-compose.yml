@@ -78,7 +78,7 @@ services:
     restart: ${RESTART_POLICY:?Set RESTART_POLICY in .env}
 
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:2.7.0.5723-ls167
+    image: lscr.io/linuxserver/prowlarr:3.0.2.5780-ls169@sha256:45117ba8439e2337a92ffe38a451a4dafc0be771754d05d88cdf102419d09646
     networks:
       - medianet
     security_opt:
