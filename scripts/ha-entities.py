@@ -7,7 +7,7 @@ import asyncio, json, os, re, sys
 import aiohttp
 
 FILE = "/config/ha-entities.json"
-PLATFORMS = {"nut", "uptime_kuma", "systemmonitor", "adguard", "unifi", "sabnzbd", "qbittorrent"}
+PLATFORMS = {"nut", "uptime_kuma", "systemmonitor", "adguard", "unifi", "sabnzbd", "qbittorrent", "glances"}
 VALID = re.compile(r"^[a-z_]+\.[a-z0-9_]*[a-z0-9]$")
 
 
