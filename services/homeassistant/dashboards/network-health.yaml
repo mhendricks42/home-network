@@ -49,13 +49,17 @@ views:
               - sensor.kuma_sonarr_status
               - sensor.kuma_radarr_status
               - sensor.kuma_prowlarr_status
+              - sensor.kuma_sonarr_health_status
+              - sensor.kuma_radarr_health_status
+              - sensor.kuma_prowlarr_health_status
               - sensor.kuma_sabnzbd_status
               - sensor.kuma_qbittorrent_status
           - type: markdown
             content: >-
               {% set ok = namespace(n=0, t=0) %}
               {% for e in ['internet','anubis','odin','vidar','mimir','dns_odin','dns_vidar','home_assistant',
-                 'certificate','forgejo','jellyfin','seerr','sonarr','radarr','prowlarr','sabnzbd','qbittorrent'] %}
+                 'certificate','forgejo','jellyfin','seerr','sonarr','radarr','prowlarr','sabnzbd','qbittorrent',
+                 'sonarr_health','radarr_health','prowlarr_health'] %}
               {% set ok.t = ok.t + 1 %}{% if is_state('sensor.' ~ 'kuma_' ~ e ~ '_status', 'up') %}{% set ok.n = ok.n + 1 %}{% endif %}
               {% endfor %}
               **{{ ok.n }} / {{ ok.t }}** monitored checks up · Uptime Kuma on vidar alerts even when odin is down.
@@ -269,13 +273,25 @@ views:
             name: Sonarr
             icon: mdi:television-classic
           - type: tile
+            entity: sensor.kuma_sonarr_health_status
+            name: Sonarr health
+            icon: mdi:heart-pulse
+          - type: tile
             entity: sensor.kuma_radarr_status
             name: Radarr
             icon: mdi:filmstrip
           - type: tile
+            entity: sensor.kuma_radarr_health_status
+            name: Radarr health
+            icon: mdi:heart-pulse
+          - type: tile
             entity: sensor.kuma_prowlarr_status
             name: Prowlarr
             icon: mdi:magnify
+          - type: tile
+            entity: sensor.kuma_prowlarr_health_status
+            name: Prowlarr health
+            icon: mdi:heart-pulse
           - type: tile
             entity: sensor.kuma_sabnzbd_status
             name: SABnzbd
