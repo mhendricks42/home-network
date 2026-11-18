@@ -52,6 +52,7 @@ open the device, **✎ → Name**, and accept **rename entity IDs**.
 | AdGuard Home | host `adguard`, port `80`, SSL off, your AdGuard login (HA reaches it over the shared Docker network; vidar's UI is loopback-only, so the *DNS vidar* Kuma check covers it) | `AdGuard odin` → `sensor.adguard_odin_*` |
 | UniFi Network | host `10.0.40.1`, a local read-only UniFi user | gateway: `anubis` → `sensor.anubis_*` |
 | SABnzbd | `http://10.0.40.20:8081`, its API key | `SABnzbd` → `sensor.sabnzbd_*` |
+| Glances (twice) | host `10.0.40.11` and `10.0.40.20`, port `61208`, no SSL, no login. Set up first: vidar baseline §8, the `glances` service in `compose.nas.yml` | `vidar`, `mimir` → `sensor.vidar_*`, `sensor.mimir_*` (CPU, RAM, disks, temperatures) |
 | qBittorrent | `http://10.0.40.20:8080`, its login | `qBittorrent` → `sensor.qbittorrent_*` |
 
 If you have extra Kuma monitors (for example the Sonarr/Radarr/Prowlarr

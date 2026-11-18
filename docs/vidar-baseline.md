@@ -15,6 +15,7 @@ change SSH or the firewall.
 | Unbound (recursive DNS) | apt | `127.0.0.1:5335` only |
 | AdGuard Home (filtering DNS) | pinned release binary | `10.0.40.11:53`; UI `127.0.0.1:8081` |
 | Uptime Kuma | pinned git tag, Node.js | `10.0.40.11:3001`, `odin` only |
+| Glances (metrics API) | apt | `10.0.40.11:61208`, `odin` only |
 
 ## 1. OS basics
 
@@ -239,14 +240,44 @@ curl -sI http://10.0.40.11:3001 | head -1        # from odin: HTTP 302/200
 Then open `https://status.home.foxhound.nexus` (Caddy on `odin` proxies to
 it), create the admin account and add monitors (Docker runbook §4, check 6).
 
-## 8. Check and back up
+## 8. Glances (host metrics for Home Assistant)
+
+CPU, RAM, disk and temperature for HA's Glances integration. API only (no web
+UI), bound to vidar's address, refreshed every 30 s to stay light on the Pi:
+
+```bash
+sudo apt install -y glances
+glances --version                                # 4.x
+sudo tee /etc/systemd/system/glances.service >/dev/null <<'EOF'
+[Unit]
+Description=Glances API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/glances -w --disable-webui -B 10.0.40.11 -t 30
+Restart=on-failure
+DynamicUser=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now glances
+sudo ufw allow from 10.0.40.10 to any port 61208 proto tcp   # Home Assistant on odin
+curl -s http://10.0.40.11:61208/api/4/cpu/total               # from odin: {"total": …}
+```
+
+If the service fails with a missing `fastapi`/`uvicorn` module, install
+`python3-fastapi python3-uvicorn` and restart it.
+
+## 9. Check and back up
 
 ```bash
 systemctl --failed                       # nothing listed
-sudo ss -tulpn | grep -E ':(22|53|123|3001|5335|8081)\b'
+sudo ss -tulpn | grep -E ':(22|53|123|3001|5335|8081|61208)\b'
 ```
 
-Expect 53 on `10.0.40.11`, 5335 and 8081 on `127.0.0.1`, 3001 on
+Expect 53 on `10.0.40.11`, 5335 and 8081 on `127.0.0.1`, 3001 and 61208 on
 `10.0.40.11`. Reboot once and repeat. Then image the SD card (or SSD) so
 vidar can be restored in minutes.
 

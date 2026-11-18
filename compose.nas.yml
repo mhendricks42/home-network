@@ -10,3 +10,16 @@ services:
       OPTIONS: --append-only --private-repos
     volumes:
       - /volume1/backups/restic:/data
+
+  # Host metrics (CPU, RAM, disks, temps) for Home Assistant's Glances integration.
+  # API only, on the NAS address; allow TCP 61208 from odin (10.0.40.10) in the NAS firewall.
+  glances:
+    image: nicolargo/glances:4.5.9-full
+    restart: unless-stopped
+    network_mode: host                    # host network stats; bound to the NAS IP below
+    pid: host                             # host processes and load, not just the container's
+    environment:
+      GLANCES_OPT: "-w --disable-webui -B 10.0.40.20 -t 30"
+      TZ: America/New_York
+    volumes:
+      - /volume1:/volume1:ro              # disk usage; add your media volume the same way (e.g. /volume2)
