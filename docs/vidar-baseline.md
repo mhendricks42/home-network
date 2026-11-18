@@ -262,7 +262,8 @@ DynamicUser=yes
 [Install]
 WantedBy=multi-user.target
 EOF
-sudo systemctl daemon-reload && sudo systemctl enable --now glances
+# restart, not enable --now: the package already started its own glances (-s on 127.0.0.1)
+sudo systemctl daemon-reload && sudo systemctl enable glances && sudo systemctl restart glances
 sudo ufw allow from 10.0.40.10 to any port 61208 proto tcp   # Home Assistant on odin
 curl -s http://10.0.40.11:61208/api/4/cpu/total               # from odin: {"total": …}
 ```
