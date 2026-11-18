@@ -1,4 +1,5 @@
 # Network health dashboard (built-in cards only). Setup: docs/ha-dashboard.md.
+# Temperature gauges are in °F (HA here uses US customary units).
 # Entity IDs follow the device names in that doc; check them with
 #   bash scripts/check-ha-entities.sh services/homeassistant/dashboards/network-health.yaml
 title: Network health
@@ -120,10 +121,11 @@ views:
           - type: gauge
             entity: sensor.vidar_cpu_thermal_0_temperature
             name: vidar temp
-            min: 30
-            max: 90
+            unit: °F
+            min: 86
+            max: 194
             needle: true
-            severity: {green: 30, yellow: 65, red: 78}
+            severity: {green: 86, yellow: 149, red: 172}
           - type: gauge
             entity: sensor.vidar_disk_usage
             name: vidar SD card
@@ -142,17 +144,19 @@ views:
           - type: gauge
             entity: sensor.mimir_package_id_0_temperature
             name: mimir CPU temp
-            min: 30
-            max: 100
+            unit: °F
+            min: 86
+            max: 212
             needle: true
-            severity: {green: 30, yellow: 75, red: 90}
+            severity: {green: 86, yellow: 167, red: 194}
           - type: gauge
             entity: sensor.mimir_composite_temperature
             name: mimir NVMe temp
-            min: 20
-            max: 80
+            unit: °F
+            min: 68
+            max: 176
             needle: true
-            severity: {green: 20, yellow: 60, red: 70}
+            severity: {green: 68, yellow: 140, red: 158}
           - type: gauge
             entity: sensor.mimir_volume1_disk_usage
             name: volume1
@@ -166,10 +170,11 @@ views:
           - type: gauge
             entity: sensor.odin_processor_temperature
             name: odin CPU temp
-            min: 30
-            max: 100
+            unit: °F
+            min: 86
+            max: 212
             needle: true
-            severity: {green: 30, yellow: 75, red: 90}
+            severity: {green: 86, yellow: 167, red: 194}
 
       - type: grid
         cards:
