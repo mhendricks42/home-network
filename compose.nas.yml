@@ -22,5 +22,6 @@ services:
       GLANCES_OPT: "-w --disable-webui -B 10.0.40.20 -t 30"
       TZ: America/New_York
     volumes:
-      - /volume1:/volume1:ro              # disk usage; add your media volume the same way (e.g. /volume2)
+      - /volume1:/volume1:ro              # disk usage: system/apps volume
+      - /volume2:/volume2:ro              # disk usage: media volume
       - ./services/glances/glances.conf:/glances/conf/glances.conf:ro   # hides Docker internals
