@@ -102,6 +102,76 @@ views:
             severity: {green: 0, yellow: 60, red: 85}
 
       - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Host resources
+            icon: mdi:chip
+          - type: gauge
+            entity: sensor.vidar_cpu_usage
+            name: vidar CPU
+            needle: true
+            severity: {green: 0, yellow: 60, red: 85}
+          - type: gauge
+            entity: sensor.vidar_memory_usage
+            name: vidar RAM
+            needle: true
+            severity: {green: 0, yellow: 80, red: 92}
+          - type: gauge
+            entity: sensor.vidar_cpu_thermal_0_temperature
+            name: vidar temp
+            min: 30
+            max: 90
+            needle: true
+            severity: {green: 30, yellow: 65, red: 78}
+          - type: gauge
+            entity: sensor.vidar_disk_usage
+            name: vidar SD card
+            needle: true
+            severity: {green: 0, yellow: 75, red: 90}
+          - type: gauge
+            entity: sensor.mimir_cpu_usage
+            name: mimir CPU
+            needle: true
+            severity: {green: 0, yellow: 70, red: 90}
+          - type: gauge
+            entity: sensor.mimir_memory_usage
+            name: mimir RAM
+            needle: true
+            severity: {green: 0, yellow: 80, red: 92}
+          - type: gauge
+            entity: sensor.mimir_package_id_0_temperature
+            name: mimir CPU temp
+            min: 30
+            max: 100
+            needle: true
+            severity: {green: 30, yellow: 75, red: 90}
+          - type: gauge
+            entity: sensor.mimir_composite_temperature
+            name: mimir NVMe temp
+            min: 20
+            max: 80
+            needle: true
+            severity: {green: 20, yellow: 60, red: 70}
+          - type: gauge
+            entity: sensor.mimir_volume1_disk_usage
+            name: volume1
+            needle: true
+            severity: {green: 0, yellow: 80, red: 90}
+          - type: gauge
+            entity: sensor.mimir_volume2_disk_usage
+            name: volume2 (media)
+            needle: true
+            severity: {green: 0, yellow: 85, red: 95}
+          - type: gauge
+            entity: sensor.odin_processor_temperature
+            name: odin CPU temp
+            min: 30
+            max: 100
+            needle: true
+            severity: {green: 30, yellow: 75, red: 90}
+
+      - type: grid
         cards:
           - type: heading
             heading: Network & DNS
@@ -248,6 +318,21 @@ views:
                 name: odin CPU
               - entity: sensor.anubis_cpu_utilization
                 name: Gateway CPU
+              - entity: sensor.vidar_cpu_usage
+                name: vidar CPU
+              - entity: sensor.mimir_cpu_usage
+                name: mimir CPU
+          - type: history-graph
+            hours_to_show: 24
+            entities:
+              - entity: sensor.vidar_cpu_thermal_0_temperature
+                name: vidar
+              - entity: sensor.mimir_package_id_0_temperature
+                name: mimir CPU
+              - entity: sensor.mimir_composite_temperature
+                name: mimir NVMe
+              - entity: sensor.odin_processor_temperature
+                name: odin CPU
           - type: history-graph
             hours_to_show: 24
             entities: *kuma
