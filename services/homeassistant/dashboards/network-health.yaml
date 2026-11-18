@@ -1,359 +1,1005 @@
 # Network health dashboard (built-in cards only). Setup: docs/ha-dashboard.md.
+# Tabs: Overview (status, coloured), Resources (gauges), Network (DNS, UPS, history).
+# Each Kuma check is a pair of tiles with visibility conditions: green while "up", red otherwise.
 # Temperature gauges are in °F (HA here uses US customary units).
-# Entity IDs follow the device names in that doc; check them with
-#   bash scripts/check-ha-entities.sh services/homeassistant/dashboards/network-health.yaml
+# Check entity IDs: bash scripts/check-ha-entities.sh services/homeassistant/dashboards/network-health.yaml
 title: Network health
 views:
-  - title: Health
-    path: health
-    icon: mdi:lan
-    type: sections
-    max_columns: 4
-    badges:
-      - entity: sensor.kuma_internet_status
-        name: Internet
-      - entity: sensor.ups_office_status_data
-        name: Office UPS
-      - entity: sensor.ups_closet_status_data
-        name: Closet UPS
-      - entity: switch.adguard_odin_protection
-        name: DNS filter
-    sections:
-      # Only shows something when a monitored service is not up.
-      - type: grid
-        cards:
-          - type: heading
-            heading: Problems
-            icon: mdi:alert-circle-outline
-          - type: entity-filter
-            show_empty: false
-            state_filter:
-              - operator: "!="
-                value: "up"
-            card:
-              type: entities
-              state_color: true
-            entities: &kuma
-              - sensor.kuma_internet_status
-              - sensor.kuma_anubis_status
-              - sensor.kuma_odin_status
-              - sensor.kuma_vidar_status
-              - sensor.kuma_mimir_status
-              - sensor.kuma_dns_odin_status
-              - sensor.kuma_dns_vidar_status
-              - sensor.kuma_home_assistant_status
-              - sensor.kuma_certificate_status
-              - sensor.kuma_forgejo_status
-              - sensor.kuma_jellyfin_status
-              - sensor.kuma_seerr_status
-              - sensor.kuma_sonarr_status
-              - sensor.kuma_radarr_status
-              - sensor.kuma_prowlarr_status
-              - sensor.kuma_sonarr_health_status
-              - sensor.kuma_radarr_health_status
-              - sensor.kuma_prowlarr_health_status
-              - sensor.kuma_sabnzbd_status
-              - sensor.kuma_qbittorrent_status
-          - type: markdown
-            content: >-
-              {% set ok = namespace(n=0, t=0) %}
-              {% for e in ['internet','anubis','odin','vidar','mimir','dns_odin','dns_vidar','home_assistant',
-                 'certificate','forgejo','jellyfin','seerr','sonarr','radarr','prowlarr','sabnzbd','qbittorrent',
-                 'sonarr_health','radarr_health','prowlarr_health'] %}
-              {% set ok.t = ok.t + 1 %}{% if is_state('sensor.' ~ 'kuma_' ~ e ~ '_status', 'up') %}{% set ok.n = ok.n + 1 %}{% endif %}
-              {% endfor %}
-              **{{ ok.n }} / {{ ok.t }}** monitored checks up · Uptime Kuma on vidar alerts even when odin is down.
-
-      - type: grid
-        cards:
-          - type: heading
-            heading: Hosts
-            icon: mdi:server-network
-          - type: tile
-            entity: sensor.kuma_anubis_status
-            name: anubis (gateway)
-            icon: mdi:router-network
-          - type: tile
-            entity: sensor.kuma_odin_status
-            name: odin (server)
-            icon: mdi:server
-          - type: tile
-            entity: sensor.kuma_vidar_status
-            name: vidar (DNS 2)
-            icon: mdi:raspberry-pi
-          - type: tile
-            entity: sensor.kuma_mimir_status
-            name: mimir (NAS)
-            icon: mdi:nas
-          - type: gauge
-            entity: sensor.odin_processor_use
-            name: odin CPU
-            needle: true
-            severity: {green: 0, yellow: 60, red: 85}
-          - type: gauge
-            entity: sensor.odin_memory_usage
-            name: odin memory
-            needle: true
-            severity: {green: 0, yellow: 70, red: 90}
-          - type: gauge
-            entity: sensor.odin_disk_usage_config
-            name: odin disk
-            needle: true
-            severity: {green: 0, yellow: 75, red: 90}
-          - type: gauge
-            entity: sensor.anubis_cpu_utilization
-            name: Gateway CPU
-            needle: true
-            severity: {green: 0, yellow: 60, red: 85}
-
-      - type: grid
-        column_span: 2
-        cards:
-          - type: heading
-            heading: Host resources
-            icon: mdi:chip
-          - type: gauge
-            entity: sensor.vidar_cpu_usage
-            name: vidar CPU
-            needle: true
-            severity: {green: 0, yellow: 60, red: 85}
-          - type: gauge
-            entity: sensor.vidar_memory_usage
-            name: vidar RAM
-            needle: true
-            severity: {green: 0, yellow: 80, red: 92}
-          - type: gauge
-            entity: sensor.vidar_cpu_thermal_0_temperature
-            name: vidar temp
-            unit: °F
-            min: 86
-            max: 194
-            needle: true
-            severity: {green: 86, yellow: 149, red: 172}
-          - type: gauge
-            entity: sensor.vidar_disk_usage
-            name: vidar SD card
-            needle: true
-            severity: {green: 0, yellow: 75, red: 90}
-          - type: gauge
-            entity: sensor.mimir_cpu_usage
-            name: mimir CPU
-            needle: true
-            severity: {green: 0, yellow: 70, red: 90}
-          - type: gauge
-            entity: sensor.mimir_memory_usage
-            name: mimir RAM
-            needle: true
-            severity: {green: 0, yellow: 80, red: 92}
-          - type: gauge
-            entity: sensor.mimir_package_id_0_temperature
-            name: mimir CPU temp
-            unit: °F
-            min: 86
-            max: 212
-            needle: true
-            severity: {green: 86, yellow: 167, red: 194}
-          - type: gauge
-            entity: sensor.mimir_composite_temperature
-            name: mimir NVMe temp
-            unit: °F
-            min: 68
-            max: 176
-            needle: true
-            severity: {green: 68, yellow: 140, red: 158}
-          - type: gauge
-            entity: sensor.mimir_volume1_disk_usage
-            name: volume1
-            needle: true
-            severity: {green: 0, yellow: 80, red: 90}
-          - type: gauge
-            entity: sensor.mimir_volume2_disk_usage
-            name: volume2 (media)
-            needle: true
-            severity: {green: 0, yellow: 85, red: 95}
-          - type: gauge
-            entity: sensor.odin_processor_temperature
-            name: odin CPU temp
-            unit: °F
-            min: 86
-            max: 212
-            needle: true
-            severity: {green: 86, yellow: 167, red: 194}
-
-      - type: grid
-        cards:
-          - type: heading
-            heading: Network & DNS
-            icon: mdi:dns
-          - type: tile
-            entity: sensor.kuma_internet_status
-            name: Internet
-            icon: mdi:web
-          - type: tile
-            entity: sensor.anubis_uptime
-            name: Gateway up since
-          - type: tile
-            entity: sensor.kuma_dns_odin_status
-            name: DNS 1 (odin)
-            icon: mdi:dns-outline
-          - type: tile
-            entity: sensor.kuma_dns_vidar_status
-            name: DNS 2 (vidar)
-            icon: mdi:dns-outline
-          - type: tile
-            entity: sensor.adguard_odin_dns_queries
-            name: Queries today
-          - type: tile
-            entity: sensor.adguard_odin_dns_queries_blocked_ratio
-            name: Blocked
-          - type: tile
-            entity: switch.adguard_odin_protection
-            name: Filtering (odin)
-
-      - type: grid
-        cards:
-          - type: heading
-            heading: Power
-            icon: mdi:battery-charging-high
-          - type: tile
-            entity: sensor.ups_office_status_data
-            name: Office UPS
-          - type: tile
-            entity: sensor.ups_closet_status_data
-            name: Closet UPS
-          - type: gauge
-            entity: sensor.ups_office_battery_charge
-            name: Office battery
-            severity: {green: 60, yellow: 50, red: 0}
-          - type: gauge
-            entity: sensor.ups_closet_battery_charge
-            name: Closet battery
-            severity: {green: 60, yellow: 40, red: 0}
-          - type: tile
-            entity: sensor.ups_office_battery_runtime
-            name: Office runtime
-          - type: tile
-            entity: sensor.ups_closet_battery_runtime
-            name: Closet runtime
-          - type: tile
-            entity: sensor.ups_office_load
-            name: Office load
-          - type: tile
-            entity: sensor.ups_closet_load
-            name: Closet load
-
-      - type: grid
-        column_span: 2
-        cards:
-          - type: heading
-            heading: Services
-            icon: mdi:application-cog-outline
-          - type: tile
-            entity: sensor.kuma_home_assistant_status
-            name: Home Assistant
-            icon: mdi:home-assistant
-          - type: tile
-            entity: sensor.kuma_certificate_status
-            name: HTTPS certificate
-            icon: mdi:certificate-outline
-          - type: tile
-            entity: sensor.kuma_forgejo_status
-            name: Forgejo
-            icon: mdi:git
-          - type: tile
-            entity: sensor.kuma_jellyfin_status
-            name: Jellyfin
-            icon: mdi:play-box-multiple-outline
-          - type: tile
-            entity: sensor.kuma_seerr_status
-            name: Seerr
-            icon: mdi:movie-search-outline
-          - type: tile
-            entity: sensor.kuma_sonarr_status
-            name: Sonarr
-            icon: mdi:television-classic
-          - type: tile
-            entity: sensor.kuma_sonarr_health_status
-            name: Sonarr health
-            icon: mdi:heart-pulse
-          - type: tile
-            entity: sensor.kuma_radarr_status
-            name: Radarr
-            icon: mdi:filmstrip
-          - type: tile
-            entity: sensor.kuma_radarr_health_status
-            name: Radarr health
-            icon: mdi:heart-pulse
-          - type: tile
-            entity: sensor.kuma_prowlarr_status
-            name: Prowlarr
-            icon: mdi:magnify
-          - type: tile
-            entity: sensor.kuma_prowlarr_health_status
-            name: Prowlarr health
-            icon: mdi:heart-pulse
-          - type: tile
-            entity: sensor.kuma_sabnzbd_status
-            name: SABnzbd
-            icon: mdi:download-network-outline
-          - type: tile
-            entity: sensor.kuma_qbittorrent_status
-            name: qBittorrent (VPN)
-            icon: mdi:shield-lock-outline
-
-      - type: grid
-        cards:
-          - type: heading
-            heading: Downloads
-            icon: mdi:download
-          - type: tile
-            entity: sensor.sabnzbd_speed
-            name: Usenet speed
-          - type: tile
-            entity: sensor.sabnzbd_queue
-            name: Usenet queue
-          - type: tile
-            entity: sensor.qbittorrent_download_speed
-            name: Torrent down
-          - type: tile
-            entity: sensor.qbittorrent_upload_speed
-            name: Torrent up
-
-      - type: grid
-        column_span: 4
-        cards:
-          - type: heading
-            heading: Last 24 hours
-            icon: mdi:chart-line
-          - type: history-graph
-            hours_to_show: 24
-            entities:
-              - entity: sensor.ups_office_battery_charge
-                name: Office battery
-              - entity: sensor.ups_closet_battery_charge
-                name: Closet battery
-          - type: history-graph
-            hours_to_show: 24
-            entities:
-              - entity: sensor.odin_processor_use
-                name: odin CPU
-              - entity: sensor.anubis_cpu_utilization
-                name: Gateway CPU
-              - entity: sensor.vidar_cpu_usage
-                name: vidar CPU
-              - entity: sensor.mimir_cpu_usage
-                name: mimir CPU
-          - type: history-graph
-            hours_to_show: 24
-            entities:
-              - entity: sensor.vidar_cpu_thermal_0_temperature
-                name: vidar
-              - entity: sensor.mimir_package_id_0_temperature
-                name: mimir CPU
-              - entity: sensor.mimir_composite_temperature
-                name: mimir NVMe
-              - entity: sensor.odin_processor_temperature
-                name: odin CPU
-          - type: history-graph
-            hours_to_show: 24
-            entities: *kuma
+- title: Overview
+  path: overview
+  icon: mdi:view-dashboard
+  type: sections
+  max_columns: 3
+  badges:
+  - entity: sensor.kuma_internet_status
+    name: Internet
+  - entity: sensor.ups_office_status_data
+    name: Office UPS
+  - entity: sensor.ups_closet_status_data
+    name: Closet UPS
+  - entity: switch.adguard_odin_protection
+    name: DNS filter
+  sections:
+  - type: grid
+    column_span: 3
+    cards:
+    - type: heading
+      heading: Problems
+      icon: mdi:alert-circle-outline
+    - type: markdown
+      grid_options:
+        columns: 12
+      content: '{% set ns = namespace(n=0, t=0, down=[]) %}{% for e in [''anubis'', ''odin'', ''vidar'', ''mimir'', ''internet'',
+        ''dns_odin'', ''dns_vidar'', ''home_assistant'', ''certificate'', ''forgejo'', ''jellyfin'', ''seerr'', ''sonarr'',
+        ''sonarr_health'', ''radarr'', ''radarr_health'', ''prowlarr'', ''prowlarr_health'', ''sabnzbd'', ''qbittorrent'']
+        %}{% set ns.t = ns.t + 1 %}{% if is_state(''sensor.'' ~ ''kuma_'' ~ e ~ ''_status'', ''up'') %}{% set ns.n = ns.n
+        + 1 %}{% else %}{% set ns.down = ns.down + [e] %}{% endif %}{% endfor %}{% if ns.down %}<ha-alert alert-type="error">**{{
+        ns.t - ns.n }} of {{ ns.t }} checks failing:** {{ ns.down | join('', '') | replace(''_'', '' '') }}</ha-alert>{% else
+        %}<ha-alert alert-type="success">**All {{ ns.t }} checks up.** Uptime Kuma on vidar alerts even when odin is down.</ha-alert>{%
+        endif %}'
+  - type: grid
+    cards:
+    - type: heading
+      heading: Hosts
+      icon: mdi:server-network
+    - type: tile
+      entity: sensor.kuma_anubis_status
+      name: anubis · gateway
+      icon: mdi:router-network
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_anubis_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_anubis_status
+      name: anubis · gateway
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_anubis_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_odin_status
+      name: odin · server
+      icon: mdi:server
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_odin_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_odin_status
+      name: odin · server
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_odin_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_vidar_status
+      name: vidar · DNS 2
+      icon: mdi:raspberry-pi
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_vidar_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_vidar_status
+      name: vidar · DNS 2
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_vidar_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_mimir_status
+      name: mimir · NAS
+      icon: mdi:nas
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_mimir_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_mimir_status
+      name: mimir · NAS
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_mimir_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_internet_status
+      name: Internet
+      icon: mdi:web
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_internet_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_internet_status
+      name: Internet
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_internet_status
+        state_not: up
+  - type: grid
+    cards:
+    - type: heading
+      heading: Core services
+      icon: mdi:cog
+    - type: tile
+      entity: sensor.kuma_dns_odin_status
+      name: DNS 1 · odin
+      icon: mdi:dns
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_dns_odin_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_dns_odin_status
+      name: DNS 1 · odin
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_dns_odin_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_dns_vidar_status
+      name: DNS 2 · vidar
+      icon: mdi:dns
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_dns_vidar_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_dns_vidar_status
+      name: DNS 2 · vidar
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_dns_vidar_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_home_assistant_status
+      name: Home Assistant
+      icon: mdi:home-assistant
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_home_assistant_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_home_assistant_status
+      name: Home Assistant
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_home_assistant_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_certificate_status
+      name: HTTPS certificate
+      icon: mdi:certificate
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_certificate_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_certificate_status
+      name: HTTPS certificate
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_certificate_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_forgejo_status
+      name: Forgejo
+      icon: mdi:git
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_forgejo_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_forgejo_status
+      name: Forgejo
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_forgejo_status
+        state_not: up
+  - type: grid
+    cards:
+    - type: heading
+      heading: Power
+      icon: mdi:battery-charging-high
+    - type: tile
+      entity: sensor.ups_office_status_data
+      name: Office UPS
+      grid_options:
+        columns: 6
+        rows: 1
+      icon: mdi:power-plug-battery
+    - type: tile
+      entity: sensor.ups_closet_status_data
+      name: Closet UPS
+      grid_options:
+        columns: 6
+        rows: 1
+      icon: mdi:power-plug-battery
+    - type: tile
+      entity: sensor.ups_office_battery_charge
+      name: Office battery
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.ups_closet_battery_charge
+      name: Closet battery
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.ups_office_battery_runtime
+      name: Office runtime
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.ups_closet_battery_runtime
+      name: Closet runtime
+      grid_options:
+        columns: 6
+        rows: 1
+  - type: grid
+    column_span: 2
+    cards:
+    - type: heading
+      heading: Media
+      icon: mdi:play-network
+    - type: tile
+      entity: sensor.kuma_jellyfin_status
+      name: Jellyfin
+      icon: mdi:play-box-multiple
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_jellyfin_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_jellyfin_status
+      name: Jellyfin
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_jellyfin_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_seerr_status
+      name: Seerr
+      icon: mdi:movie-search
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_seerr_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_seerr_status
+      name: Seerr
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_seerr_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_sonarr_status
+      name: Sonarr
+      icon: mdi:television-classic
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_sonarr_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_sonarr_status
+      name: Sonarr
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_sonarr_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_sonarr_health_status
+      name: Sonarr health
+      icon: mdi:heart-pulse
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_sonarr_health_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_sonarr_health_status
+      name: Sonarr health
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_sonarr_health_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_radarr_status
+      name: Radarr
+      icon: mdi:filmstrip
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_radarr_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_radarr_status
+      name: Radarr
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_radarr_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_radarr_health_status
+      name: Radarr health
+      icon: mdi:heart-pulse
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_radarr_health_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_radarr_health_status
+      name: Radarr health
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_radarr_health_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_prowlarr_status
+      name: Prowlarr
+      icon: mdi:magnify
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_prowlarr_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_prowlarr_status
+      name: Prowlarr
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_prowlarr_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_prowlarr_health_status
+      name: Prowlarr health
+      icon: mdi:heart-pulse
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_prowlarr_health_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_prowlarr_health_status
+      name: Prowlarr health
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_prowlarr_health_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_sabnzbd_status
+      name: SABnzbd
+      icon: mdi:download-network
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_sabnzbd_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_sabnzbd_status
+      name: SABnzbd
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_sabnzbd_status
+        state_not: up
+    - type: tile
+      entity: sensor.kuma_qbittorrent_status
+      name: qBittorrent · VPN
+      icon: mdi:shield-lock
+      color: green
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_qbittorrent_status
+        state: up
+    - type: tile
+      entity: sensor.kuma_qbittorrent_status
+      name: qBittorrent · VPN
+      icon: mdi:alert-circle
+      color: red
+      vertical: false
+      grid_options:
+        columns: 4
+        rows: 1
+      visibility:
+      - condition: state
+        entity: sensor.kuma_qbittorrent_status
+        state_not: up
+  - type: grid
+    cards:
+    - type: heading
+      heading: Downloads
+      icon: mdi:download
+    - type: tile
+      entity: sensor.sabnzbd_speed
+      name: Usenet speed
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.sabnzbd_queue
+      name: Usenet queue
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.qbittorrent_download_speed
+      name: Torrent down
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.qbittorrent_upload_speed
+      name: Torrent up
+      grid_options:
+        columns: 6
+        rows: 1
+- title: Resources
+  path: resources
+  icon: mdi:chip
+  type: sections
+  max_columns: 3
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: odin
+      icon: mdi:server
+    - type: gauge
+      entity: sensor.odin_processor_use
+      name: CPU
+      needle: true
+      severity:
+        green: 0
+        yellow: 60
+        red: 85
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.odin_memory_usage
+      name: RAM
+      needle: true
+      severity:
+        green: 0
+        yellow: 70
+        red: 90
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.odin_disk_usage_config
+      name: Disk
+      needle: true
+      severity:
+        green: 0
+        yellow: 75
+        red: 90
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.odin_processor_temperature
+      name: CPU temp
+      needle: true
+      severity:
+        green: 86
+        yellow: 167
+        red: 194
+      grid_options:
+        columns: 4
+        rows: 2
+      unit: °F
+      min: 86
+      max: 212
+  - type: grid
+    cards:
+    - type: heading
+      heading: vidar
+      icon: mdi:raspberry-pi
+    - type: gauge
+      entity: sensor.vidar_cpu_usage
+      name: CPU
+      needle: true
+      severity:
+        green: 0
+        yellow: 60
+        red: 85
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.vidar_memory_usage
+      name: RAM
+      needle: true
+      severity:
+        green: 0
+        yellow: 80
+        red: 92
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.vidar_disk_usage
+      name: SD card
+      needle: true
+      severity:
+        green: 0
+        yellow: 75
+        red: 90
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.vidar_cpu_thermal_0_temperature
+      name: Temp
+      needle: true
+      severity:
+        green: 86
+        yellow: 149
+        red: 172
+      grid_options:
+        columns: 4
+        rows: 2
+      unit: °F
+      min: 86
+      max: 194
+  - type: grid
+    cards:
+    - type: heading
+      heading: mimir
+      icon: mdi:nas
+    - type: gauge
+      entity: sensor.mimir_cpu_usage
+      name: CPU
+      needle: true
+      severity:
+        green: 0
+        yellow: 70
+        red: 90
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.mimir_memory_usage
+      name: RAM
+      needle: true
+      severity:
+        green: 0
+        yellow: 80
+        red: 92
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.mimir_package_id_0_temperature
+      name: CPU temp
+      needle: true
+      severity:
+        green: 86
+        yellow: 167
+        red: 194
+      grid_options:
+        columns: 4
+        rows: 2
+      unit: °F
+      min: 86
+      max: 212
+    - type: gauge
+      entity: sensor.mimir_composite_temperature
+      name: NVMe temp
+      needle: true
+      severity:
+        green: 68
+        yellow: 140
+        red: 158
+      grid_options:
+        columns: 4
+        rows: 2
+      unit: °F
+      min: 68
+      max: 176
+    - type: gauge
+      entity: sensor.mimir_volume1_disk_usage
+      name: volume1
+      needle: true
+      severity:
+        green: 0
+        yellow: 75
+        red: 90
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.mimir_volume2_disk_usage
+      name: volume2 · media
+      needle: true
+      severity:
+        green: 0
+        yellow: 85
+        red: 95
+      grid_options:
+        columns: 4
+        rows: 2
+  - type: grid
+    column_span: 3
+    cards:
+    - type: heading
+      heading: Last 24 hours
+      icon: mdi:chart-line
+    - type: history-graph
+      hours_to_show: 24
+      grid_options:
+        columns: 6
+      title: CPU %
+      entities:
+      - entity: sensor.odin_processor_use
+        name: odin
+      - entity: sensor.vidar_cpu_usage
+        name: vidar
+      - entity: sensor.mimir_cpu_usage
+        name: mimir
+      - entity: sensor.anubis_cpu_utilization
+        name: gateway
+    - type: history-graph
+      hours_to_show: 24
+      grid_options:
+        columns: 6
+      title: Temperatures °F
+      entities:
+      - entity: sensor.odin_processor_temperature
+        name: odin
+      - entity: sensor.vidar_cpu_thermal_0_temperature
+        name: vidar
+      - entity: sensor.mimir_package_id_0_temperature
+        name: mimir CPU
+      - entity: sensor.mimir_composite_temperature
+        name: mimir NVMe
+- title: Network
+  path: network
+  icon: mdi:lan
+  type: sections
+  max_columns: 3
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Gateway & DNS
+      icon: mdi:dns
+    - type: gauge
+      entity: sensor.anubis_cpu_utilization
+      name: Gateway CPU
+      needle: true
+      severity:
+        green: 0
+        yellow: 60
+        red: 85
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.anubis_memory_utilization
+      name: Gateway RAM
+      needle: true
+      severity:
+        green: 0
+        yellow: 80
+        red: 92
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: tile
+      entity: sensor.anubis_uptime
+      name: Gateway up since
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.adguard_odin_dns_queries
+      name: DNS queries today
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.adguard_odin_dns_queries_blocked_ratio
+      name: Blocked
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: switch.adguard_odin_protection
+      name: Filtering · odin
+      grid_options:
+        columns: 6
+        rows: 1
+  - type: grid
+    cards:
+    - type: heading
+      heading: UPS detail
+      icon: mdi:battery-charging-high
+    - type: gauge
+      entity: sensor.ups_office_battery_charge
+      name: Office battery
+      needle: true
+      severity:
+        green: 60
+        yellow: 50
+        red: 0
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: gauge
+      entity: sensor.ups_closet_battery_charge
+      name: Closet battery
+      needle: true
+      severity:
+        green: 60
+        yellow: 40
+        red: 0
+      grid_options:
+        columns: 4
+        rows: 2
+    - type: tile
+      entity: sensor.ups_office_load
+      name: Office load
+      grid_options:
+        columns: 6
+        rows: 1
+    - type: tile
+      entity: sensor.ups_closet_load
+      name: Closet load
+      grid_options:
+        columns: 6
+        rows: 1
+  - type: grid
+    cards:
+    - type: heading
+      heading: Battery, 24 h
+      icon: mdi:chart-line
+    - type: history-graph
+      hours_to_show: 24
+      entities:
+      - entity: sensor.ups_office_battery_charge
+        name: Office
+      - entity: sensor.ups_closet_battery_charge
+        name: Closet
+  - type: grid
+    column_span: 3
+    cards:
+    - type: heading
+      heading: Checks, 24 h
+      icon: mdi:timeline-check
+    - type: history-graph
+      hours_to_show: 24
+      entities:
+      - sensor.kuma_anubis_status
+      - sensor.kuma_odin_status
+      - sensor.kuma_vidar_status
+      - sensor.kuma_mimir_status
+      - sensor.kuma_internet_status
+      - sensor.kuma_dns_odin_status
+      - sensor.kuma_dns_vidar_status
+      - sensor.kuma_home_assistant_status
+      - sensor.kuma_certificate_status
+      - sensor.kuma_forgejo_status
+      - sensor.kuma_jellyfin_status
+      - sensor.kuma_seerr_status
+      - sensor.kuma_sonarr_status
+      - sensor.kuma_sonarr_health_status
+      - sensor.kuma_radarr_status
+      - sensor.kuma_radarr_health_status
+      - sensor.kuma_prowlarr_status
+      - sensor.kuma_prowlarr_health_status
+      - sensor.kuma_sabnzbd_status
+      - sensor.kuma_qbittorrent_status

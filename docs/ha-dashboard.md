@@ -4,15 +4,15 @@ One page for the network, hosts, power and services:
 [`services/homeassistant/dashboards/network-health.yaml`](../services/homeassistant/dashboards/network-health.yaml).
 Built-in cards only (no HACS), so nothing extra to install or keep updated.
 
-| Section | Shows | Source |
+| Tab | Shows | Source |
 |---|---|---|
-| Problems | Only the checks that are **not** up, plus "N / M checks up" | Uptime Kuma |
-| Hosts | anubis, odin, vidar, mimir up/down; odin CPU, memory, disk; gateway CPU | Uptime Kuma, System Monitor, UniFi |
-| Network & DNS | Internet, both DNS servers, AdGuard queries and blocked %, filtering switches | Uptime Kuma, AdGuard Home |
-| Power | Both UPSes: status, battery, runtime, load | Network UPS Tools |
-| Services | HA, certificate, Forgejo, Jellyfin, Seerr, Sonarr, Radarr, Prowlarr, SABnzbd, qBittorrent | Uptime Kuma |
-| Downloads | Usenet and torrent speed and queue | SABnzbd, qBittorrent |
-| Last 24 hours | Battery, CPU, and every check's up/down history | all of the above |
+| **Overview** | Green/red banner with the failing checks; hosts, core services and media apps as coloured tiles (green = up, red = down); power; download speeds | Uptime Kuma, NUT, SABnzbd, qBittorrent |
+| **Resources** | CPU, RAM, disk and temperature gauges (°F) for odin, vidar and mimir; 24 h CPU and temperature graphs | System Monitor, Glances |
+| **Network** | Gateway CPU/RAM, AdGuard, UPS battery and load, 24 h history of every check | UniFi, AdGuard, NUT, Uptime Kuma |
+
+Each Kuma check is a pair of tiles with visibility conditions, so exactly one
+shows: green while the check is `up`, red otherwise. Adding a check means
+copying such a pair (and adding the key to the Problems banner's list).
 
 Service health comes from **Uptime Kuma on vidar**, so the dashboard shows the
 same checks that alert your phone, and Kuma keeps alerting when odin (and so
