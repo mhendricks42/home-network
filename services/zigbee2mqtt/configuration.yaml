@@ -9,6 +9,8 @@ mqtt:
 serial:
   # port and adapter come from .env (ZIGBEE_PORT, ZIGBEE_ADAPTER) via compose.server.yml
   adapter: ember
+  baudrate: 115200   # SONOFF Dongle-M guide
+  rtscts: false
 frontend:
   enabled: true
   port: 8080

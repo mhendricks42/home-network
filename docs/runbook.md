@@ -681,12 +681,16 @@ by PoE; its Wi-Fi stays off (coordinators over Wi-Fi are unreliable).
    has no authentication, so it sits where only the servers are, not in
    IoT-Local with the devices. Mount it high and away from the switch, USB 3
    devices and Wi-Fi APs (Zigbee shares 2.4 GHz).
-2. **Its web UI** (`http://10.0.40.30` from an admin device): set a login if it
-   offers one, turn **Wi-Fi off**, update to the latest **Zigbee coordinator
-   (EmberZNet)** firmware, and note the **serial-over-TCP port** it shows.
-3. **`.env`:** `ZIGBEE_PORT=tcp://10.0.40.30:<that port>`,
-   `ZIGBEE_ADAPTER=ember`, a long random `Z2M_AUTH_TOKEN`. Check from odin:
-   `nc -z -w 3 10.0.40.30 <port> && echo reachable`.
+2. **Its web UI** (`http://10.0.40.30` from an admin device; `Dongle-M.local`
+   only works on its own VLAN): set a login if it offers one, turn **Wi-Fi
+   off**, keep the operation mode **Zigbee Coordinator** (not Thread RCP or
+   MultiPAN), and update to the latest coordinator (EmberZNet) firmware.
+3. **`.env`:** `ZIGBEE_PORT=tcp://10.0.40.30:6638` (the IP, not the hostname),
+   `ZIGBEE_ADAPTER=ember`, a long random `Z2M_AUTH_TOKEN`. Baud rate 115200 and
+   `rtscts: false` are in `services/zigbee2mqtt/configuration.yaml`, per
+   SONOFF's Zigbee2MQTT guide. Check from odin:
+   `nc -z -w 3 10.0.40.30 6638 && echo reachable`. If 6638 refuses
+   connections, reboot the dongle from its web UI menu (a known quirk).
 4. Start: `sudo sh scripts/start.sh server https zigbee …` (your other
    profiles), then `https://z2m.home.foxhound.nexus` and
    `docker compose -f compose.server.yml logs -f zigbee2mqtt` until
