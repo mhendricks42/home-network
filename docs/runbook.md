@@ -682,8 +682,8 @@ by PoE; its Wi-Fi stays off (coordinators over Wi-Fi are unreliable).
    has no authentication, so it sits where only the servers are, not in
    IoT-Local with the devices. Mount it high and away from the switch, USB 3
    devices and Wi-Fi APs (Zigbee shares 2.4 GHz).
-2. **Its web UI** (`http://10.0.40.30` from an admin device; `Dongle-M.local`
-   only works on its own VLAN): set a login if it offers one, turn **Wi-Fi
+2. **Its web UI**, through odin (admin devices only reach VLAN 40 on SSH, Z7):
+   `ssh -L 8088:10.0.40.30:80 odin`, then `http://localhost:8088`: set a login if it offers one, turn **Wi-Fi
    off**, keep the operation mode **Zigbee Coordinator** (not Thread RCP or
    MultiPAN), and update to the latest coordinator (EmberZNet) firmware.
 3. **`.env`:** `ZIGBEE_PORT=tcp://10.0.40.30:6638` (the IP, not the hostname),
