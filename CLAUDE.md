@@ -13,7 +13,7 @@ Docs are the source of truth; check them before answering from memory.
 
 VLANs: Mgmt 10, Trusted 20 (Mostly-Harmless), Work 30 (The-Forge), Servers 40,
 IoT-Local 50 (Alfheim), IoT-Cloud 55 (Niflheim), Cameras 60 (no internet), Guest 70 (Mead-Hall).
-Firewall policies Z1–Z33 in docs/network-architecture.md §9. An empty destination means **Any**.
+Firewall policies Z1–Z35 in docs/network-architecture.md §9 (Z34/Z35: Zigbee coordinator, D-N16). An empty destination means **Any**.
 
 ## Services and access
 - Domain `foxhound.nexus` on Cloudflare; Caddy wildcard `*.home.foxhound.nexus` → 10.0.40.10 (AdGuard rewrite).

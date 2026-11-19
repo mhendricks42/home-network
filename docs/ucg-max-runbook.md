@@ -167,7 +167,8 @@ Create reusable address/port objects using the UI's supported groups:
 | `GW_ADMIN_PORTS` | TCP/UDP 22, 53, 80, 443, 853 (Z13) |
 | `CAMERA_PORTS` | TCP 554, 80, 443 (Z12; confirm the ONVIF port) |
 | `IOT_GW_PORTS` | UDP 67, 5353 (Z20 and Z29, used with Match Opposite) |
-| `CAM_GW_PORTS` | UDP 67 (Z21, used with Match Opposite) |
+| `CAM_GW_PORTS` | UDP 67 (Z21 and Z35, used with Match Opposite) |
+| `ZIGBEE_COORD` | `10.0.40.30` (SONOFF Dongle-M; Z34, Z35) |
 
 ## 4. Adopt devices and apply port profiles
 
@@ -228,7 +229,9 @@ from that table; don't keep a second copy here.
    custom zone should show Block All to the other internal zones and Allow All
    to External and Gateway. If any cell differs, **stop** and update §9.4
    before continuing.
-4. Create the address/port objects from section 3, then Z1–Z22 and Z25–Z33 in ID order.
+4. Create the address/port objects from section 3, then Z1–Z22 and Z25–Z35 in ID order.
+   Z34/Z35 need the Dongle-M's reservation (`10.0.40.30`) first; check Z34's hit
+   counter after a day (the dongle's blocked phone-home attempts, if any).
    Create Z13, Z23 and Z24 **disabled**; Z13 is enabled one lease time after
    the DNS cutover (section 6, step 5). Enable logging on Z14, Z15, Z18 and Z19.
 5. Before enabling Z13, confirm the admin laptop's address is in `ADMIN_CLIENTS`
@@ -248,6 +251,8 @@ Boundaries the zone firewall can't enforce:
 
 - Servers share VLAN 40. Server ↔ Pi (Kuma TCP 3001) and NAS traffic is
   switched, not routed; use the host/Docker firewalls from the Docker runbook.
+  That includes the Zigbee coordinator: odin, vidar and the NAS each deny new
+  connections from `10.0.40.30` (architecture §9.4, Z34/Z35 note).
   The same applies to devices inside IoT-Local or Cameras.
 - Tailscale subnet traffic is SNATed to `10.0.40.10`, so UniFi sees remote
   users as `SERVER`. Tailnet ACLs separate admins from family; UniFi can't.

@@ -243,7 +243,7 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 
 ### 9.4 Final policy set
 
-31 baseline policies (Z1–Z22 and Z25–Z33). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
+33 baseline policies (Z1–Z22 and Z25–Z35). `DNS_NODES` (the server and Pi) also serve NTP. "NOT" means UniFi's *Match Opposite* option on that field. Set **IP version: Both** on policies with no IPv4 address object, so they cover IPv6 as well.
 
 | ID | Source zone (match) | Destination zone (match) | Protocol / ports | Action | Replaces | Reasoning |
 |---|---|---|---|---|---|---|
@@ -278,6 +278,8 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | Z31 | Work | External: `ISP_LAN` | Any | Block | F10 | No reason to reach the ISP box. |
 | Z32 | IoT-Cloud | External: `ISP_LAN` | Any | Block | F10 | Same. |
 | Z33 | IoT-Cloud | Servers: `SERVER` | TCP 443 | Allow | New | Streaming boxes reach Jellyfin (and other services) only through Caddy, with each app's login; nothing on the NAS is opened directly. |
+| Z34 | Servers: `ZIGBEE_COORD` | External | Any | Block + log | New (D-N16) | The Zigbee coordinator needs no internet: no phone-home, no remote firmware. Disable briefly only if a firmware update must download directly (otherwise upload the file in its web UI). IP version Both. |
+| Z35 | Servers: `ZIGBEE_COORD` | Gateway | TCP/UDP, ports NOT 67 | Block | New (D-N16) | DHCP only, like Z21: no gateway UI, SSH or DNS from a vendor ESP32. |
 
 **Conditional (create disabled; enable when needed):**
 
@@ -307,6 +309,15 @@ Within one network, Wi-Fi client isolation (Guest SSID, Mead-Hall) and the mDNS 
 | WAN inbound deny | Covered | External defaults are return-only. |
 | Adoption ports (8080, 3478, 10001) | Covered | Mgmt→Gateway is allow-all. |
 | Guest isolation | Covered + setting | Hotspot defaults keep guests out of every other zone; Mead-Hall (Guest SSID) client isolation covers clients within the Guest network. |
+
+**Zigbee coordinator (D-N16).** `ZIGBEE_COORD` (`10.0.40.30`) sits in Servers so
+only the servers can reach its unauthenticated TCP 6638. Its own outbound
+reach is closed in three layers: other VLANs are already blocked (Servers →
+other zones is Block All, and Z10–Z12 allow only `SERVER`), Z34/Z35 close the
+internet and gateway, and odin, vidar and the NAS refuse new connections from
+it in their host firewalls, because traffic within VLAN 40 never reaches the
+gateway. odin's own connection to it (Zigbee2MQTT → 6638) still works: the host
+firewalls only drop connections the dongle *starts*.
 
 **No inbound port forwards exist.**
 **mDNS proxy:** Trusted ↔ IoT-Local and Trusted ↔ IoT-Cloud only, for casting (a gateway setting, not a policy).

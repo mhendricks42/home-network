@@ -94,6 +94,7 @@ sudo ufw allow from 10.0.40.10 to any port 22 proto tcp      # ssh -J odin vidar
 sudo ufw allow from 10.0.0.0/16 to any port 53               # DNS, TCP and UDP
 sudo ufw allow from 10.0.0.0/16 to any port 123 proto udp    # NTP
 sudo ufw allow from 10.0.40.10 to any port 3001 proto tcp    # Caddy → Uptime Kuma
+sudo ufw insert 1 deny from 10.0.40.30   # Zigbee coordinator (D-N16)
 sudo ufw enable
 sudo ufw status verbose
 ```
