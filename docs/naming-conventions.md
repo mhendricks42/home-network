@@ -77,7 +77,8 @@ the HA device doesn't rename the Kuma monitor, so alerts keep their names.
 **Not yet named** (suggestions, adopt by moving them into the table above):
 core switch `yggdrasil`, office switch `bifrost`, U7 Pro `voyager`, U7 Lite
 `pioneer`, desk PC `wintermute`, admin laptop `zero-cool`, closet UPS `atlas`,
-office UPS `hyperion`, recording disk `nostromo`, Home Assistant instance
+office UPS `hyperion`, recording disk `nostromo`, Zigbee coordinator
+`ratatoskr` (the squirrel carrying messages along Yggdrasil), Home Assistant instance
 `Deep Thought`.
 
 ## 5. Renaming a device

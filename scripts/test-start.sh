@@ -48,9 +48,10 @@ reject 'Create MQTT credentials' server
 printf 'homeassistant:hash\nzigbee2mqtt:hash\nfrigate:hash\n' > "$temporary/mqtt/config/passwords"
 printf 'DOMAIN = example.test\n' > "$temporary/forgejo/data/gitea/conf/app.ini"
 reject 'Set HOME_DOMAIN' server https
-reject 'Set ZIGBEE_DEVICE' server radios
+reject 'Set ZIGBEE_PORT' server zigbee
+reject 'Set ZWAVE_DEVICE' server zwave
 reject 'Set MQTT_FRIGATE_PASSWORD' server cameras
 reject 'Register the runner' server actions
 sh "$repository/scripts/start.sh" server > "$temporary/output" 2>&1
 [ -f "$temporary/started" ] || { printf 'FAIL: valid configuration did not start\n' >&2; exit 1; }
-printf 'PASS: 10 preflight rejection cases and valid server startup (mock Docker).\n'
+printf 'PASS: 11 preflight rejection cases and valid server startup (mock Docker).\n'

@@ -94,16 +94,16 @@ services:
     networks:
       default:
         mac_address: "02:00:00:28:00:12"
-    profiles: [radios]
+    profiles: [zigbee]
     image: ghcr.io/koenkk/zigbee2mqtt:2.14.2
     depends_on: [mqtt]
     ports: ["127.0.0.1:8080:8080"]
-    devices:
-      - ${ZIGBEE_DEVICE:-/dev/serial/by-id/REPLACE_ZIGBEE}:/dev/ttyZigbee
+    # Network coordinator (SONOFF Dongle-M over Ethernet): no USB device to map.
     environment:
       TZ: ${TZ:-Etc/UTC}
       ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD: ${MQTT_Z2M_PASSWORD:-}
       ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN: ${Z2M_AUTH_TOKEN:-}
+      ZIGBEE2MQTT_CONFIG_SERIAL_PORT: ${ZIGBEE_PORT:-tcp://REPLACE_ZIGBEE}
       ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: ${ZIGBEE_ADAPTER:-ember}
     volumes:
       - ${DATA_ROOT:-/srv}/zigbee2mqtt/data:/app/data
@@ -114,7 +114,7 @@ services:
     networks:
       default:
         mac_address: "02:00:00:28:00:13"
-    profiles: [radios]
+    profiles: [zwave]
     image: zwavejs/zwave-js-ui:11.24.3
     ports: ["127.0.0.1:8091:8091"]
     devices:

@@ -4,11 +4,11 @@ set -eu
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 cd "$(dirname "$0")/.."
 node=${1:-}
-case "$node" in server) ;; *) fail "Usage: sh scripts/start.sh server [https radios cameras monitoring actions]";; esac
+case "$node" in server) ;; *) fail "Usage: sh scripts/start.sh server [https zigbee zwave cameras monitoring actions]";; esac
 shift
 profiles=" $* "
 for profile in "$@"; do
-    case "$profile" in https|radios|cameras|monitoring|actions) ;; *) fail "Unknown profile: $profile";; esac
+    case "$profile" in https|zigbee|zwave|cameras|monitoring|actions) ;; *) fail "Unknown profile: $profile";; esac
 done
 
 set -- docker compose --env-file .env -f "compose.$node.yml"
@@ -42,11 +42,14 @@ case "$profiles" in *" https "*)
     done
     ;;
 esac
-case "$profiles" in *" radios "*)
-    for key in ZIGBEE_DEVICE ZWAVE_DEVICE MQTT_Z2M_PASSWORD Z2M_AUTH_TOKEN; do require "$key"; done
-    for key in ZIGBEE_DEVICE ZWAVE_DEVICE; do
-        [ -c "$(value "$key")" ] || fail "$key is not an attached character device."
-    done
+case "$profiles" in *" zigbee "*)
+    for key in ZIGBEE_PORT MQTT_Z2M_PASSWORD Z2M_AUTH_TOKEN; do require "$key"; done
+    case "$(value ZIGBEE_PORT)" in tcp://?*:[0-9]*) ;; *) fail "ZIGBEE_PORT must look like tcp://10.0.40.30:PORT.";; esac
+    ;;
+esac
+case "$profiles" in *" zwave "*)
+    require ZWAVE_DEVICE
+    [ -c "$(value ZWAVE_DEVICE)" ] || fail "ZWAVE_DEVICE is not an attached character device."
     ;;
 esac
 case "$profiles" in *" cameras "*)

@@ -7,7 +7,7 @@ on the **Linux targets**, not Docker Desktop.
 
 | Target | Default services | Optional profiles |
 |---|---|---|
-| Server | AdGuard Home, Unbound, Mosquitto, Home Assistant, ESPHome, Forgejo | `https`: Caddy; `radios`: Zigbee2MQTT + Z-Wave JS UI; `cameras`: Frigate; `monitoring`: NetAlertX; `actions`: Forgejo runner |
+| Server | AdGuard Home, Unbound, Mosquitto, Home Assistant, ESPHome, Forgejo | `https`: Caddy; `zigbee`: Zigbee2MQTT (network coordinator); `zwave`: Z-Wave JS UI; `cameras`: Frigate; `monitoring`: NetAlertX; `actions`: Forgejo runner |
 | Pi (vidar) | AdGuard Home, Unbound, Uptime Kuma (native, no Docker: [vidar baseline](docs/vidar-baseline.md)) | None |
 | NAS (mimir) | Media stack in [`media-stack/`](media-stack/readme.md): Gluetun + qBittorrent, SABnzbd, Prowlarr, Sonarr, Radarr, Bazarr, Jellyfin, ErsatzTV, Seerr | `recyclarr` (on demand) |
 

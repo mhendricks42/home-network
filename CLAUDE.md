@@ -25,6 +25,8 @@ Firewall policies Z1–Z33 in docs/network-architecture.md §9. An empty destina
   Dashboard `services/homeassistant/dashboards/network-health.yaml` (built-in cards, pasted into the raw editor; HA uses °F);
   entity IDs follow docs/naming-conventions.md (set via HA device names: `odin`, `UPS Office`, `AdGuard odin`, `Kuma Sonarr`);
   update the HA side to the convention rather than the YAML to HA's defaults. Check with `scripts/check-ha-entities.sh`.
+- Zigbee: SONOFF Dongle-M network coordinator, VLAN 40 `10.0.40.30`, switch port 7; Z2M via `ZIGBEE_PORT=tcp://…`
+  (profiles `zigbee` and `zwave` are separate).
 - Docker networks on odin: default 172.28.0.0/24, resolver 172.29.0.0/24 (Unbound 172.29.0.2).
 - Media stack images are pinned by tag in `media-stack/docker-compose.yml`; update by bumping the tag, never in-app.
 

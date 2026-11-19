@@ -77,7 +77,8 @@ flowchart TB
 |---|---|---|---|
 | 1–5 | 1G PoE+ | Cameras 1–5 | Access, VLAN 60 |
 | 6 | 1G PoE+ | Raspberry Pi 3B+ | Access, VLAN 40 |
-| 7–12 | 1G PoE+ | Spare | — |
+| 7 | 1G PoE+ | Zigbee coordinator (SONOFF Dongle-M) | Access, VLAN 40; `10.0.40.30` |
+| 8–12 | 1G PoE+ | Spare | — |
 | 13 | 2.5G PoE++ | UCG Max LAN | Uplink; PoE off |
 | 14 | 2.5G PoE++ | Office trunk (existing Cat6) | Native Mgmt 10; tagged 20/30/40/50/55/70 (includes upstairs SSIDs); **PoE off** (office switch has its own adapter) |
 | 15 | 2.5G PoE++ | U7 Pro downstairs | Trunk (AP SSIDs) |
@@ -539,6 +540,7 @@ Recurring: $0 subscriptions; domain ≈ $10–15/yr; electricity ≈ $140–155/
 | D-N14 | SSID names | Mostly-Harmless (Trusted), The-Forge (Work), Alfheim (IoT-Local), Niflheim (IoT-Cloud), Mead-Hall (Guest) | 2026-11-04 |
 | D-N15 | BGW320 WAN mode | IP passthrough (closes former P1): one NAT layer, public IP on the UCG Max, best Tailscale direct connections | 2026-11-06 |
 | D-N12 | Domain and DNS host | `foxhound.nexus`, Cloudflare Registrar + DNS (closes former P2) | 2026-11-01 |
+| D-N16 | Zigbee coordinator | SONOFF Dongle-M over Ethernet/PoE in **Servers (VLAN 40)**, `10.0.40.30`, Wi-Fi off. Its serial-over-TCP port is unauthenticated, so it sits with the servers rather than with IoT-Local devices | 2026-11-19 |
 | D-N13 | Time service | chrony on the server and Pi hosts serves NTP to all VLANs (UCG Max has no LAN NTP server) | 2026-11-01 |
 | — | Raspberry Pi | Pi 3B+ (owned) | 2026-10-18 |
 | — | NAS | Ugreen, in office | 2026-10-18 |

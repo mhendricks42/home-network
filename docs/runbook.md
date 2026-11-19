@@ -52,7 +52,7 @@ build and reboots must work before (or without) AdGuard.
 | C2 | AdGuard admin bcrypt hash on both nodes | §1 "DNS on both nodes" | C1 | No `REPLACE` left in `AdGuardHome.yaml` |
 | C3 | MQTT accounts and matching `.env` passwords; Forgejo config check | §2 | C1 | `start.sh server` passes its credential checks |
 | C4 | *(https)* Cloudflare token, CAA, DNSSEC; `ACME_EMAIL`, `DNS_API_TOKEN`; Caddy basic-auth files | §2 Caddy | C1, B3 (outbound DNS/HTTPS) | Token verify returns `active`; both auth files exist |
-| C5 | *(radios)* Both USB radios attached; `/dev/serial/by-id` paths and `Z2M_AUTH_TOKEN` in `.env` | §3 Radios | C1 | Both device paths exist |
+| C5 | *(zigbee / zwave)* Zigbee: Dongle-M on the network, `ZIGBEE_PORT` and `Z2M_AUTH_TOKEN` in `.env`. Z-Wave: USB stick, `ZWAVE_DEVICE` from `/dev/serial/by-id` | §3 Radios | C1 | `nc -z` reaches the Dongle-M; the Z-Wave path exists |
 | C6 | *(cameras)* Cameras configured offline and reserved on VLAN 60 (UCG §3); recording disk mounted by UUID with mount ordering before Docker; marker file; GPU and RTSP values in `.env` | §3 Cameras | A4 (Z12 lets the server reach cameras), C1 | `mountpoint /mnt/recordings` succeeds; `ffprobe -rtsp_transport tcp 'URL'` (from `apt install ffmpeg`) lists the streams for one camera |
 | C7 | *(production)* Review release notes and resolve image digests | §2 intro note | C1 | Pinned versions accepted |
 
@@ -668,11 +668,32 @@ a separate admin-laptop/device operation; no broad USB passthrough is provided.
 
 ## 3. Hardware profiles
 
-### Radios (`radios`)
+### Radios (`zigbee`, `zwave`)
 
-Set stable `ZIGBEE_DEVICE` and `ZWAVE_DEVICE` paths from
-`/dev/serial/by-id/`, plus the actual `ZIGBEE_ADAPTER`. Set a long random
-`Z2M_AUTH_TOKEN`. Do not enable the profile before attaching both radios.
+Two independent profiles: start either without the other.
+
+**Zigbee coordinator: SONOFF Dongle-M (Dongle Max)**, EFR32MG24 with
+EmberZNet firmware, reached over Ethernet (serial over TCP). Wired and powered
+by PoE; its Wi-Fi stays off (coordinators over Wi-Fi are unreliable).
+
+1. **Placement:** core switch **port 7** (PoE+), port profile **Servers
+   (VLAN 40)**, DHCP reservation **`10.0.40.30`** (D-N16). Its TCP serial port
+   has no authentication, so it sits where only the servers are, not in
+   IoT-Local with the devices. Mount it high and away from the switch, USB 3
+   devices and Wi-Fi APs (Zigbee shares 2.4 GHz).
+2. **Its web UI** (`http://10.0.40.30` from an admin device): set a login if it
+   offers one, turn **Wi-Fi off**, update to the latest **Zigbee coordinator
+   (EmberZNet)** firmware, and note the **serial-over-TCP port** it shows.
+3. **`.env`:** `ZIGBEE_PORT=tcp://10.0.40.30:<that port>`,
+   `ZIGBEE_ADAPTER=ember`, a long random `Z2M_AUTH_TOKEN`. Check from odin:
+   `nc -z -w 3 10.0.40.30 <port> && echo reachable`.
+4. Start: `sudo sh scripts/start.sh server https zigbee …` (your other
+   profiles), then `https://z2m.home.foxhound.nexus` and
+   `docker compose -f compose.server.yml logs -f zigbee2mqtt` until
+   *Zigbee2MQTT started*.
+
+**Z-Wave:** set a stable `ZWAVE_DEVICE` path from `/dev/serial/by-id/` before
+enabling the `zwave` profile.
 
 Z2M starts with pairing closed and external JS disabled. It generates network
 keys/PAN IDs on the first successful start; preserve `/srv/zigbee2mqtt/data`
@@ -749,7 +770,7 @@ devices, so 03:30 doesn't report them missing.
 # Server base services:
 sudo sh scripts/start.sh server
 # Add only configured profiles; HTTPS is optional until the domain is ready:
-sudo sh scripts/start.sh server https radios cameras monitoring
+sudo sh scripts/start.sh server https zigbee cameras monitoring   # add zwave once a stick is attached
 ```
 
 `start.sh` checks placeholders, required profile credentials/devices, MQTT
