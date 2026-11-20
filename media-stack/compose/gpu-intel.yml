@@ -2,3 +2,7 @@ services:
   jellyfin:
     devices:
       - /dev/dri:/dev/dri
+  # ErsatzTV transcodes every channel; without the GPU it warns and uses the CPU.
+  ersatztv:
+    devices:
+      - /dev/dri:/dev/dri
