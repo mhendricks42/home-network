@@ -529,6 +529,31 @@ sudo docker compose -f compose.server.yml exec --user 1000:1000 forgejo \
 Store the printed password securely and change it at first login. Putting
 Forgejo into use (token, GitHub mirror, monitoring, updates): [Forgejo](forgejo.md).
 
+### HACS (community store)
+
+HA runs as a container (no add-ons), so HACS is installed as a custom
+integration into `/srv/homeassistant/config/custom_components/hacs`. The script
+pins the release and checks its SHA-256 before touching anything, then restarts HA:
+
+```bash
+cd ~/home-network && sudo sh scripts/install-hacs.sh
+```
+
+Then *Settings → Devices & services → Add integration → HACS*, accept the
+notes, and enter the GitHub code it shows at `github.com/login/device`
+(read-only access to public repositories).
+
+**Updating HACS itself:** HACS offers updates in HA, but install them with the
+script so the pin stays true: set `VERSION` and `SHA256` in
+`scripts/install-hacs.sh` to the new release (`sha256sum` of its `hacs.zip`),
+commit, and rerun it.
+
+**What to install:** everything from HACS runs with HA's full access to devices,
+tokens and the network. Only well-known, maintained projects; frontend cards
+are lower risk than integrations (Python inside HA). Update deliberately after
+reading the release notes, after a nightly backup. `custom_components/` and
+`www/` are in `/srv`, so restic backs them up.
+
 ### Caddy (`https` profile): Cloudflare DNS and Let's Encrypt
 
 The domain is `foxhound.nexus`, registered and hosted on Cloudflare. Caddy
