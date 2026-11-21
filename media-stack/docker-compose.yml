@@ -200,7 +200,7 @@ services:
     restart: "no"
 
   seerr:
-    image: seerr/seerr@sha256:d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be
+    image: seerr/seerr:v3.5.2@sha256:aadee014b40e28cf9aa4928bc9d1183a6eb08f8c44d543cddc9efdcb16549be2
     init: true
     networks:
       - medianet
