@@ -3,6 +3,17 @@
 # secrets.yaml: seerr_webhook_id: seerr-<long random string>
 # Payload template: see media-stack docs, "Seerr webhook". Objects such as
 # media/request/issue are null when an event doesn't have them.
+# Seerr has a single webhook slot. Jellyfin's Moonfin plugin wants it too, so HA
+# takes it and forwards every payload unchanged to Moonfin.
+# secrets.yaml: moonfin_seerr_webhook_url: http://10.0.40.20:8096/Moonfin/Seerr/Webhook?secret=<secret>
+rest_command:
+  moonfin_seerr:
+    url: !secret moonfin_seerr_webhook_url
+    method: post
+    content_type: application/json
+    payload: "{{ body }}"
+    timeout: 10
+
 automation:
   - id: seerr_request_alert
     alias: Seerr request alert
@@ -58,3 +69,8 @@ automation:
             clickAction: "{{ page | trim }}"
             priority: "{{ 'high' if urgent else 'normal' }}"
             ttl: "{{ 0 if urgent else 3600 }}"
+      # After the phone alert, so a Moonfin outage never delays or blocks it.
+      - action: rest_command.moonfin_seerr
+        continue_on_error: true
+        data:
+          body: "{{ trigger.json | to_json }}"

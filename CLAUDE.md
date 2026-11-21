@@ -20,7 +20,8 @@ Firewall policies Z1–Z35 in docs/network-architecture.md §9 (Z34/Z35: Zigbee 
   Media apps proxied via the `(media)` snippet to `MEDIA_IP`.
 - HA 2026.10: proxy settings are UI-only (`.storage/http`), trusted proxy `172.28.0.1`. No `http:` YAML.
   Packages in `services/homeassistant/packages/` must be copied by hand to `/srv/homeassistant/config/packages/`.
-  Webhook IDs live in HA `secrets.yaml` (`seerr_webhook_id`, `radarr_/sonarr_/prowlarr_webhook_id`; all must exist).
+  Webhook IDs live in HA `secrets.yaml` (`seerr_webhook_id`, `radarr_/sonarr_/prowlarr_webhook_id`, `moonfin_seerr_webhook_url`; all must exist).
+  Seerr's single webhook goes to HA; HA forwards it to Jellyfin's Moonfin plugin (which otherwise takes the slot).
   Phone notify: `notify.mobile_app_matt_s_samsung_galaxy`.
   HACS: `scripts/install-hacs.sh` (pinned version + SHA-256; update by editing both, never via HACS's own updater).
   Dashboard `services/homeassistant/dashboards/network-health.yaml` (built-in cards, pasted into the raw editor; HA uses °F);
