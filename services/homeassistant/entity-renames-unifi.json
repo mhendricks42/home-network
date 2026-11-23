@@ -1,0 +1,86 @@
+[
+ {
+  "entity_id": "device_tracker.desktop_ij99m1l",
+  "new_entity_id": "device_tracker.admin_laptop_eth",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.desktop_ij99m1l_link_speed",
+  "new_entity_id": "sensor.admin_laptop_eth_link_speed",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.desktop_ij99m1l_2",
+  "new_entity_id": "device_tracker.admin_laptop_wifi",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.dongle_m_21c8",
+  "new_entity_id": "device_tracker.zigbee_coord",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.dongle_m_21c8_link_speed",
+  "new_entity_id": "sensor.zigbee_coord_link_speed",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.laptop_2hi3u29h",
+  "new_entity_id": "device_tracker.msft_laptop",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.matthew_s_s25_ultra_3",
+  "new_entity_id": "device_tracker.matthew_s_s25_ultra",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.nicole_s_s25_ultra_2",
+  "new_entity_id": "device_tracker.nicole_s_s25_ultra",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.unifi_default_50_31_23_2a_ff_2e",
+  "new_entity_id": "device_tracker.3d_printer",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.unifi_default_88_42_d0_f4_b6_8a",
+  "new_entity_id": "device_tracker.living_room_streaming",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "device_tracker.unifi_default_d4_9f_f9_50_07_22",
+  "new_entity_id": "device_tracker.master_bedroom_streaming",
+  "enable": false,
+  "disabled": true
+ },
+ {
+  "entity_id": "device_tracker.unifi_default_f6_fd_d7_5e_16_b3",
+  "new_entity_id": "device_tracker.nicole_s_tab_s9",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "device_tracker.irobot_b781e9070d0b4976b88ab3c0b0307448",
+  "new_entity_id": "device_tracker.rif_raf",
+  "enable": false,
+  "disabled": false
+ },
+ {
+  "entity_id": "sensor.media_closet_usw_pro_max_16_poe_port_11_link_speed",
+  "new_entity_id": "sensor.usw_pro_max_16_poe_port_11_link_speed",
+  "enable": false,
+  "disabled": true
+ }
+]
